@@ -358,3 +358,36 @@ svg { display: block; }
   .ftr-grid { grid-template-columns: 1fr; }
   .srch-loc { display: none; }
 }
+
+/* ── Post Ad form ── */
+.em-post-form { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+.em-post-field { display: flex; flex-direction: column; gap: 5px; }
+.em-post-label { font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+.em-post-label span { font-weight: 400; color: var(--muted); }
+.em-post-row { display: flex; gap: 10px; }
+.em-post-row > * { flex: 1; min-width: 0; }
+.em-post-input { border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 13px; font-size: 13px; color: var(--ink); background: var(--white); outline: none; font-family: inherit; width: 100%; transition: border-color .13s; }
+.em-post-input:focus { border-color: var(--forest); }
+.em-post-select { border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 13px; font-size: 13px; color: var(--ink); background: var(--white); outline: none; font-family: inherit; width: 100%; cursor: pointer; appearance: auto; }
+.em-post-select:focus { border-color: var(--forest); }
+.em-post-toggle { display: flex; gap: 6px; }
+.em-post-toggle-btn { flex: 1; padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: .13s; font-family: inherit; }
+.em-post-toggle-btn.active { border-color: var(--forest); background: var(--leaf-lt); color: var(--forest); }
+.em-post-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); cursor: pointer; user-select: none; }
+.em-post-check input { accent-color: var(--forest); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+.em-photo-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 22px 16px; text-align: center; cursor: pointer; transition: .13s; background: var(--surf); position: relative; overflow: hidden; }
+.em-photo-zone:hover, .em-photo-zone.drag { border-color: var(--leaf); background: var(--leaf-lt); }
+.em-photo-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.em-photo-zone-txt { pointer-events: none; }
+.em-photo-zone-txt strong { display: block; font-size: 13px; color: var(--ink2); margin-bottom: 2px; }
+.em-photo-zone-txt { font-size: 12px; color: var(--muted); }
+.em-photo-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.em-photo-thumb-wrap { position: relative; display: inline-flex; }
+.em-photo-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--border); display: block; }
+.em-photo-rm { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff; border: none; cursor: pointer; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0; font-family: inherit; }
+.em-post-error { font-size: 12px; color: var(--red); background: #FEF0EE; border: 1px solid #FBBBB3; border-radius: 6px; padding: 9px 12px; }
+.em-post-submit { width: 100%; padding: 14px; background: var(--forest); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .13s; font-family: inherit; margin-top: 2px; }
+.em-post-submit:hover { background: var(--mid); }
+
+/* ── Empty state ── */
+.em-empty-state { grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }

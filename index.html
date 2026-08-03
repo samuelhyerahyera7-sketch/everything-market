@@ -23,7 +23,7 @@
     <div class="tb-r">
       <a href="#" onclick="return toast('Sign in')">Sign In</a>
       <a href="#" onclick="return toast('Register')">Register</a>
-      <a href="#" class="tb-post" onclick="return toast('Opening post ad form…')">+ Post Ad Free</a>
+      <a href="#" class="tb-post" onclick="openPostAdModal(); return false;">+ Post Ad Free</a>
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@
     <div class="hdr-r">
       <a href="#" class="btn-signin" onclick="return toast('Opening sign in…')">Sign In</a>
       <a href="#" class="btn-register" onclick="return toast('Opening registration…')">Register</a>
-      <button class="btn-post" onclick="toast('Opening post ad form…')">+ Post Free Ad</button>
+      <button class="btn-post" onclick="openPostAdModal()">+ Post Free Ad</button>
     </div>
   </div>
 </header>
@@ -160,7 +160,7 @@
       <div class="sb-cta">
         <h4>Sell Something Today</h4>
         <p>Post your free ad and connect with buyers across South Africa.</p>
-        <button class="btn-cta-sb" onclick="toast('Opening post ad form…')">+ Post Free Ad</button>
+        <button class="btn-cta-sb" onclick="openPostAdModal()">+ Post Free Ad</button>
       </div>
     </aside>
   </div>
@@ -171,7 +171,7 @@
   <div class="wrap">
     <h2>Have something to sell?</h2>
     <p>List for free and reach buyers across South Africa — quick, easy, no cost.</p>
-    <button class="btn-cta-main" onclick="toast('Opening post ad form…')">+ Post Your Free Ad</button>
+    <button class="btn-cta-main" onclick="openPostAdModal()">+ Post Your Free Ad</button>
   </div>
 </section>
 

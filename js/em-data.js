@@ -3,10 +3,8 @@ const ICO = {
   wa:   `<svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 1.41.37 2.73 1.01 3.89L0 16l4.25-1.11A7.96 7.96 0 008 16c4.42 0 8-3.58 8-8s-3.58-8-8-8zm0 14.4a6.39 6.39 0 01-3.26-.9l-.23-.14-2.52.66.67-2.46-.16-.25A6.4 6.4 0 118 14.4zm3.5-4.77c-.19-.1-1.13-.56-1.31-.62-.17-.06-.3-.1-.42.1-.12.19-.48.62-.59.75-.11.13-.21.14-.4.05-.19-.1-.8-.3-1.52-.95-.56-.5-.94-1.12-1.05-1.31-.11-.19-.01-.3.08-.39.09-.09.19-.22.29-.33.1-.11.13-.19.19-.32.06-.13.03-.25-.01-.35-.05-.1-.42-1.01-.58-1.38-.15-.37-.3-.32-.42-.33H5.4c-.12 0-.32.05-.49.24S4.4 6.2 4.4 7.15c0 .95.7 1.87.79 2 .1.13 1.37 2.09 3.31 2.93.46.2.82.32 1.1.41.46.15.88.13 1.22.08.37-.06 1.13-.46 1.29-.91.16-.45.16-.83.11-.91-.05-.08-.17-.13-.36-.22z"/></svg>`,
   pin:  `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 1a3 3 0 013 3c0 2.5-3 7-3 7S3 6.5 3 4a3 3 0 013-3z"/><circle cx="6" cy="4" r="1.2"/></svg>`,
   time: `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M6 3.5V6l1.5 1.2"/></svg>`,
-  eye:  `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M1 6s2-3.5 5-3.5S11 6 11 6s-2 3.5-5 3.5S1 6 1 6z"/><circle cx="6" cy="6" r="1.3"/></svg>`,
   heart:`<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 10.5S1 7 1 3.8A2.8 2.8 0 016 2.6a2.8 2.8 0 015 1.2C11 7 6 10.5 6 10.5z"/></svg>`,
 };
-function ico(name, cls='') { return `<span class="${cls}" style="display:inline-flex;align-items:center;">${ICO[name]}</span>`; }
 
 /* ── Category definitions ── */
 const CATS = [
@@ -21,7 +19,7 @@ const CATS = [
   { id:'pets', name:'Pets',            color:'#BF360C', bg:'#FFECE6', svg:`<circle cx="9" cy="8.5" r="2.2" fill="currentColor"/><circle cx="15" cy="8.5" r="2.2" fill="currentColor"/><circle cx="5.5" cy="13.5" r="1.8" fill="currentColor"/><circle cx="18.5" cy="13.5" r="1.8" fill="currentColor"/><ellipse cx="12" cy="18" rx="4" ry="3.2" fill="currentColor"/>` },
 ];
 
-/* ── SVG art (Canvas-rendered) ── */
+/* ── Canvas artwork ── */
 function drawSVG(key) {
   const arts = {
     phone:  (c,w,h) => { c.fillStyle='#141830'; c.fillRect(0,0,w,h); const g=c.createLinearGradient(0,0,0,h); g.addColorStop(0,'#3B5FD4'); g.addColorStop(1,'#1A3498'); c.fillStyle='#22273C'; roundRect(c,(w*.34),(h*.09),(w*.32),(h*.82),w*.06); c.fillStyle=g; c.fillRect(w*.37,h*.17,w*.27,h*.66); c.fillStyle='rgba(255,255,255,.22)'; c.fillRect(w*.39,h*.25,w*.22,h*.05); c.fillStyle='rgba(255,255,255,.1)'; c.fillRect(w*.39,h*.34,w*.16,h*.03); c.fillStyle='rgba(80,180,100,.3)'; roundRect(c,w*.39,h*.61,w*.22,h*.09,w*.025); },
@@ -46,24 +44,39 @@ function drawSVG(key) {
   function ellipse(ctx,cx,cy,rx,ry){ ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill(); }
   function wheel(ctx,cx,cy,r){ ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#1A1A1A'; ctx.beginPath(); ctx.arc(cx,cy,r*.7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#2A2A2A'; ctx.beginPath(); ctx.arc(cx,cy,r*.28,0,Math.PI*2); ctx.fill(); }
 
+  if (!arts[key]) return document.createElement('canvas');
   arts[key](ctx, 320, 240);
   return cvs;
 }
 
-/* ── Listings data ── */
+/* ── Time helpers ── */
+const H = 3600000, D = 86400000;
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + 'm ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+/* ── Sample listings (example ads to show the platform) ── */
 const LISTINGS = [
-  { id:1,  title:'iPhone 14 Pro 256GB – Space Black',      price:14500,  neg:true,  loc:'Sandton, Gauteng',        art:'phone',    badge:'Featured', cond:'Used – Excellent', cat:'elec', views:2840, posted:'2h ago',  desc:'Perfect condition, no scratches. Includes original box, charger and case.', seller:'Priya N.',    sellerType:'private', verified:true  },
-  { id:2,  title:'2020 Toyota Hilux 2.8 GD-6 4x4 Manual', price:489000, neg:true,  loc:'Centurion, Gauteng',      art:'truck',    badge:'Featured', cond:'Used – Good',      cat:'cars', views:5210, posted:'5h ago',  desc:'One owner, full service history. Bullbar, canopy and towbar included.',     seller:'Johan V.',    sellerType:'private', verified:true  },
-  { id:3,  title:'3-Bed House for Sale – Bellville',       price:1850000,neg:true,  loc:'Bellville, Western Cape', art:'house',    badge:'Featured', cond:'N/A',              cat:'prop', views:3120, posted:'1d ago',  desc:'Spacious home in quiet suburb. Double garage, braai area, garden.',          seller:'Cape Prop.',  sellerType:'dealer',  verified:true  },
-  { id:4,  title:'Samsung 75" QLED 4K Smart TV',           price:12999,  neg:false, loc:'Durban North, KZN',       art:'tv',       badge:'Hot',      cond:'New',              cat:'elec', views:980,  posted:'3h ago',  desc:'Brand new sealed box. QN75Q80C, HDMI 2.1, 120Hz gaming mode.',             seller:'TechZone',    sellerType:'dealer',  verified:false },
-  { id:5,  title:'Golden Retriever Puppies',               price:0,      neg:false, loc:'Pretoria East, Gauteng',  art:'dog',      badge:null,       cond:'N/A',              cat:'pets', views:1650, posted:'6h ago',  desc:'8 weeks old, vet checked, vaccinated and dewormed. Ready for loving homes.',seller:'Sarah M.',    sellerType:'private', verified:true  },
-  { id:6,  title:'Bosch Power Tools Bundle – 8 Pieces',    price:4200,   neg:true,  loc:'George, Western Cape',    art:'tools',    badge:null,       cond:'Used – Good',      cat:'jobs', views:720,  posted:'12h ago', desc:'Drill, jigsaw, angle grinder, sander and more. All in good working order.', seller:'Handyman SA', sellerType:'private', verified:false },
-  { id:7,  title:'2019 Kawasaki Z900 ABS – Low KM',        price:89000,  neg:true,  loc:'Roodepoort, Gauteng',     art:'moto',     badge:'Featured', cond:'Used – Like New',  cat:'cars', views:1890, posted:'1d ago',  desc:'11,000km only. Serviced. Snake exhausts, bar end mirrors.',                 seller:'Blade Moto',  sellerType:'dealer',  verified:true  },
-  { id:8,  title:'Solid Oak Dining Table – 6 Seater',      price:6500,   neg:true,  loc:'Somerset West, W. Cape',  art:'table',    badge:null,       cond:'Used – Excellent', cat:'home', views:430,  posted:'2d ago',  desc:'Gorgeous solid oak, 1.8m long. A few minor marks. Chairs sold separately.', seller:'Lee A.',      sellerType:'private', verified:false },
-  { id:9,  title:'Nike Air Max 270 – Size 10 US',          price:1200,   neg:false, loc:'Cape Town CBD, W. Cape',  art:'sneakers', badge:null,       cond:'Used – Good',      cat:'fash', views:560,  posted:'4h ago',  desc:'Worn a handful of times. Original box. White / black colourway.',           seller:'Jordan T.',   sellerType:'private', verified:false },
-  { id:10, title:'PlayStation 5 + 3 Games Bundle',         price:11500,  neg:true,  loc:'Fourways, Gauteng',       art:'ps5',      badge:'Hot',      cond:'Used – Like New',  cat:'elec', views:3200, posted:'8h ago',  desc:'PS5 disc edition with God of War, FIFA 24 and Spider-Man 2.',              seller:'GameZone',    sellerType:'dealer',  verified:true  },
-  { id:11, title:'Graphic Design & Branding Services',     price:0,      neg:false, loc:'Remote / Nationwide',     art:'design',   badge:null,       cond:'N/A',              cat:'jobs', views:890,  posted:'3d ago',  desc:'Logos, business cards, social media kits. 48h turnaround. Portfolio on request.', seller:'Studio AM', sellerType:'dealer', verified:true },
-  { id:12, title:'1-Bed Apartment To Let – Woodstock',     price:8500,   neg:false, loc:'Woodstock, Western Cape', art:'apt',      badge:'Featured', cond:'N/A',              cat:'prop', views:2100, posted:'1d ago',  desc:'Modern open-plan flat, secure parking, fibre-ready. Available 1 Aug.',      seller:'Urban Let',   sellerType:'dealer',  verified:true  },
+  { id:1,  title:'iPhone 14 Pro 256GB – Space Black',      price:14500,  neg:true,  loc:'Sandton, Gauteng',        art:'phone',    badge:'Featured', cond:'Used – Excellent', cat:'elec', postedAt: Date.now()-2*H,    desc:'Perfect condition, no scratches. Includes original box, charger and case.', seller:'Priya N.',    sellerType:'private', verified:true  },
+  { id:2,  title:'2020 Toyota Hilux 2.8 GD-6 4x4 Manual', price:489000, neg:true,  loc:'Centurion, Gauteng',      art:'truck',    badge:'Featured', cond:'Used – Good',      cat:'cars', postedAt: Date.now()-5*H,    desc:'One owner, full service history. Bullbar, canopy and towbar included.',     seller:'Johan V.',    sellerType:'private', verified:true  },
+  { id:3,  title:'3-Bed House for Sale – Bellville',       price:1850000,neg:true,  loc:'Bellville, Western Cape', art:'house',    badge:'Featured', cond:'N/A',              cat:'prop', postedAt: Date.now()-1*D,    desc:'Spacious home in quiet suburb. Double garage, braai area, garden.',          seller:'Cape Prop.',  sellerType:'dealer',  verified:true  },
+  { id:4,  title:'Samsung 75" QLED 4K Smart TV',           price:12999,  neg:false, loc:'Durban North, KZN',       art:'tv',       badge:'Hot',      cond:'New',              cat:'elec', postedAt: Date.now()-3*H,    desc:'Brand new sealed box. QN75Q80C, HDMI 2.1, 120Hz gaming mode.',             seller:'TechZone',    sellerType:'dealer',  verified:false },
+  { id:5,  title:'Golden Retriever Puppies',               price:0,      neg:false, loc:'Pretoria East, Gauteng',  art:'dog',      badge:null,       cond:'N/A',              cat:'pets', postedAt: Date.now()-6*H,    desc:'8 weeks old, vet checked, vaccinated and dewormed. Ready for loving homes.',seller:'Sarah M.',    sellerType:'private', verified:true  },
+  { id:6,  title:'Bosch Power Tools Bundle – 8 Pieces',    price:4200,   neg:true,  loc:'George, Western Cape',    art:'tools',    badge:null,       cond:'Used – Good',      cat:'jobs', postedAt: Date.now()-12*H,   desc:'Drill, jigsaw, angle grinder, sander and more. All in good working order.', seller:'Handyman SA', sellerType:'private', verified:false },
+  { id:7,  title:'2019 Kawasaki Z900 ABS – Low KM',        price:89000,  neg:true,  loc:'Roodepoort, Gauteng',     art:'moto',     badge:'Featured', cond:'Used – Like New',  cat:'cars', postedAt: Date.now()-1*D,    desc:'11,000km only. Serviced. Snake exhausts, bar end mirrors.',                 seller:'Blade Moto',  sellerType:'dealer',  verified:true  },
+  { id:8,  title:'Solid Oak Dining Table – 6 Seater',      price:6500,   neg:true,  loc:'Somerset West, W. Cape',  art:'table',    badge:null,       cond:'Used – Excellent', cat:'home', postedAt: Date.now()-2*D,    desc:'Gorgeous solid oak, 1.8m long. A few minor marks. Chairs sold separately.', seller:'Lee A.',      sellerType:'private', verified:false },
+  { id:9,  title:'Nike Air Max 270 – Size 10 US',          price:1200,   neg:false, loc:'Cape Town CBD, W. Cape',  art:'sneakers', badge:null,       cond:'Used – Good',      cat:'fash', postedAt: Date.now()-4*H,    desc:'Worn a handful of times. Original box. White / black colourway.',           seller:'Jordan T.',   sellerType:'private', verified:false },
+  { id:10, title:'PlayStation 5 + 3 Games Bundle',         price:11500,  neg:true,  loc:'Fourways, Gauteng',       art:'ps5',      badge:'Hot',      cond:'Used – Like New',  cat:'elec', postedAt: Date.now()-8*H,    desc:'PS5 disc edition with God of War, FIFA 24 and Spider-Man 2.',              seller:'GameZone',    sellerType:'dealer',  verified:true  },
+  { id:11, title:'Graphic Design & Branding Services',     price:0,      neg:false, loc:'Remote / Nationwide',     art:'design',   badge:null,       cond:'N/A',              cat:'jobs', postedAt: Date.now()-3*D,    desc:'Logos, business cards, social media kits. 48h turnaround. Portfolio on request.', seller:'Studio AM', sellerType:'dealer', verified:true },
+  { id:12, title:'1-Bed Apartment To Let – Woodstock',     price:8500,   neg:false, loc:'Woodstock, Western Cape', art:'apt',      badge:'Featured', cond:'N/A',              cat:'prop', postedAt: Date.now()-1*D,    desc:'Modern open-plan flat, secure parking, fibre-ready. Available 1 Aug.',      seller:'Urban Let',   sellerType:'dealer',  verified:true  },
 ];
 
 const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Northern Cape','Free State'];
