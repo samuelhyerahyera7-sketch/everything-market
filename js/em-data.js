@@ -63,35 +63,8 @@ function fmtTime(ts) {
   return Math.floor(h / 24) + 'd ago';
 }
 
-/* ── Sample listings (example ads to show the platform) ── */
-const LISTINGS = [
-  { id:1,  title:'iPhone 14 Pro 256GB – Space Black',      price:14500,  neg:true,  loc:'Sandton, Gauteng',        art:'phone',    badge:'Featured', cond:'Used – Excellent', cat:'elec', postedAt: Date.now()-2*H,    desc:'Perfect condition, no scratches. Includes original box, charger and case.', seller:'Priya N.',    sellerType:'private', verified:true  },
-  { id:2,  title:'2020 Toyota Hilux 2.8 GD-6 4x4 Manual', price:489000, neg:true,  loc:'Centurion, Gauteng',      art:'truck',    badge:'Featured', cond:'Used – Good',      cat:'cars', postedAt: Date.now()-5*H,    desc:'One owner, full service history. Bullbar, canopy and towbar included.',     seller:'Johan V.',    sellerType:'private', verified:true  },
-  { id:3,  title:'3-Bed House for Sale – Bellville',       price:1850000,neg:true,  loc:'Bellville, Western Cape', art:'house',    badge:'Featured', cond:'N/A',              cat:'prop', postedAt: Date.now()-1*D,    desc:'Spacious home in quiet suburb. Double garage, braai area, garden.',          seller:'Cape Prop.',  sellerType:'dealer',  verified:true  },
-  { id:4,  title:'Samsung 75" QLED 4K Smart TV',           price:12999,  neg:false, loc:'Durban North, KZN',       art:'tv',       badge:'Hot',      cond:'New',              cat:'elec', postedAt: Date.now()-3*H,    desc:'Brand new sealed box. QN75Q80C, HDMI 2.1, 120Hz gaming mode.',             seller:'TechZone',    sellerType:'dealer',  verified:false },
-  { id:5,  title:'Golden Retriever Puppies',               price:0,      neg:false, loc:'Pretoria East, Gauteng',  art:'dog',      badge:null,       cond:'N/A',              cat:'pets', postedAt: Date.now()-6*H,    desc:'8 weeks old, vet checked, vaccinated and dewormed. Ready for loving homes.',seller:'Sarah M.',    sellerType:'private', verified:true  },
-  { id:6,  title:'Bosch Power Tools Bundle – 8 Pieces',    price:4200,   neg:true,  loc:'George, Western Cape',    art:'tools',    badge:null,       cond:'Used – Good',      cat:'jobs', postedAt: Date.now()-12*H,   desc:'Drill, jigsaw, angle grinder, sander and more. All in good working order.', seller:'Handyman SA', sellerType:'private', verified:false },
-  { id:7,  title:'2019 Kawasaki Z900 ABS – Low KM',        price:89000,  neg:true,  loc:'Roodepoort, Gauteng',     art:'moto',     badge:'Featured', cond:'Used – Like New',  cat:'cars', postedAt: Date.now()-1*D,    desc:'11,000km only. Serviced. Snake exhausts, bar end mirrors.',                 seller:'Blade Moto',  sellerType:'dealer',  verified:true  },
-  { id:8,  title:'Solid Oak Dining Table – 6 Seater',      price:6500,   neg:true,  loc:'Somerset West, W. Cape',  art:'table',    badge:null,       cond:'Used – Excellent', cat:'home', postedAt: Date.now()-2*D,    desc:'Gorgeous solid oak, 1.8m long. A few minor marks. Chairs sold separately.', seller:'Lee A.',      sellerType:'private', verified:false },
-  { id:9,  title:'Nike Air Max 270 – Size 10 US',          price:1200,   neg:false, loc:'Cape Town CBD, W. Cape',  art:'sneakers', badge:null,       cond:'Used – Good',      cat:'fash', postedAt: Date.now()-4*H,    desc:'Worn a handful of times. Original box. White / black colourway.',           seller:'Jordan T.',   sellerType:'private', verified:false },
-  { id:10, title:'PlayStation 5 + 3 Games Bundle',         price:11500,  neg:true,  loc:'Fourways, Gauteng',       art:'ps5',      badge:'Hot',      cond:'Used – Like New',  cat:'elec', postedAt: Date.now()-8*H,    desc:'PS5 disc edition with God of War, FIFA 24 and Spider-Man 2.',              seller:'GameZone',    sellerType:'dealer',  verified:true  },
-  { id:11, title:'Graphic Design & Branding Services',     price:0,      neg:false, loc:'Remote / Nationwide',     art:'design',   badge:null,       cond:'N/A',              cat:'jobs', postedAt: Date.now()-3*D,    desc:'Logos, business cards, social media kits. 48h turnaround. Portfolio on request.', seller:'Studio AM', sellerType:'dealer', verified:true },
-  { id:12, title:'1-Bed Apartment To Let – Woodstock',     price:8500,   neg:false, loc:'Woodstock, Western Cape', art:'apt',      badge:'Featured', cond:'N/A',              cat:'prop', postedAt: Date.now()-1*D,    desc:'Modern open-plan flat, secure parking, fibre-ready. Available 1 Aug.',      seller:'Urban Let',   sellerType:'dealer',  verified:true  },
-];
+const LISTINGS = [];
 
 const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Northern Cape','Free State'];
 
-const BB_SELLER_DATA = {
-  1:  { delivery: true  },
-  2:  { delivery: false },
-  3:  { delivery: false },
-  4:  { delivery: true  },
-  5:  { delivery: false },
-  6:  { delivery: true  },
-  7:  { delivery: false },
-  8:  { delivery: true  },
-  9:  { delivery: true  },
-  10: { delivery: true  },
-  11: { delivery: false },
-  12: { delivery: false },
-};
+const BB_SELLER_DATA = {};
