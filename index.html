@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Everything Market – Buy &amp; Sell Anything in South Africa</title>
+  <meta name="description" content="South Africa's free online classifieds marketplace. Buy and sell cars, property, electronics, furniture, jobs and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/em-style.css">
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="wrap tb">
+    <div class="tb-l">
+      <span>South Africa</span>
+      <a href="#" onclick="return toast('Safety Tips')">Safety Tips</a>
+      <a href="#" onclick="return toast('Help Centre')">Help Centre</a>
+    </div>
+    <div class="tb-r">
+      <a href="#" onclick="return toast('Sign in')">Sign In</a>
+      <a href="#" onclick="return toast('Register')">Register</a>
+      <a href="#" class="tb-post" onclick="return toast('Opening post ad form…')">+ Post Ad Free</a>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="#" class="logo">
+      <div class="logo-name">
+        <strong>Everything <span>Market</span></strong>
+        <small>South Africa</small>
+      </div>
+    </a>
+    <div class="srch-wrap">
+      <div class="srch">
+        <input type="text" id="main-search" placeholder="Search cars, property, electronics and more…" autocomplete="off">
+        <select class="srch-loc">
+          <option value="">All Provinces</option>
+          <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
+          <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
+          <option>North West</option><option>Northern Cape</option><option>Free State</option>
+        </select>
+        <button class="srch-btn">Search</button>
+      </div>
+      <div class="ac-drop" id="ac-drop"></div>
+    </div>
+    <div class="hdr-r">
+      <a href="#" class="btn-signin" onclick="return toast('Opening sign in…')">Sign In</a>
+      <a href="#" class="btn-register" onclick="return toast('Opening registration…')">Register</a>
+      <button class="btn-post" onclick="toast('Opening post ad form…')">+ Post Free Ad</button>
+    </div>
+  </div>
+</header>
+
+<!-- Shop by Category -->
+<div class="shopcat">
+  <div class="wrap">
+    <div class="shopcat-hd"><h2>Shop by Category</h2></div>
+    <div class="shopcat-grid" id="shopcat-grid"></div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="main">
+  <div class="wrap main-grid">
+    <div>
+      <!-- Featured: BidorBuy grid -->
+      <div class="sec-head">
+        <h2>Featured Listings <span class="sec-tag">Sponsored</span></h2>
+        <a href="#" onclick="return toast('Viewing all featured…')">View all</a>
+      </div>
+      <div class="bb-grid" id="bb-grid"></div>
+
+      <!-- Latest: Gumtree horizontal list -->
+      <div class="sec-head" style="margin-top: 28px;">
+        <h2>Latest Ads</h2>
+        <a href="#" onclick="return toast('Viewing all ads…')">View all</a>
+      </div>
+      <div class="gt-list" id="gt-list"></div>
+      <div class="load-more">
+        <button class="btn-lm" onclick="toast('Loading more ads…')">Load More Ads</button>
+      </div>
+
+      <!-- Province browse -->
+      <div class="prov-sec">
+        <div class="sec-head"><h2>Browse by Province</h2></div>
+        <div class="prov-grid" id="prov-grid"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Filter listings">
+      <div class="sb-sec">
+        <div class="sb-auth">
+          <p>Sign in to save ads, track your listings and get price drop alerts.</p>
+          <div class="sb-auth-btns">
+            <button class="btn-sb-signin" onclick="toast('Opening sign in…')">Sign In</button>
+            <button class="btn-sb-register" onclick="toast('Opening registration…')">Register</button>
+          </div>
+        </div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-hd">
+          <span>Filter Results</span>
+          <button onclick="toast('Filters cleared')">Clear all</button>
+        </div>
+        <div class="sb-body">
+          <div class="fg">
+            <div class="fl">Category</div>
+            <label class="fo"><input type="radio" name="cat" checked> All Categories</label>
+            <label class="fo"><input type="radio" name="cat"> Vehicles</label>
+            <label class="fo"><input type="radio" name="cat"> Property</label>
+            <label class="fo"><input type="radio" name="cat"> Electronics</label>
+            <label class="fo"><input type="radio" name="cat"> Services</label>
+            <label class="fo"><input type="radio" name="cat"> Fashion</label>
+          </div>
+          <div class="fg">
+            <div class="fl">Price Range (R)</div>
+            <div class="pi">
+              <input type="number" placeholder="Min">
+              <input type="number" placeholder="Max">
+            </div>
+            <button class="btn-fltr" onclick="toast('Filter applied')">Apply</button>
+          </div>
+          <div class="fg">
+            <div class="fl">Condition</div>
+            <label class="fo"><input type="checkbox"> New</label>
+            <label class="fo"><input type="checkbox"> Used – Like New</label>
+            <label class="fo"><input type="checkbox"> Used – Good</label>
+            <label class="fo"><input type="checkbox"> Used – Fair</label>
+          </div>
+          <div class="fg">
+            <div class="fl">Ad Type</div>
+            <label class="fo"><input type="checkbox" checked> For Sale</label>
+            <label class="fo"><input type="checkbox" checked> Services</label>
+            <label class="fo"><input type="checkbox" checked> To Let / Rent</label>
+            <label class="fo"><input type="checkbox"> Wanted</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-sec">
+        <div class="sb-hd"><span>Stay Safe Online</span></div>
+        <div class="sb-body">
+          <div class="safety-list">
+            <div class="si"><span class="si-dot">·</span> Meet buyers in a safe, busy public place.</div>
+            <div class="si"><span class="si-dot">·</span> Never share banking details or OTPs.</div>
+            <div class="si"><span class="si-dot">·</span> Verify goods before making any payment.</div>
+            <div class="si"><span class="si-dot">·</span> Be wary of deals that seem too good to be true.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-cta">
+        <h4>Sell Something Today</h4>
+        <p>Post your free ad and connect with buyers across South Africa.</p>
+        <button class="btn-cta-sb" onclick="toast('Opening post ad form…')">+ Post Free Ad</button>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- CTA band -->
+<section class="cta-band" aria-label="Post an ad">
+  <div class="wrap">
+    <h2>Have something to sell?</h2>
+    <p>List for free and reach buyers across South Africa — quick, easy, no cost.</p>
+    <button class="btn-cta-main" onclick="toast('Opening post ad form…')">+ Post Your Free Ad</button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-grid">
+      <div class="ftr-brand">
+        <div class="ftr-brand-name">Everything <span>Market</span></div>
+        <p>South Africa's free online classifieds marketplace. Buy and sell anything — from cars to property, electronics to services — safely and easily.</p>
+        <div class="ftr-social">
+          <a href="#" class="fsb">FB</a>
+          <a href="#" class="fsb">IG</a>
+          <a href="#" class="fsb">TT</a>
+          <a href="#" class="fsb">WA</a>
+        </div>
+      </div>
+      <div class="ftr-col">
+        <h5>Categories</h5>
+        <a href="#">Vehicles</a><a href="#">Property</a><a href="#">Electronics</a>
+        <a href="#">Home &amp; Furniture</a><a href="#">Fashion</a><a href="#">Jobs</a><a href="#">Services</a>
+      </div>
+      <div class="ftr-col">
+        <h5>My Account</h5>
+        <a href="#">Sign In</a><a href="#">Register</a>
+        <a href="#">Post a Free Ad</a><a href="#">My Ads</a><a href="#">Saved Ads</a>
+      </div>
+      <div class="ftr-col">
+        <h5>Help &amp; Info</h5>
+        <a href="#">Safety Tips</a><a href="#">Help Centre</a>
+        <a href="#">About Us</a><a href="#">Contact Us</a>
+        <a href="#">Privacy Policy</a><a href="#">Terms of Use</a>
+      </div>
+    </div>
+    <div class="ftr-bottom">
+      <span>© 2025 Everything Market (Pty) Ltd. All rights reserved.</span>
+      <div><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Sitemap</a></div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast-el"></div>
+
+<!-- Modal -->
+<div class="em-modal-backdrop" id="em-modal">
+  <div class="em-modal-box"></div>
+</div>
+<button class="tt" id="tt-btn" onclick="toggleTheme()">Dark Mode</button>
+
+<script src="js/em-data.js"></script>
+<script src="js/em-main.js"></script>
+</body>
+</html>
