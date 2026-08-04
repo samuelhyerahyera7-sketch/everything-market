@@ -306,7 +306,7 @@ function openPostAdModal() {
 
       <div class="em-post-field">
         <label class="em-post-label" for="pa-name">Your Name <span>(shown on the listing)</span></label>
-        <input class="em-post-input" id="pa-name" type="text" placeholder="e.g. Sipho M." maxlength="50">
+        <input class="em-post-input" id="pa-name" type="text" placeholder="e.g. Sipho M." maxlength="50" value="${(_getSession()||{}).name||''}">
       </div>
 
       <div class="em-post-field">
@@ -409,6 +409,7 @@ function submitPostAd(e) {
   }
   errEl.style.display = 'none';
 
+  const sess = _getSession();
   const listing = {
     id: Date.now(),
     title,
@@ -426,6 +427,7 @@ function submitPostAd(e) {
     verified: false,
     photos: [...(window._paPhotos || [])],
     isUserAd: true,
+    userId: sess ? sess.userId : null,
   };
 
   LISTINGS.unshift(listing);
@@ -581,3 +583,246 @@ function showSentConfirm(type, detail) {
       <button class="em-confirm-close" onclick="closeModal()">Done</button>
     </div>`;
 }
+
+/* ── Account system ── */
+function _getAccounts() {
+  try { return JSON.parse(localStorage.getItem('em_accounts') || '[]'); } catch(e) { return []; }
+}
+function _saveAccounts(a) { localStorage.setItem('em_accounts', JSON.stringify(a)); }
+function _getSession() {
+  try { return JSON.parse(localStorage.getItem('em_session') || 'null'); } catch(e) { return null; }
+}
+function _setSession(s) {
+  s ? localStorage.setItem('em_session', JSON.stringify(s)) : localStorage.removeItem('em_session');
+}
+
+function _updateAuthUI() {
+  const sess = _getSession();
+  const tbSignIn   = document.getElementById('tb-signin');
+  const tbRegister = document.getElementById('tb-register');
+  const tbUser     = document.getElementById('tb-user');
+  const hdrSignIn  = document.getElementById('hdr-signin');
+  const hdrRegister= document.getElementById('hdr-register');
+  const hdrUser    = document.getElementById('hdr-user');
+  const hdrName    = document.getElementById('hdr-user-name');
+  const hdrAvatar  = document.getElementById('hdr-user-avatar');
+  const sbAuth     = document.getElementById('sb-auth');
+  const sbAuthIn   = document.getElementById('sb-auth-in');
+  const sbWelcome  = document.getElementById('sb-welcome');
+
+  if (sess) {
+    const first = sess.name.split(' ')[0];
+    const initials = sess.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    if (tbSignIn)   tbSignIn.style.display = 'none';
+    if (tbRegister) tbRegister.style.display = 'none';
+    if (tbUser)     { tbUser.style.display = ''; tbUser.textContent = first; }
+    if (hdrSignIn)  hdrSignIn.style.display = 'none';
+    if (hdrRegister)hdrRegister.style.display = 'none';
+    if (hdrUser)    hdrUser.style.display = '';
+    if (hdrName)    hdrName.textContent = first;
+    if (hdrAvatar)  hdrAvatar.textContent = initials;
+    if (sbAuth)     sbAuth.style.display = 'none';
+    if (sbAuthIn)   sbAuthIn.style.display = '';
+    if (sbWelcome)  sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
+  } else {
+    if (tbSignIn)   tbSignIn.style.display = '';
+    if (tbRegister) tbRegister.style.display = '';
+    if (tbUser)     tbUser.style.display = 'none';
+    if (hdrSignIn)  hdrSignIn.style.display = '';
+    if (hdrRegister)hdrRegister.style.display = '';
+    if (hdrUser)    hdrUser.style.display = 'none';
+    if (sbAuth)     sbAuth.style.display = '';
+    if (sbAuthIn)   sbAuthIn.style.display = 'none';
+  }
+}
+_updateAuthUI();
+
+function toggleUserMenu(e) {
+  e && e.stopPropagation();
+  const drop = document.getElementById('hdr-user-drop');
+  if (drop) drop.classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  document.getElementById('hdr-user-drop')?.classList.remove('open');
+});
+
+function signOut() {
+  _setSession(null);
+  _updateAuthUI();
+  closeModal();
+  toast('You have been signed out.');
+}
+
+function openSignInModal() {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Sign In</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitSignIn(event)" novalidate>
+      <div class="em-post-field">
+        <label class="em-post-label" for="si-email">Email address</label>
+        <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="si-pass">Password</label>
+        <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password">
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Sign In</button>
+      <p class="em-auth-switch">Don't have an account? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
+    </form>`;
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('si-email')?.focus(), 80);
+}
+
+function submitSignIn(e) {
+  e.preventDefault();
+  const email = (document.getElementById('si-email').value || '').trim().toLowerCase();
+  const pass  = document.getElementById('si-pass').value || '';
+  const errEl = document.getElementById('auth-error');
+  if (!email || !pass) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = ''; return; }
+  const acc = _getAccounts().find(a => a.email === email && a.password === pass);
+  if (!acc) { errEl.textContent = 'Incorrect email or password.'; errEl.style.display = ''; return; }
+  _setSession({ userId: acc.id, name: acc.name, email: acc.email });
+  _updateAuthUI();
+  closeModal();
+  toast('Welcome back, ' + acc.name.split(' ')[0] + '!');
+}
+
+function openRegisterModal() {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Create Account</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitRegister(event)" novalidate>
+      <div class="em-post-field">
+        <label class="em-post-label" for="reg-name">Your name <span>(shown on your listings)</span></label>
+        <input class="em-post-input" id="reg-name" type="text" placeholder="e.g. Sipho Dlamini" maxlength="60" autocomplete="name">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="reg-email">Email address</label>
+        <input class="em-post-input" id="reg-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="reg-pass">Password <span>(at least 6 characters)</span></label>
+        <input class="em-post-input" id="reg-pass" type="password" placeholder="Choose a password" autocomplete="new-password">
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Create Account</button>
+      <p class="em-auth-switch">Already have an account? <button type="button" onclick="openSignInModal()">Sign in</button></p>
+    </form>`;
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('reg-name')?.focus(), 80);
+}
+
+function submitRegister(e) {
+  e.preventDefault();
+  const name  = (document.getElementById('reg-name').value  || '').trim();
+  const email = (document.getElementById('reg-email').value || '').trim().toLowerCase();
+  const pass  = document.getElementById('reg-pass').value   || '';
+  const errEl = document.getElementById('auth-error');
+
+  if (!name)                  { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
+  if (!email.includes('@'))   { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (pass.length < 6)        { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
+
+  const accounts = _getAccounts();
+  if (accounts.find(a => a.email === email)) {
+    errEl.textContent = 'An account with that email already exists.';
+    errEl.style.display = '';
+    return;
+  }
+
+  const acc = { id: Date.now(), name, email, password: pass, createdAt: Date.now() };
+  accounts.push(acc);
+  _saveAccounts(accounts);
+  _setSession({ userId: acc.id, name: acc.name, email: acc.email });
+  _updateAuthUI();
+
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon">
+        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--leaf)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </div>
+      <div class="em-confirm-title">Welcome, ${name.split(' ')[0]}!</div>
+      <div class="em-confirm-sub">Your account has been created. You can now post free ads and save your favourites.</div>
+      <button class="em-confirm-close" onclick="closeModal()">Get Started</button>
+    </div>`;
+}
+
+/* ── My Ads ── */
+function openMyAds() {
+  const sess = _getSession();
+  if (!sess) { openSignInModal(); return; }
+  document.getElementById('hdr-user-drop')?.classList.remove('open');
+
+  const myAds = LISTINGS.filter(l => l.userId === sess.userId);
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>My Ads</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-myads-body">
+      ${!myAds.length
+        ? `<div class="em-myads-empty">
+             <p>You haven't posted any ads yet.</p>
+             <button class="em-post-submit" style="margin-top:14px;" onclick="openPostAdModal()">Post Your First Ad</button>
+           </div>`
+        : myAds.map(l => `
+          <div class="em-myad-row">
+            <div class="em-myad-img" id="myad-img-${l.id}"></div>
+            <div class="em-myad-info">
+              <div class="em-myad-title">${l.title}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
+            </div>
+            <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd(${l.id})" title="Delete ad">&#x2715;</button>
+          </div>`).join('')
+      }
+    </div>`;
+  modal.classList.add('open');
+  myAds.forEach(l => {
+    const el = document.getElementById('myad-img-' + l.id);
+    if (el) _renderImg(el, l);
+  });
+}
+
+function openSavedAds() {
+  document.getElementById('hdr-user-drop')?.classList.remove('open');
+  const saved = LISTINGS.filter(l => wl.has(l.id));
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Saved Ads</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-myads-body">
+      ${!saved.length
+        ? `<div class="em-myads-empty"><p>You haven't saved any ads yet.<br>Tap the heart on any listing to save it.</p></div>`
+        : saved.map(l => `
+          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id===${l.id})),200)" style="cursor:pointer;">
+            <div class="em-myad-img" id="svad-img-${l.id}"></div>
+            <div class="em-myad-info">
+              <div class="em-myad-title">${l.title}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc}</div>
+            </div>
+          </div>`).join('')
+      }
+    </div>`;
+  modal.classList.add('open');
+  saved.forEach(l => {
+    const el = document.getElementById('svad-img-' + l.id);
+    if (el) _renderImg(el, l);
+  });
+}
+
+window._deleteMyAd = function(id) {
+  const idx = LISTINGS.findIndex(l => l.id === id);
+  if (idx !== -1) LISTINGS.splice(idx, 1);
+  _saveUserAds();
+  renderAll('all');
+  openMyAds();
+};

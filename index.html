@@ -21,8 +21,9 @@
       <a href="#" onclick="return toast('Help Centre')">Help Centre</a>
     </div>
     <div class="tb-r">
-      <a href="#" onclick="return toast('Sign in')">Sign In</a>
-      <a href="#" onclick="return toast('Register')">Register</a>
+      <a href="#" id="tb-signin" onclick="openSignInModal(); return false;">Sign In</a>
+      <a href="#" id="tb-register" onclick="openRegisterModal(); return false;">Register</a>
+      <a href="#" id="tb-user" class="tb-user-link" style="display:none;" onclick="openMyAds(); return false;"></a>
       <a href="#" class="tb-post" onclick="openPostAdModal(); return false;">+ Post Ad Free</a>
     </div>
   </div>
@@ -51,8 +52,19 @@
       <div class="ac-drop" id="ac-drop"></div>
     </div>
     <div class="hdr-r">
-      <a href="#" class="btn-signin" onclick="return toast('Opening sign in…')">Sign In</a>
-      <a href="#" class="btn-register" onclick="return toast('Opening registration…')">Register</a>
+      <a href="#" class="btn-signin" id="hdr-signin" onclick="openSignInModal(); return false;">Sign In</a>
+      <a href="#" class="btn-register" id="hdr-register" onclick="openRegisterModal(); return false;">Register</a>
+      <div class="hdr-user" id="hdr-user" style="display:none;">
+        <button class="hdr-user-btn" onclick="toggleUserMenu(event)">
+          <span class="hdr-user-avatar" id="hdr-user-avatar"></span>
+          <span id="hdr-user-name"></span>
+        </button>
+        <div class="hdr-user-drop" id="hdr-user-drop">
+          <button onclick="openMyAds()">My Ads</button>
+          <button onclick="openSavedAds()">Saved Ads</button>
+          <button class="sign-out" onclick="signOut()">Sign Out</button>
+        </div>
+      </div>
       <button class="btn-post" onclick="openPostAdModal()">+ Post Free Ad</button>
     </div>
   </div>
@@ -97,11 +109,18 @@
     <!-- Sidebar -->
     <aside class="sidebar" aria-label="Filter listings">
       <div class="sb-sec">
-        <div class="sb-auth">
+        <div class="sb-auth" id="sb-auth">
           <p>Sign in to save ads, track your listings and get price drop alerts.</p>
           <div class="sb-auth-btns">
-            <button class="btn-sb-signin" onclick="toast('Opening sign in…')">Sign In</button>
-            <button class="btn-sb-register" onclick="toast('Opening registration…')">Register</button>
+            <button class="btn-sb-signin" onclick="openSignInModal()">Sign In</button>
+            <button class="btn-sb-register" onclick="openRegisterModal()">Register</button>
+          </div>
+        </div>
+        <div class="sb-auth sb-auth-loggedin" id="sb-auth-in" style="display:none;">
+          <p id="sb-welcome"></p>
+          <div class="sb-auth-btns">
+            <button class="btn-sb-signin" onclick="openMyAds()">My Ads</button>
+            <button class="btn-sb-register" onclick="signOut()">Sign Out</button>
           </div>
         </div>
       </div>

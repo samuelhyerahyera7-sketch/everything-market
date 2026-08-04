@@ -391,3 +391,63 @@ svg { display: block; }
 
 /* ── Empty state ── */
 .em-empty-state { grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+
+/* ── Auth switch link ── */
+.em-auth-switch { text-align: center; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.em-auth-switch button { background: none; border: none; color: var(--forest); font-weight: 700; font-size: 12px; cursor: pointer; padding: 0; font-family: inherit; text-decoration: underline; }
+.em-auth-switch button:hover { color: var(--mid); }
+
+/* ── Header user menu ── */
+.hdr-user { position: relative; display: flex; align-items: center; }
+.hdr-user-btn {
+  display: flex; align-items: center; gap: 7px; padding: 5px 10px 5px 5px;
+  border-radius: 20px; border: 1.5px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08); color: #fff; font-size: 12.5px; font-weight: 700;
+  cursor: pointer; transition: .13s; font-family: inherit;
+}
+.hdr-user-btn:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.28); }
+.hdr-user-avatar {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--ochre);
+  color: #fff; font-size: 9px; font-weight: 900; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; line-height: 1;
+}
+.hdr-user-drop {
+  position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow-md); z-index: 300; overflow: hidden;
+  opacity: 0; pointer-events: none; transform: translateY(-6px); transition: .15s;
+}
+.hdr-user-drop.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+.hdr-user-drop button {
+  display: block; width: 100%; text-align: left; padding: 10px 16px;
+  font-size: 13px; font-weight: 600; color: var(--ink); background: none;
+  border: none; cursor: pointer; transition: .1s; border-bottom: 1px solid var(--border-lt);
+  font-family: inherit;
+}
+.hdr-user-drop button:last-child { border-bottom: none; }
+.hdr-user-drop button:hover { background: var(--surf); }
+.hdr-user-drop button.sign-out { color: var(--red); }
+
+/* ── Topbar user link ── */
+.tb-user-link { color: var(--ochre-brt) !important; font-weight: 700 !important; }
+
+/* ── My Ads modal ── */
+.em-myads-body { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 2px; }
+.em-myads-empty { text-align: center; padding: 36px 0 8px; color: var(--muted); font-size: 13px; }
+.em-myad-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border-lt);
+}
+.em-myad-row:last-child { border-bottom: none; }
+.em-myad-img { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: var(--surf2); }
+.em-myad-img canvas { width: 56px !important; height: 56px !important; }
+.em-myad-img img { width: 56px; height: 56px; object-fit: cover; display: block; }
+.em-myad-info { flex: 1; min-width: 0; }
+.em-myad-title { font-size: 13px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.em-myad-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.em-myad-del {
+  width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border);
+  background: none; color: var(--muted); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: .13s;
+}
+.em-myad-del:hover { border-color: var(--red); color: var(--red); background: #FEF0EE; }
