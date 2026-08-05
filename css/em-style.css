@@ -567,7 +567,7 @@ svg { display: block; }
 #cat-page {
   position: fixed;
   inset: 0;
-  top: 54px;
+  top: 0;
   z-index: 50;
   background: var(--surf);
   overflow-y: scroll;
@@ -579,7 +579,6 @@ html[style*="overflow: hidden"] body,
 body[style*="position: fixed"] {
   touch-action: none;
 }
-@media (max-width: 600px) { #cat-page { top: 50px; } }
 
 .cat-page-hdr {
   position: sticky;
