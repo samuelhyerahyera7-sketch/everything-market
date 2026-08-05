@@ -539,9 +539,14 @@ svg { display: block; }
   top: 54px;
   z-index: 50;
   background: var(--surf);
-  overflow-y: auto;
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+}
+/* Ensure the underlying page is fully frozen when any overlay is open */
+html[style*="overflow: hidden"] body,
+body[style*="position: fixed"] {
+  touch-action: none;
 }
 @media (max-width: 600px) { #cat-page { top: 50px; } }
 

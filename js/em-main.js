@@ -400,19 +400,30 @@ PROVINCES.forEach(p => {
 
 /* ── Scroll lock (prevents background scroll behind overlays on iOS/Android) ── */
 let _scrollLockY = 0;
+let _scrollLockDepth = 0;
 function _lockScroll() {
-  _scrollLockY = window.scrollY;
-  document.body.style.position = 'fixed';
-  document.body.style.top = '-' + _scrollLockY + 'px';
-  document.body.style.width = '100%';
-  document.body.style.overflow = 'hidden';
+  if (_scrollLockDepth === 0) {
+    _scrollLockY = window.scrollY;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + _scrollLockY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+  _scrollLockDepth++;
 }
 function _unlockScroll() {
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, _scrollLockY);
+  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
+  if (_scrollLockDepth === 0) {
+    document.documentElement.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, _scrollLockY);
+  }
 }
 
 /* ── Toast ── */
