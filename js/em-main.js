@@ -113,15 +113,17 @@ function _getCatListings() {
 }
 
 function applyCatFilters() {
-  const minV = Number(document.getElementById('cf-min').value) || 0;
-  const maxV = Number(document.getElementById('cf-max').value) || Infinity;
+  const minV  = Number(document.getElementById('cf-min').value) || 0;
+  const maxV  = Number(document.getElementById('cf-max').value) || Infinity;
   const conds = [...document.querySelectorAll('.cf-cond:checked')].map(el => el.value);
-  const sort = document.getElementById('cf-sort').value;
+  const sort  = document.getElementById('cf-sort').value;
+  const loc   = (document.getElementById('cf-loc').value || '').trim().toLowerCase();
 
   let data = _getCatListings().filter(l => {
     if (l.price !== 0 && l.price < minV) return false;
     if (maxV !== Infinity && l.price > maxV) return false;
     if (conds.length && !conds.includes(l.cond)) return false;
+    if (loc && !(l.loc || '').toLowerCase().includes(loc)) return false;
     return true;
   });
 
@@ -132,10 +134,8 @@ function applyCatFilters() {
 }
 
 function clearCatFilters() {
-  const minEl = document.getElementById('cf-min');
-  const maxEl = document.getElementById('cf-max');
-  if (minEl) minEl.value = '';
-  if (maxEl) maxEl.value = '';
+  const ids = ['cf-min', 'cf-max', 'cf-loc'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   const sortEl = document.getElementById('cf-sort');
   if (sortEl) sortEl.value = 'newest';

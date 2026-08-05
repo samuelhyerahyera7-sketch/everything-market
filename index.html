@@ -89,35 +89,45 @@
     </div>
   </div>
   <div class="wrap cat-page-body">
-    <div class="cat-filters">
-      <div class="cat-filter-group">
-        <label class="cat-filter-label">Price (R)</label>
+    <aside class="cat-filters">
+      <div class="cf-header">
+        <span>Filters</span>
+        <button class="cf-clear-link" onclick="clearCatFilters()">Clear all</button>
+      </div>
+
+      <div class="cf-section">
+        <div class="cf-section-label">Location</div>
+        <input type="text" id="cf-loc" placeholder="City or province…" class="cat-filter-input" oninput="applyCatFilters()">
+      </div>
+
+      <div class="cf-section">
+        <div class="cf-section-label">Price (R)</div>
         <div class="cat-price-row">
-          <input type="number" id="cf-min" placeholder="Min" class="cat-filter-input">
-          <span>–</span>
-          <input type="number" id="cf-max" placeholder="Max" class="cat-filter-input">
+          <input type="number" id="cf-min" placeholder="Min" class="cat-filter-input" oninput="applyCatFilters()">
+          <span class="cf-dash">–</span>
+          <input type="number" id="cf-max" placeholder="Max" class="cat-filter-input" oninput="applyCatFilters()">
         </div>
       </div>
-      <div class="cat-filter-group">
-        <label class="cat-filter-label">Condition</label>
+
+      <div class="cf-section">
+        <div class="cf-section-label">Condition</div>
         <div class="cat-check-row">
-          <label><input type="checkbox" class="cf-cond" value="New"> New</label>
-          <label><input type="checkbox" class="cf-cond" value="Used – Like New"> Like New</label>
-          <label><input type="checkbox" class="cf-cond" value="Used – Good"> Good</label>
-          <label><input type="checkbox" class="cf-cond" value="Used – Fair"> Fair</label>
+          <label><input type="checkbox" class="cf-cond" value="New" onchange="applyCatFilters()"> New</label>
+          <label><input type="checkbox" class="cf-cond" value="Used – Like New" onchange="applyCatFilters()"> Like New</label>
+          <label><input type="checkbox" class="cf-cond" value="Used – Good" onchange="applyCatFilters()"> Good</label>
+          <label><input type="checkbox" class="cf-cond" value="Used – Fair" onchange="applyCatFilters()"> Fair</label>
         </div>
       </div>
-      <div class="cat-filter-group">
-        <label class="cat-filter-label">Sort by</label>
-        <select id="cf-sort" class="cat-filter-select">
+
+      <div class="cf-section cf-section-last">
+        <div class="cf-section-label">Sort by</div>
+        <select id="cf-sort" class="cat-filter-select" onchange="applyCatFilters()">
           <option value="newest">Newest first</option>
           <option value="price-asc">Price: low to high</option>
           <option value="price-desc">Price: high to low</option>
         </select>
       </div>
-      <button class="cat-filter-apply" onclick="applyCatFilters()">Apply Filters</button>
-      <button class="cat-filter-clear" onclick="clearCatFilters()">Clear</button>
-    </div>
+    </aside>
     <div id="cat-results" class="cat-results"></div>
   </div>
 </div>
