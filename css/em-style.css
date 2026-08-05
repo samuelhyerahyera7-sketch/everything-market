@@ -620,7 +620,7 @@ body[style*="position: fixed"] {
 }
 
 .cat-page-body {
-  padding: 20px 0 60px;
+  padding: 8px 0 60px;
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 20px;
