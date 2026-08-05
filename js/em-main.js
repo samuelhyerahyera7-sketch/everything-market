@@ -610,6 +610,7 @@ function _updateAuthUI() {
   const sbAuthIn   = document.getElementById('sb-auth-in');
   const sbWelcome  = document.getElementById('sb-welcome');
 
+  const mobAuthBtn = document.getElementById('mob-auth-btn');
   if (sess) {
     const first = sess.name.split(' ')[0];
     const initials = sess.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
@@ -624,6 +625,7 @@ function _updateAuthUI() {
     if (sbAuth)     sbAuth.style.display = 'none';
     if (sbAuthIn)   sbAuthIn.style.display = '';
     if (sbWelcome)  sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
+    if (mobAuthBtn) { mobAuthBtn.title = first; mobAuthBtn.onclick = () => toggleUserMenu(); }
   } else {
     if (tbSignIn)   tbSignIn.style.display = '';
     if (tbRegister) tbRegister.style.display = '';
@@ -633,6 +635,7 @@ function _updateAuthUI() {
     if (hdrUser)    hdrUser.style.display = 'none';
     if (sbAuth)     sbAuth.style.display = '';
     if (sbAuthIn)   sbAuthIn.style.display = 'none';
+    if (mobAuthBtn) { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = openSignInModal; }
   }
 }
 _updateAuthUI();

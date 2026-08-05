@@ -49,7 +49,7 @@
 
 /* ── Reset & base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: -apple-system, 'Segoe UI', system-ui, Arial, sans-serif;
   background: var(--surf);
@@ -57,6 +57,8 @@ body {
   font-size: 13.5px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
 }
 a { text-decoration: none; color: inherit; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; }
@@ -103,8 +105,10 @@ svg { display: block; }
 .btn-signin:hover { color: #fff; border-bottom-color: rgba(255,255,255,.4); }
 .btn-register { border: 1.5px solid rgba(255,255,255,.3); border-radius: var(--r); color: rgba(255,255,255,.85); padding: 6px 13px; font-size: 12.5px; font-weight: 600; transition: .13s; white-space: nowrap; }
 .btn-register:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
-.btn-post { background: var(--ochre); border: none; border-radius: var(--r); color: #fff; padding: 7px 15px; font-size: 12.5px; font-weight: 700; letter-spacing: .01em; transition: .13s; }
+.btn-post { background: var(--ochre); border: none; border-radius: var(--r); color: #fff; padding: 7px 15px; font-size: 12.5px; font-weight: 700; letter-spacing: .01em; transition: .13s; white-space: nowrap; }
 .btn-post:hover { background: #A46A08; box-shadow: 0 3px 12px rgba(200,130,10,.35); }
+.btn-mob-auth { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; color: #fff; flex-shrink: 0; }
+.btn-mob-auth svg { width: 18px; height: 18px; }
 
 /* ── Shop by Category ── */
 .shopcat { background: var(--surf2); border-bottom: 1.5px solid var(--border); padding: 28px 0 24px; }
@@ -360,6 +364,12 @@ svg { display: block; }
   .prov-grid { grid-template-columns: 1fr 1fr; }
   .ftr-grid { grid-template-columns: 1fr; }
   .srch-loc { display: none; }
+  .btn-signin { display: none; }
+  .btn-register { display: none; }
+  .hdr-in { gap: 8px; }
+  .wrap { padding: 0 10px; }
+  .btn-mob-auth { display: flex; }
+  .btn-post { padding: 7px 10px; font-size: 11.5px; }
 }
 
 /* ── Post Ad form ── */
