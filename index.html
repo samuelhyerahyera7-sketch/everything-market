@@ -283,13 +283,13 @@
         </div>
         <div class="ftr-col">
           <h5>Browse</h5>
-          <a href="#" onclick="return toast('Browsing Cars…')">Cars &amp; Bakkies</a>
-          <a href="#" onclick="return toast('Browsing Property…')">Property</a>
-          <a href="#" onclick="return toast('Browsing Electronics…')">Electronics</a>
-          <a href="#" onclick="return toast('Browsing Home…')">Home &amp; Garden</a>
-          <a href="#" onclick="return toast('Browsing Fashion…')">Fashion</a>
-          <a href="#" onclick="return toast('Browsing Jobs…')">Jobs</a>
-          <a href="#" onclick="return toast('Browsing Pets…')">Pets</a>
+          <a href="#" onclick="openCategoryPage('cars','Cars &amp; Bakkies');return false;">Cars &amp; Bakkies</a>
+          <a href="#" onclick="openCategoryPage('prop','Property');return false;">Property</a>
+          <a href="#" onclick="openCategoryPage('elec','Electronics');return false;">Electronics</a>
+          <a href="#" onclick="openCategoryPage('home','Home &amp; Garden');return false;">Home &amp; Garden</a>
+          <a href="#" onclick="openCategoryPage('fash','Fashion');return false;">Fashion</a>
+          <a href="#" onclick="openCategoryPage('jobs','Jobs');return false;">Jobs</a>
+          <a href="#" onclick="openCategoryPage('pets','Pets');return false;">Pets</a>
         </div>
         <div class="ftr-col">
           <h5>My Account</h5>
@@ -301,25 +301,25 @@
         </div>
         <div class="ftr-col">
           <h5>Buying</h5>
-          <a href="#" onclick="return toast('Help Centre')">How to Buy Safely</a>
-          <a href="#" onclick="return toast('Safety Tips')">Safety Tips</a>
-          <a href="#" onclick="return toast('Help Centre')">Buyer Protection</a>
-          <a href="#" onclick="return toast('Help Centre')">Report a Scam</a>
+          <a href="#" onclick="openInfoModal('buy-safe');return false;">How to Buy Safely</a>
+          <a href="#" onclick="openInfoModal('safety-tips');return false;">Safety Tips</a>
+          <a href="#" onclick="openInfoModal('buyer-protection');return false;">Buyer Protection</a>
+          <a href="#" onclick="openInfoModal('report-scam');return false;">Report a Scam</a>
         </div>
         <div class="ftr-col">
           <h5>Selling</h5>
           <a href="#" onclick="openPostAdModal(); return false;">Post a Free Ad</a>
-          <a href="#" onclick="return toast('Seller tips')">Seller Tips</a>
-          <a href="#" onclick="return toast('Pricing guide')">Pricing Guide</a>
-          <a href="#" onclick="return toast('Advertise')">Advertise with Us</a>
+          <a href="#" onclick="openInfoModal('seller-tips');return false;">Seller Tips</a>
+          <a href="#" onclick="openInfoModal('pricing-guide');return false;">Pricing Guide</a>
+          <a href="#" onclick="openInfoModal('advertise');return false;">Advertise with Us</a>
         </div>
         <div class="ftr-col">
           <h5>Company</h5>
-          <a href="#" onclick="return toast('About Us')">About Us</a>
-          <a href="#" onclick="return toast('Contact Us')">Contact Us</a>
-          <a href="#" onclick="return toast('Careers')">Careers</a>
-          <a href="#" onclick="return toast('Press')">Press &amp; Media</a>
-          <a href="#" onclick="return toast('Blog')">Blog</a>
+          <a href="#" onclick="openInfoModal('about');return false;">About Us</a>
+          <a href="#" onclick="openInfoModal('contact');return false;">Contact Us</a>
+          <a href="#" onclick="openInfoModal('careers');return false;">Careers</a>
+          <a href="#" onclick="openInfoModal('press');return false;">Press &amp; Media</a>
+          <a href="#" onclick="openInfoModal('blog');return false;">Blog</a>
         </div>
       </div>
 

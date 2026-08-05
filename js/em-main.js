@@ -1171,3 +1171,101 @@ window._deleteMyAd = function(id) {
   renderAll('all');
   openMyAds();
 };
+
+/* ── Info modals (footer links) ── */
+const INFO_CONTENT = {
+  'buy-safe': {
+    title: 'How to Buy Safely',
+    html: `<div class="info-section"><h4>1. Meet in a safe public place</h4><p>Always meet the seller in a busy, well-lit public area such as a shopping centre or police station. Never go alone.</p></div>
+<div class="info-section"><h4>2. Inspect before you pay</h4><p>Check the item carefully before handing over any money. Test electronics, check vehicle papers, and never pay a deposit without seeing the item first.</p></div>
+<div class="info-section"><h4>3. Use secure payment</h4><p>Pay via EFT to a verified account, or use cash in person. Avoid sending money via WhatsApp, SnapScan to unknown contacts, or cryptocurrency.</p></div>
+<div class="info-section"><h4>4. Verify the seller</h4><p>Ask for a SA ID or driver's licence. Verified sellers on Everything Market have completed our identity check.</p></div>
+<div class="info-section"><h4>5. Trust your instincts</h4><p>If a deal seems too good to be true, it probably is. Walk away from any pressure tactics or requests for upfront fees.</p></div>`
+  },
+  'safety-tips': {
+    title: 'Safety Tips',
+    html: `<div class="info-section"><h4>Online safety</h4><p>Never share your banking PIN, OTP, or passwords. Everything Market will never ask for your password via email or WhatsApp.</p></div>
+<div class="info-section"><h4>Vehicle scams</h4><p>Be wary of vehicles priced far below market value. Always check the VIN number and get an AA inspection before buying.</p></div>
+<div class="info-section"><h4>Property rentals</h4><p>Visit the property in person before paying any deposit. Ask for a lease agreement and verify the landlord owns the property.</p></div>
+<div class="info-section"><h4>Report suspicious ads</h4><p>Tap the <strong>⚑ Report this ad</strong> link on any listing to flag it for our safety team. We review all reports within 24 hours.</p></div>`
+  },
+  'buyer-protection': {
+    title: 'Buyer Protection',
+    html: `<div class="info-section"><h4>Our commitment to buyers</h4><p>Everything Market is a free classifieds platform. We connect buyers and sellers but we encourage safe trading practices.</p></div>
+<div class="info-section"><h4>Verified sellers</h4><p>Look for the <strong>Verified</strong> badge on listings. Verified sellers have submitted valid South African ID to our team.</p></div>
+<div class="info-section"><h4>Report & remove</h4><p>Fraudulent or misleading ads are removed within 24 hours of being reported. Use the report button on any listing.</p></div>
+<div class="info-section"><h4>Need help?</h4><p>Contact our support team at <strong>everythingmarket48@gmail.com</strong> for any disputes or safety concerns.</p></div>`
+  },
+  'report-scam': {
+    title: 'Report a Scam',
+    html: `<div class="info-section"><p>If you've encountered a scam or suspicious listing, please report it immediately.</p></div>
+<div class="info-section"><h4>On a listing</h4><p>Open the listing and tap <strong>⚑ Report this ad</strong> at the bottom of the Contact Seller screen.</p></div>
+<div class="info-section"><h4>Contact us directly</h4><p>Email <strong>everythingmarket48@gmail.com</strong> with details of the scam, the listing title, and any screenshots you have.</p></div>
+<div class="info-section"><h4>Report to authorities</h4><p>You can also report online fraud to the <strong>South African Police Service (SAPS)</strong> or the <strong>Cybercrime Division</strong> at <strong>www.saps.gov.za</strong>.</p></div>`
+  },
+  'seller-tips': {
+    title: 'Seller Tips',
+    html: `<div class="info-section"><h4>Take great photos</h4><p>Listings with clear, well-lit photos get up to 5× more views. Use natural light and photograph from multiple angles.</p></div>
+<div class="info-section"><h4>Write a clear description</h4><p>Include the condition, brand, model, size, and any defects. Honest descriptions build trust and reduce time-wasters.</p></div>
+<div class="info-section"><h4>Price it right</h4><p>Search for similar items on Everything Market to see what others are charging. Competitive pricing gets faster sales.</p></div>
+<div class="info-section"><h4>Respond quickly</h4><p>Buyers move on fast. Aim to reply to enquiries within an hour for the best chance of making a sale.</p></div>
+<div class="info-section"><h4>Stay safe</h4><p>Only share your phone number when you're ready to deal. Meet buyers in public places and bring someone with you.</p></div>`
+  },
+  'pricing-guide': {
+    title: 'Pricing Guide',
+    html: `<div class="info-section"><h4>Research the market</h4><p>Browse the same category on Everything Market to see what similar items are selling for right now in your area.</p></div>
+<div class="info-section"><h4>Condition affects value</h4><ul style="padding-left:18px;margin:8px 0;line-height:1.9;font-size:13px;color:var(--ink)"><li><strong>New / sealed:</strong> 80–95% of retail price</li><li><strong>Like New:</strong> 60–80% of retail</li><li><strong>Used – Good:</strong> 40–60% of retail</li><li><strong>Used – Fair:</strong> 20–40% of retail</li></ul></div>
+<div class="info-section"><h4>Mark as Negotiable</h4><p>Ticking "Negotiable" on your listing signals flexibility to buyers and increases the number of enquiries you receive.</p></div>
+<div class="info-section"><h4>Free listings</h4><p>All ads on Everything Market are completely free to post. No commissions, no listing fees — ever.</p></div>`
+  },
+  'advertise': {
+    title: 'Advertise with Us',
+    html: `<div class="info-section"><h4>Reach South African buyers</h4><p>Everything Market is growing fast across all nine provinces. Advertise your business or brand to thousands of active South African shoppers.</p></div>
+<div class="info-section"><h4>Sponsored listings</h4><p>Feature your ads at the top of search results and category pages to get maximum visibility.</p></div>
+<div class="info-section"><h4>Get in touch</h4><p>Email us at <strong>everythingmarket48@gmail.com</strong> with your business name and what you'd like to promote. We'll get back to you within 24 hours.</p></div>`
+  },
+  'about': {
+    title: 'About Everything Market',
+    html: `<div class="info-section"><p style="font-size:15px;font-weight:700;color:var(--forest);">South Africa's free online classifieds marketplace.</p></div>
+<div class="info-section"><p>Everything Market connects millions of South Africans to buy and sell anything — from cars and property to electronics, fashion, jobs, and services — safely and for free.</p></div>
+<div class="info-section"><h4>Our mission</h4><p>To make buying and selling simple, safe, and accessible to every South African, no matter where they live.</p></div>
+<div class="info-section"><h4>Based in South Africa</h4><p>We are proudly South African, built for local communities across all nine provinces.</p></div>
+<div class="info-section"><h4>Contact us</h4><p><strong>everythingmarket48@gmail.com</strong></p></div>`
+  },
+  'contact': {
+    title: 'Contact Us',
+    html: `<div class="info-section"><h4>Email support</h4><p><strong>everythingmarket48@gmail.com</strong></p><p style="margin-top:6px;font-size:12px;color:var(--muted)">We respond to all enquiries within 24 hours, Monday to Friday.</p></div>
+<div class="info-section"><h4>Report an ad</h4><p>To report a suspicious or fraudulent listing, open the ad and tap <strong>⚑ Report this ad</strong>.</p></div>
+<div class="info-section"><h4>Business enquiries</h4><p>For advertising, partnerships, or press enquiries, email us at <strong>everythingmarket48@gmail.com</strong> with the subject line "Business Enquiry".</p></div>`
+  },
+  'careers': {
+    title: 'Careers at Everything Market',
+    html: `<div class="info-section"><p>We're a growing South African startup and we're always looking for talented, passionate people to join our team.</p></div>
+<div class="info-section"><h4>Open roles</h4><p>We currently have openings in product, engineering, customer support, and marketing. Send your CV and a short note about yourself to <strong>everythingmarket48@gmail.com</strong> with the subject line "Careers".</p></div>
+<div class="info-section"><h4>What we look for</h4><p>We value curiosity, hustle, and a genuine passion for making South Africa's marketplace better for everyone.</p></div>`
+  },
+  'press': {
+    title: 'Press & Media',
+    html: `<div class="info-section"><p>For press enquiries, interviews, or media assets, please contact our team directly.</p></div>
+<div class="info-section"><h4>Media contact</h4><p>Email <strong>everythingmarket48@gmail.com</strong> with the subject line "Press Enquiry". We aim to respond within one business day.</p></div>`
+  },
+  'blog': {
+    title: 'Everything Market Blog',
+    html: `<div class="info-section"><p>Our blog is coming soon! We'll be sharing selling tips, buyer guides, success stories, and South African marketplace insights.</p></div>
+<div class="info-section"><h4>Get notified</h4><p>Register for an account to be the first to know when the blog launches.</p></div>`
+  },
+};
+
+function openInfoModal(key) {
+  const content = INFO_CONTENT[key];
+  if (!content) return;
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>${content.title}</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="info-modal-body">
+      ${content.html}
+    </div>`;
+  _openModal();
+}

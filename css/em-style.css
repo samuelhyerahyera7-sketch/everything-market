@@ -466,6 +466,13 @@ svg { display: block; }
 /* ── Topbar user link ── */
 .tb-user-link { color: var(--ochre-brt) !important; font-weight: 700 !important; }
 
+/* ── Info modals (footer links) ── */
+.info-modal-body { padding: 4px 20px 24px; }
+.info-section { padding: 14px 0; border-bottom: 1px solid var(--border-lt); }
+.info-section:last-child { border-bottom: none; }
+.info-section h4 { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+.info-section p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
 /* ── My Ads modal ── */
 .em-myads-body { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 2px; }
 .em-myads-empty { text-align: center; padding: 36px 0 8px; color: var(--muted); font-size: 13px; }
