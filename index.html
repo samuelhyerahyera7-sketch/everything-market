@@ -32,7 +32,8 @@
         <small>South Africa</small>
       </div>
     </a>
-    <div class="srch-wrap">
+    <!-- Desktop search -->
+    <div class="srch-wrap srch-desktop">
       <div class="srch">
         <input type="text" id="main-search" placeholder="Search cars, property, electronics and more…" autocomplete="off">
         <select class="srch-loc">
@@ -44,6 +45,15 @@
         <button class="srch-btn">Search</button>
       </div>
       <div class="ac-drop" id="ac-drop"></div>
+    </div>
+    <!-- Mobile search icon -->
+    <button class="btn-mob-search" onclick="toggleMobileSearch()" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    </button>
+    <!-- Mobile search bar (hidden by default) -->
+    <div class="srch-mob" id="srch-mob">
+      <input type="text" id="mob-search-input" placeholder="Search…" autocomplete="off">
+      <button class="srch-mob-btn" onclick="toggleMobileSearch()">✕</button>
     </div>
     <div class="hdr-r">
       <a href="#" class="btn-signin" id="hdr-signin" onclick="openSignInModal(); return false;">Sign In</a>
@@ -295,7 +305,6 @@
 <div class="em-modal-backdrop" id="em-modal">
   <div class="em-modal-box"></div>
 </div>
-<button class="tt" id="tt-btn" onclick="toggleTheme()">Dark Mode</button>
 
 <script src="js/em-data.js"></script>
 <script src="js/em-main.js"></script>

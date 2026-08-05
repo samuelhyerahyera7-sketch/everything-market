@@ -109,6 +109,13 @@ svg { display: block; }
 .btn-post:hover { background: #A46A08; box-shadow: 0 3px 12px rgba(200,130,10,.35); }
 .btn-mob-auth { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; color: #fff; flex-shrink: 0; }
 .btn-mob-auth svg { width: 18px; height: 18px; }
+.btn-mob-search { display: none; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.12); border: none; color: #fff; flex-shrink: 0; }
+.btn-mob-search svg { width: 18px; height: 18px; }
+.srch-mob { display: none; position: absolute; left: 0; right: 0; top: 0; height: 50px; background: var(--hdr); padding: 0 12px; align-items: center; gap: 8px; z-index: 10; }
+.srch-mob.open { display: flex; }
+.srch-mob input { flex: 1; border: none; border-radius: 6px; padding: 8px 12px; font-size: 14px; outline: none; background: rgba(255,255,255,.12); color: #fff; }
+.srch-mob input::placeholder { color: rgba(255,255,255,.4); }
+.srch-mob-btn { color: rgba(255,255,255,.6); font-size: 16px; background: none; border: none; padding: 4px 6px; }
 
 /* ── Sponsored Strip ── */
 .sponsored-strip { background: var(--white); border-bottom: 1.5px solid var(--border-lt); padding: 18px 0 20px; }
@@ -390,15 +397,15 @@ svg { display: block; }
   .srch-loc { display: none; }
   .btn-signin { display: none; }
   .btn-register { display: none; }
-  .hdr-in { gap: 6px; padding: 0 10px; height: 50px; }
+  .hdr-in { gap: 6px; padding: 0 10px; height: 50px; position: relative; }
   .wrap { padding: 0 10px; }
   .btn-mob-auth { display: flex; }
+  .btn-mob-search { display: flex; }
+  .srch-desktop { display: none; }
   .btn-post { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
   .logo-name strong { font-size: 0.95rem; }
   .logo-name small { display: none; }
-  .srch-wrap { min-width: 0; }
   .bb-grid { grid-template-columns: 1fr 1fr !important; }
-  .gt-list .gt-card { max-width: 100%; }
   .gt-card { overflow: hidden; }
 }
 

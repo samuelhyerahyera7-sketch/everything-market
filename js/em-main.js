@@ -256,9 +256,14 @@ let _dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 function toggleTheme() {
   _dark = !_dark;
   document.documentElement.setAttribute('data-theme', _dark ? 'dark' : 'light');
-  document.getElementById('tt-btn').textContent = _dark ? 'Light Mode' : 'Dark Mode';
 }
-document.getElementById('tt-btn').textContent = _dark ? 'Light Mode' : 'Dark Mode';
+
+function toggleMobileSearch() {
+  const bar = document.getElementById('srch-mob');
+  const input = document.getElementById('mob-search-input');
+  bar.classList.toggle('open');
+  if (bar.classList.contains('open') && input) input.focus();
+}
 
 /* ── Modal system ── */
 const modal = document.getElementById('em-modal');
