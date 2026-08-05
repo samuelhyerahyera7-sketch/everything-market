@@ -1,6 +1,10 @@
 /* ── Wishlist ── */
 let wl = new Set(JSON.parse(localStorage.getItem('em_wl2') || '[]'));
 function toggleWL(id, btn) {
+  if (!_getSession()) {
+    openSignInModal('Sign in to save ads to your wishlist.');
+    return;
+  }
   wl.has(id) ? wl.delete(id) : wl.add(id);
   localStorage.setItem('em_wl2', JSON.stringify([...wl]));
   btn.classList.toggle('on', wl.has(id));
@@ -101,11 +105,15 @@ const SPONSORED = [
   { title:'Samsung Galaxy S24 Ultra', price:'R 18 999', tag:'Electronics', loc:'Sandton, Gauteng', img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=260&fit=crop&auto=format' },
   { title:'2022 Toyota Hilux 2.8 GD-6', price:'R 649 900', tag:'Cars & Bakkies', loc:'Pretoria, Gauteng', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=260&fit=crop&auto=format' },
   { title:'3 Bedroom House – Sandton', price:'R 2 450 000', tag:'Property', loc:'Sandton, Gauteng', img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop&auto=format' },
+  { title:'iPhone 15 Pro Max 256GB', price:'R 22 499', tag:'Electronics', loc:'Cape Town, Western Cape', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=260&fit=crop&auto=format' },
+  { title:'2021 Volkswagen Polo Vivo', price:'R 189 900', tag:'Cars & Bakkies', loc:'Durban, KwaZulu-Natal', img:'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=260&fit=crop&auto=format' },
+  { title:'2-Bed Apartment to Rent', price:'R 8 500 /mo', tag:'Property', loc:'Fourways, Gauteng', img:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=260&fit=crop&auto=format' },
 ];
 (function() {
   const grid = document.getElementById('spons-grid');
   if (!grid) return;
-  SPONSORED.forEach(s => {
+
+  function makeCard(s) {
     const card = document.createElement('div');
     card.className = 'spons-card';
     card.onclick = () => toast('Opening sponsored ad…');
@@ -120,8 +128,12 @@ const SPONSORED = [
         <div class="spons-price">${s.price}</div>
         <div class="spons-loc">${s.loc}</div>
       </div>`;
-    grid.appendChild(card);
-  });
+    return card;
+  }
+
+  // Render original set then a duplicate so the CSS loop is seamless
+  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
+  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
 })();
 
 /* ── Shop by Category ── */
@@ -604,6 +616,10 @@ modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 window._paPhotos = [];
 
 function openPostAdModal() {
+  if (!_getSession()) {
+    openSignInModal('Sign in to post a free ad.');
+    return;
+  }
   window._paPhotos = [];
   const catOpts = CATS.filter(c => c.id !== 'all')
     .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -1104,13 +1120,14 @@ async function signOut() {
   toast('You have been signed out.');
 }
 
-function openSignInModal() {
+function openSignInModal(hint) {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Sign In</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <form class="em-post-form" onsubmit="submitSignIn(event)" novalidate>
+      ${hint ? `<p class="em-signin-hint">${hint}</p>` : ''}
       <div class="em-post-field">
         <label class="em-post-label" for="si-email">Email address</label>
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
