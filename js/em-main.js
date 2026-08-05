@@ -601,7 +601,7 @@ function closeModal() {
 }
 function _openModal() {
   _lockScroll();
-  _openModal();
+  modal.classList.add('open');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
@@ -850,26 +850,29 @@ function openBuyNow(listing) {
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Contact Seller</h3>
+      <h3>Ad Details</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div class="em-modal-listing">
-      <div class="em-modal-listing-img" id="modal-img"></div>
-      <div class="em-modal-listing-info">
-        <div class="em-modal-listing-title">${listing.title}</div>
-        <div class="em-modal-listing-price">${price}</div>
-        ${listing.cond !== 'N/A' ? `<div class="em-modal-listing-cond">${listing.cond}</div>` : ''}
+    <div class="em-ad-photo" id="modal-img"></div>
+    <div class="em-ad-detail-body">
+      <div class="em-ad-detail-price">${price}</div>
+      <div class="em-ad-detail-title">${listing.title}</div>
+      <div class="em-ad-detail-meta">
+        ${listing.cond !== 'N/A' ? `<span class="gt-chip">${listing.cond}</span>` : ''}
+        <span class="gt-chip">${listing.loc}</span>
+        <span class="gt-chip">${fmtTime(listing.postedAt)}</span>
       </div>
-    </div>
-    <div class="em-modal-seller">
-      <div class="em-modal-avatar">${initials}</div>
-      <div>
-        <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
-        <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
+      ${listing.desc ? `<div class="em-ad-detail-desc">${listing.desc}</div>` : ''}
+      <div class="em-modal-seller" style="margin:0 0 4px;">
+        <div class="em-modal-avatar">${initials}</div>
+        <div>
+          <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
+          <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
+        </div>
       </div>
     </div>
     <div class="em-modal-divider"></div>
-    <div class="em-modal-section-label">Choose how to connect</div>
+    <div style="padding:0 20px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact Seller</div>
     <div class="em-contact-btns">
       ${phone
         ? `<button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
