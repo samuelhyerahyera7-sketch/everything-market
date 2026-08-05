@@ -111,11 +111,12 @@ svg { display: block; }
 .shopcat-hd { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
 .shopcat-hd h2 { font-size: 1.05rem; font-weight: 800; color: var(--ink); }
 .shopcat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.scat-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px 14px 16px; border-radius: 14px; background: var(--white); border: 1.5px solid var(--border-lt); box-shadow: 0 1px 4px rgba(0,0,0,.07); cursor: pointer; transition: transform .13s, box-shadow .13s; text-decoration: none; }
+.scat-card { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 0; border-radius: 14px; background: var(--white); border: 1.5px solid var(--border-lt); box-shadow: 0 1px 4px rgba(0,0,0,.07); cursor: pointer; transition: transform .13s, box-shadow .13s; text-decoration: none; overflow: hidden; }
 .scat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.scat-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.scat-icon svg { width: 26px; height: 26px; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.scat-name { font-size: 13px; font-weight: 800; color: var(--ink); line-height: 1.25; }
+.scat-img-wrap { width: 100%; height: 100px; overflow: hidden; background: var(--bg); }
+.scat-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.scat-card:hover .scat-img { transform: scale(1.05); }
+.scat-name { font-size: 13px; font-weight: 800; color: var(--ink); line-height: 1.25; padding: 10px 12px 12px; }
 
 /* ── Autocomplete ── */
 .ac-drop { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-md); z-index: 200; overflow: hidden; display: none; }

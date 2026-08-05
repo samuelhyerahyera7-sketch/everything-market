@@ -8,15 +8,15 @@ const ICO = {
 
 /* ── Category definitions ── */
 const CATS = [
-  { id:'all',  name:'All Ads',        color:'#5B6EF5', bg:'#ECEEFF', svg:`<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/>` },
-  { id:'cars', name:'Cars & Bakkies', color:'#1565C0', bg:'#E3F0FF', svg:`<path d="M4 13.5L6 8h12l2 5.5"/><path d="M2 13.5h20v4a1 1 0 01-1 1H3a1 1 0 01-1-1v-4z"/><circle cx="7" cy="18.5" r="2" fill="currentColor"/><circle cx="17" cy="18.5" r="2" fill="currentColor"/><path d="M5 13.5h14"/><line x1="10" y1="8" x2="10" y2="13.5"/><line x1="14" y1="8" x2="14" y2="13.5"/>` },
-  { id:'prop', name:'Property',        color:'#E65100', bg:'#FFF0E6', svg:`<path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z"/><path d="M9 22V15h6v7"/>` },
-  { id:'elec', name:'Electronics',     color:'#6B3FA0', bg:'#F3EEFF', svg:`<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>` },
-  { id:'home', name:'Home & Garden',   color:'#2E7D32', bg:'#E6F4E8', svg:`<path d="M20 9V6a2 2 0 00-2-2H6a2 2 0 00-2 2v3"/><rect x="2" y="11" width="20" height="8" rx="2"/><line x1="4" y1="19" x2="4" y2="21"/><line x1="20" y1="19" x2="20" y2="21"/>` },
-  { id:'fash', name:'Fashion',         color:'#C2185B', bg:'#FFEBF2', svg:`<path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/>` },
-  { id:'jobs', name:'Jobs',            color:'#00695C', bg:'#E0F5F3', svg:`<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/>` },
-  { id:'baby', name:'Baby & Kids',     color:'#E65100', bg:'#FFF4E0', svg:`<circle cx="12" cy="12" r="9"/><circle cx="9" cy="11" r="1.5" fill="currentColor"/><circle cx="15" cy="11" r="1.5" fill="currentColor"/><path d="M9 15.5q3 2.5 6 0"/>` },
-  { id:'pets', name:'Pets',            color:'#BF360C', bg:'#FFECE6', svg:`<circle cx="9" cy="8.5" r="2.2" fill="currentColor"/><circle cx="15" cy="8.5" r="2.2" fill="currentColor"/><circle cx="5.5" cy="13.5" r="1.8" fill="currentColor"/><circle cx="18.5" cy="13.5" r="1.8" fill="currentColor"/><ellipse cx="12" cy="18" rx="4" ry="3.2" fill="currentColor"/>` },
+  { id:'all',  name:'All Ads',        color:'#5B6EF5', bg:'#ECEEFF', img:'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=300&h=180&fit=crop&auto=format' },
+  { id:'cars', name:'Cars & Bakkies', color:'#1565C0', bg:'#E3F0FF', img:'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=300&h=180&fit=crop&auto=format' },
+  { id:'prop', name:'Property',       color:'#E65100', bg:'#FFF0E6', img:'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300&h=180&fit=crop&auto=format' },
+  { id:'elec', name:'Electronics',    color:'#6B3FA0', bg:'#F3EEFF', img:'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300&h=180&fit=crop&auto=format' },
+  { id:'home', name:'Home & Garden',  color:'#2E7D32', bg:'#E6F4E8', img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&h=180&fit=crop&auto=format' },
+  { id:'fash', name:'Fashion',        color:'#C2185B', bg:'#FFEBF2', img:'https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=180&fit=crop&auto=format' },
+  { id:'jobs', name:'Jobs',           color:'#00695C', bg:'#E0F5F3', img:'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=180&fit=crop&auto=format' },
+  { id:'baby', name:'Baby & Kids',    color:'#E65100', bg:'#FFF4E0', img:'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&h=180&fit=crop&auto=format' },
+  { id:'pets', name:'Pets',           color:'#BF360C', bg:'#FFECE6', img:'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&h=180&fit=crop&auto=format' },
 ];
 
 /* ── Canvas artwork ── */

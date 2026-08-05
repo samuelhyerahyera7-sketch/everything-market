@@ -58,8 +58,8 @@ CATS.filter(c => c.id !== 'all').forEach(cat => {
   card.className = 'scat-card';
   card.onclick = e => { e.preventDefault(); toast('Browsing ' + cat.name + '…'); };
   card.innerHTML = `
-    <div class="scat-icon" style="background:${cat.bg};"><svg viewBox="0 0 24 24" style="stroke:${cat.color};">${cat.svg}</svg></div>
-    <div><div class="scat-name">${cat.name}</div></div>`;
+    <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='${cat.bg}'"></div>
+    <div class="scat-name">${cat.name}</div>`;
   scatGrid.appendChild(card);
 });
 
