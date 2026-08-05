@@ -132,6 +132,7 @@ const SPONSORED = [
   }
 
   SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
+  SPONSORED.forEach(s => grid.appendChild(makeCard(s))); // duplicate for seamless loop
 })();
 
 /* ── Shop by Category ── */
@@ -231,6 +232,14 @@ function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
   _searchQuery = '';
   _unlockScroll();
+}
+
+function toggleCatFilters() {
+  const aside = document.querySelector('.cat-filters');
+  const btn = document.getElementById('cat-filter-toggle');
+  if (!aside) return;
+  const open = aside.classList.toggle('mob-open');
+  if (btn) btn.classList.toggle('active', open);
 }
 
 function applyCatFilters() {
@@ -453,6 +462,7 @@ function renderBB(data) {
   items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'bb-card';
+    card.onclick = () => openBuyNow(l);
     const ribClass = l.badge === 'Hot' ? 'r-hot' : l.badge === 'Featured' ? 'r-feat' : 'r-new';
     const sd = BB_SELLER_DATA[l.id] || { delivery: false };
     const timeStr = fmtTime(l.postedAt);
@@ -497,7 +507,7 @@ function renderGT(data) {
     card.onclick = () => openBuyNow(l);
     const timeStr = fmtTime(l.postedAt);
     card.innerHTML = `
-      <div class="gt-img" style="min-height:138px;" id="gt-img-${l.id}">
+      <div class="gt-img" id="gt-img-${l.id}">
         <div class="gt-bdgs">
           ${l.badge ? `<span class="gt-bdg ${l.badge === 'Hot' ? 'gb-hot' : 'gb-feat'}">${l.badge}</span>` : ''}
           ${l.verified ? `<span class="gt-bdg gb-veri">Verified</span>` : ''}
