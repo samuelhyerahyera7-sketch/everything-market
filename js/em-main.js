@@ -137,14 +137,6 @@ const SPONSORED = [
 })();
 
 /* ── Shop by Category ── */
-function toggleShopcat() {
-  const panel = document.getElementById('shopcat-panel');
-  const arrow = document.getElementById('shopcat-arrow');
-  if (!panel) return;
-  const open = panel.classList.toggle('open');
-  if (arrow) arrow.classList.toggle('open', open);
-}
-
 (function() {
   const scatGrid = document.getElementById('shopcat-grid');
   if (!scatGrid) return;
@@ -158,11 +150,6 @@ function toggleShopcat() {
       <div class="scat-name">${cat.name}</div>`;
     scatGrid.appendChild(card);
   });
-  // Start expanded
-  const panel = document.getElementById('shopcat-panel');
-  const arrow = document.getElementById('shopcat-arrow');
-  if (panel) panel.classList.add('open');
-  if (arrow) arrow.classList.add('open');
 })();
 
 /* ── Category Page ── */
