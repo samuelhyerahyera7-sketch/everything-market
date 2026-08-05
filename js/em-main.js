@@ -122,8 +122,13 @@ function _getCatListings() {
 
 function _openResultsPage(title) {
   document.getElementById('cat-page-title').textContent = title;
-  document.getElementById('cat-page').style.display = 'block';
-  document.getElementById('cat-page').scrollTop = 0;
+  /* Position the overlay right below the actual header (topbar + header combined) */
+  const hdrBottom = Math.round(document.querySelector('.hdr').getBoundingClientRect().bottom);
+  const catPage = document.getElementById('cat-page');
+  catPage.style.top = hdrBottom + 'px';
+  catPage.style.height = `calc(100vh - ${hdrBottom}px)`;
+  catPage.style.display = 'block';
+  catPage.scrollTop = 0;
   document.getElementById('cf-min').value = '';
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
@@ -495,19 +500,18 @@ function openPostAdModal() {
       <div class="em-post-row">
         <div class="em-post-field">
           <label class="em-post-label" for="pa-cat">Category <span>(required)</span></label>
-          <select class="em-post-select" id="pa-cat">
+          <select class="em-post-select" id="pa-cat" onchange="_paUpdateCond(this.value)">
             <option value="">— Select a category —</option>
             ${catOpts}
           </select>
         </div>
-        <div class="em-post-field">
+        <div class="em-post-field" id="pa-cond-wrap">
           <label class="em-post-label" for="pa-cond">Condition</label>
           <select class="em-post-select" id="pa-cond">
             <option value="New">New</option>
             <option value="Used – Like New">Used – Like New</option>
             <option value="Used – Good" selected>Used – Good</option>
             <option value="Used – Fair">Used – Fair</option>
-            <option value="N/A">N/A (Service / Property)</option>
           </select>
         </div>
       </div>
@@ -577,6 +581,38 @@ function openPostAdModal() {
 window._paSetStype = function(btn) {
   document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+};
+
+window._paUpdateCond = function(cat) {
+  const wrap = document.getElementById('pa-cond-wrap');
+  const sel  = document.getElementById('pa-cond');
+  if (!wrap || !sel) return;
+
+  const noCondition  = ['jobs', 'pets'];
+  const propLike     = ['prop'];
+  const vehicleLike  = ['cars'];
+  const fashionLike  = ['fash'];
+
+  if (noCondition.includes(cat)) {
+    wrap.style.display = 'none';
+    sel.value = 'N/A';
+    return;
+  }
+  wrap.style.display = '';
+
+  let opts;
+  if (propLike.includes(cat)) {
+    opts = [['N/A', 'N/A']];
+  } else if (vehicleLike.includes(cat)) {
+    opts = [['New', 'New'], ['Demo', 'Demo / Ex-demo'], ['Pre-owned', 'Pre-owned']];
+  } else if (fashionLike.includes(cat)) {
+    opts = [['New with tags', 'New – with tags'], ['New without tags', 'New – without tags'], ['Used – Good', 'Used – Good'], ['Used – Fair', 'Used – Fair']];
+  } else {
+    opts = [['New', 'New'], ['Used – Like New', 'Used – Like New'], ['Used – Good', 'Used – Good'], ['Used – Fair', 'Used – Fair']];
+  }
+
+  sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  if (opts.length > 1) sel.value = opts[opts.length > 2 ? 2 : 0][0];
 };
 
 window._paAddPhotos = function(files) {
