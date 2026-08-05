@@ -131,8 +131,6 @@ const SPONSORED = [
     return card;
   }
 
-  // Render original set then a duplicate so the CSS loop is seamless
-  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
   SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
 })();
 
