@@ -42,7 +42,7 @@
           <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
           <option>North West</option><option>Northern Cape</option><option>Free State</option>
         </select>
-        <button class="srch-btn">Search</button>
+        <button class="srch-btn" onclick="if(window.emTrack){var q=document.getElementById('main-search').value.trim();if(q)emTrack('search',{q:q.slice(0,60)});}">Search</button>
       </div>
       <div class="ac-drop" id="ac-drop"></div>
     </div>
@@ -351,6 +351,7 @@
 </div>
 
 <script src="js/em-data.js"></script>
+<script src="js/em-analytics.js"></script>
 <script src="js/em-main.js"></script>
 </body>
 </html>

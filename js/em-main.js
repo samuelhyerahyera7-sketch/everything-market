@@ -100,6 +100,7 @@ function openCategoryPage(catId, catName) {
   document.getElementById('cat-page-title').textContent = catName;
   document.getElementById('cat-page').style.display = 'block';
   clearCatFilters();
+  if (window.emTrack) emTrack('category_view', { cat: catId });
 }
 
 function closeCategoryPage() {
@@ -548,6 +549,7 @@ function submitPostAd(e) {
   _saveUserAds();
   renderAll('all');
   window._paPhotos = [];
+  if (window.emTrack) emTrack('ad_post', { cat: listing.cat });
 
   showAdPostedConfirm(listing.title);
 }
@@ -570,6 +572,7 @@ function showAdPostedConfirm(title) {
 /* ── Contact / Buy Now modal ── */
 function openBuyNow(listing) {
   if (!listing) return;
+  if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
   const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
   const price = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -857,6 +860,7 @@ function submitRegister(e) {
   _saveAccounts(accounts);
   _setSession({ userId: acc.id, name: acc.name, email: acc.email });
   _updateAuthUI();
+  if (window.emTrack) emTrack('register');
 
   modalBox.innerHTML = `
     <div class="em-confirm">
