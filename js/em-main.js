@@ -792,6 +792,46 @@ function showAdPostedConfirm(title) {
     </div>`;
 }
 
+/* ── Photo gallery state ── */
+let _galPhotos = [];
+let _galIdx = 0;
+
+function _galNav(dir) {
+  _galIdx = (_galIdx + dir + _galPhotos.length) % _galPhotos.length;
+  const img = document.getElementById('ad-gal-img');
+  const counter = document.getElementById('ad-gal-counter');
+  if (img) {
+    img.innerHTML = '';
+    const el = document.createElement('img');
+    el.src = _galPhotos[_galIdx];
+    el.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;';
+    el.onclick = () => _openLightbox(_galIdx);
+    img.appendChild(el);
+  }
+  if (counter) counter.textContent = (_galIdx + 1) + ' / ' + _galPhotos.length;
+}
+
+function _openLightbox(startIdx) {
+  let idx = startIdx;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+  const renderLb = () => {
+    overlay.innerHTML = `
+      <button onclick="this.closest('[style]').remove()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
+      <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.6);font-size:13px;">${idx+1} / ${_galPhotos.length}</div>
+      <img src="${_galPhotos[idx]}" style="max-width:100%;max-height:85vh;object-fit:contain;display:block;border-radius:6px;" alt="">
+      ${_galPhotos.length > 1 ? `
+      <div style="display:flex;gap:16px;margin-top:16px;">
+        <button onclick="_lbNav(${idx},-1)" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8249;</button>
+        <button onclick="_lbNav(${idx},1)" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8250;</button>
+      </div>` : ''}`;
+  };
+  window._lbNav = (cur, dir) => { idx = (cur + dir + _galPhotos.length) % _galPhotos.length; renderLb(); };
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  renderLb();
+  document.body.appendChild(overlay);
+}
+
 /* ── Ad detail / Contact modal ── */
 function openBuyNow(listing) {
   if (!listing) return;
@@ -807,9 +847,17 @@ function openBuyNow(listing) {
   const waMsg    = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
   const timeStr  = fmtTime(listing.postedAt);
   const hasPhotos = listing.photos && listing.photos.length > 0;
+  const multiPhoto = hasPhotos && listing.photos.length > 1;
   const safeId   = String(listing.id).replace(/'/g, '');
   const safeTitle = listing.title.replace(/'/g, "\\'");
   const catName  = (CATS.find(c => c.id === listing.cat) || {}).name || listing.cat;
+
+  // Set up gallery state
+  _galPhotos = hasPhotos ? listing.photos : [];
+  _galIdx = 0;
+
+  // Store listing ref for contact screens
+  window._currentListing = listing;
 
   // General Details rows
   const details = [];
@@ -828,7 +876,16 @@ function openBuyNow(listing) {
       <h3 style="margin:0 auto">${isOwner ? 'My Ad' : ''}</h3>
     </div>
 
-    ${hasPhotos ? `<div class="ad-gal-wrap"><div class="ad-gal-img" id="ad-gal-img"></div></div>` : '<div class="ad-gal-placeholder"></div>'}
+    ${hasPhotos ? `
+    <div class="ad-gal-wrap">
+      <div class="ad-gal-img" id="ad-gal-img"></div>
+      ${multiPhoto ? `
+      <div class="ad-gal-controls">
+        <button class="ad-gal-nav" onclick="_galNav(-1)">&#8249;</button>
+        <span class="ad-gal-counter" id="ad-gal-counter">1 / ${listing.photos.length}</span>
+        <button class="ad-gal-nav" onclick="_galNav(1)">&#8250;</button>
+      </div>` : ''}
+    </div>` : '<div class="ad-gal-placeholder"></div>'}
 
     <div class="ad-detail-body2">
       <div class="ad-detail-price2">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
@@ -895,7 +952,13 @@ function openBuyNow(listing) {
   if (hasPhotos) {
     setTimeout(() => {
       const imgEl = document.getElementById('ad-gal-img');
-      if (imgEl) _renderImg(imgEl, listing);
+      if (!imgEl) return;
+      const img = document.createElement('img');
+      img.src = listing.photos[0];
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;';
+      img.alt = listing.title;
+      img.onclick = () => _openLightbox(0);
+      imgEl.appendChild(img);
     }, 10);
   }
 
@@ -976,9 +1039,14 @@ function submitReport(adId, adTitle) {
 
 function showCallScreen(seller, phone) {
   const formatted = '+' + phone.slice(0,2) + ' ' + phone.slice(2,5) + ' ' + phone.slice(5,8) + ' ' + phone.slice(8);
-  modalBox.querySelector('.em-contact-btns').innerHTML = `
-    <div style="text-align:center;padding:20px 0 8px;">
-      <div style="margin-bottom:10px;"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+  const listing = window._currentListing;
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Call Seller</h3>
+      <button class="em-modal-close" onclick="${listing ? `openBuyNow(window._currentListing)` : 'closeModal()'}">&#8592;</button>
+    </div>
+    <div style="text-align:center;padding:32px 20px 24px;">
+      <div style="margin-bottom:12px;"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">${seller}'s number</div>
       <div style="font-size:22px;font-weight:900;color:var(--ink);letter-spacing:.05em;">${formatted}</div>
       <a href="tel:${phone}" style="display:block;margin-top:16px;padding:13px;background:var(--forest);color:#fff;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;">Call Now</a>
@@ -990,12 +1058,26 @@ function showMessageScreen(listingId) {
   const l = LISTINGS.find(x => x.id == listingId);
   if (!l) return;
   const sess = _getSession();
-  modalBox.querySelector('.em-contact-btns').innerHTML = `
-    <div style="padding:4px 0;">
-      ${!sess ? `<input id="msg-from-name" class="em-offer-input" placeholder="Your name" style="margin-bottom:8px;width:100%;box-sizing:border-box;">
-      <input id="msg-from-email" class="em-offer-input" placeholder="Your email (optional)" type="email" style="margin-bottom:8px;width:100%;box-sizing:border-box;">` : ''}
-      <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
-      <button class="em-offer-submit" onclick="_sendMessage('${String(listingId).replace(/'/g,'')}')">Send Message</button>
+  const safeId = String(listingId).replace(/'/g, '');
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Send Message</h3>
+      <button class="em-modal-close" onclick="openBuyNow(window._currentListing)">&#8592;</button>
+    </div>
+    <div class="em-offer-body" style="padding-top:16px;">
+      <div class="em-offer-ref" style="margin-bottom:16px;">
+        <span style="font-size:12px;color:var(--muted);">Re: </span>
+        <strong style="font-size:13px;color:var(--ink);">${l.title}</strong>
+      </div>
+      ${!sess ? `
+      <label class="em-offer-label">Your name</label>
+      <input id="msg-from-name" class="em-offer-input" placeholder="Your name">
+      <label class="em-offer-label">Your email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="msg-from-email" class="em-offer-input" placeholder="email@example.com" type="email">` : ''}
+      <label class="em-offer-label">Message</label>
+      <textarea id="msg-body" class="em-offer-textarea" style="height:110px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
+      <div id="msg-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
+      <button class="em-offer-submit" onclick="_sendMessage('${safeId}')">Send Message</button>
     </div>`;
 }
 
