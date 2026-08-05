@@ -9,7 +9,7 @@ const ICO = {
 /* ── Category definitions ── */
 const CATS = [
   { id:'all',  name:'All Ads',        img:'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&h=200&fit=crop&auto=format' },
-  { id:'cars', name:'Cars & Bakkies', img:'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=200&h=200&fit=crop&auto=format' },
+  { id:'cars', name:'Cars & Bakkies', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop&auto=format' },
   { id:'prop', name:'Property',       img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=200&h=200&fit=crop&auto=format' },
   { id:'elec', name:'Electronics',    img:'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=200&h=200&fit=crop&auto=format' },
   { id:'home', name:'Home & Garden',  img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&auto=format' },

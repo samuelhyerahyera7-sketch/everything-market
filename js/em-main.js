@@ -72,7 +72,7 @@ const SPONSORED = [
         <div class="spons-tag">${s.tag}</div>
         <div class="spons-title">${s.title}</div>
         <div class="spons-price">${s.price}</div>
-        <div class="spons-loc">${ICO.pin} ${s.loc}</div>
+        <div class="spons-loc">${s.loc}</div>
       </div>`;
     grid.appendChild(card);
   });
