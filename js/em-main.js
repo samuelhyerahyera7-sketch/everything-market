@@ -507,18 +507,40 @@ const modalBox = modal.querySelector('.em-modal-box');
 
 function closeModal() {
   modal.classList.remove('open');
-  setTimeout(() => { modalBox.innerHTML = ''; modalBox.classList.remove('ad-modal'); }, 250);
+  setTimeout(() => { modalBox.innerHTML = ''; modalBox.classList.remove('ad-modal', 'expanded'); }, 250);
   _modalLocked = false;
   if (!_catLocked) _removeLock();
 }
+
 function _openModal() {
   if (!_modalLocked && !_catLocked) _applyLock();
   _modalLocked = true;
+  // Prepend drag handle if not already present
+  if (!modalBox.querySelector('.em-modal-handle-bar')) {
+    const h = document.createElement('div');
+    h.className = 'em-modal-handle-bar';
+    modalBox.insertBefore(h, modalBox.firstChild);
+    // Swipe up on handle = expand; swipe down = collapse/close
+    let hy0 = 0;
+    h.addEventListener('touchstart', e => { hy0 = e.touches[0].clientY; }, { passive: true });
+    h.addEventListener('touchend', e => {
+      const dy = hy0 - e.changedTouches[0].clientY;
+      if (dy > 30) {
+        modalBox.classList.add('expanded');
+      } else if (dy < -30) {
+        if (modalBox.classList.contains('expanded')) modalBox.classList.remove('expanded');
+        else closeModal();
+      }
+    }, { passive: true });
+    // Click handle to toggle expand
+    h.addEventListener('click', () => modalBox.classList.toggle('expanded'));
+  }
   modal.classList.add('open');
 }
+
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-/* ── Swipe gestures on modal ── */
+/* ── Swipe down from top of modal box to close ── */
 (function() {
   let t0x = 0, t0y = 0;
   modalBox.addEventListener('touchstart', e => {
@@ -528,9 +550,15 @@ modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   modalBox.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - t0x;
     const dy = e.changedTouches[0].clientY - t0y;
+    const scroller = modalBox.querySelector('.ad-modal-scroller') || modalBox;
+    const atTop = scroller.scrollTop === 0;
     const isDown = dy > 80 && dy > Math.abs(dx) * 1.5;
     const isLeft = dx < -80 && Math.abs(dx) > Math.abs(dy) * 1.5;
-    if ((isDown && modalBox.scrollTop === 0) || isLeft) closeModal();
+    if (isLeft) { closeModal(); return; }
+    if (isDown && atTop) {
+      if (modalBox.classList.contains('expanded')) modalBox.classList.remove('expanded');
+      else closeModal();
+    }
   }, { passive: true });
 })();
 
@@ -1095,11 +1123,13 @@ function showMessageScreen(listingId) {
 
 window._sendMessage = function(listingId) {
   const l = LISTINGS.find(x => x.id == listingId);
-  const body = (document.getElementById('msg-body').value || '').trim();
+  const body = (document.getElementById('msg-body')?.value || '').trim();
   if (!body) return;
   const sess = _getSession();
   const fromName  = sess ? sess.name  : (document.getElementById('msg-from-name')?.value || 'Anonymous');
   const fromEmail = sess ? sess.email : (document.getElementById('msg-from-email')?.value || null);
+
+  // Save to local inbox
   if (l && l.userId) {
     try {
       const key = 'em_inbox_' + l.userId;
@@ -1109,6 +1139,23 @@ window._sendMessage = function(listingId) {
       _updateInboxBadge();
     } catch(e) {}
   }
+
+  // Fire email notification via Supabase Edge Function (non-blocking)
+  try {
+    fetch('https://jucphfbaueowzlbjhxmm.supabase.co/functions/v1/notify-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fromName,
+        fromEmail: fromEmail || '',
+        listingTitle: l ? l.title : '',
+        listingId: String(listingId),
+        body,
+        sellerEmail: (l && l.sellerEmail) ? l.sellerEmail : '',
+      }),
+    }).catch(() => {});
+  } catch(e) {}
+
   showSentConfirm('message');
 };
 

@@ -315,7 +315,13 @@ svg { display: block; }
 .em-modal-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.52); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
 .em-modal-backdrop.open { opacity: 1; pointer-events: all; }
 .em-modal-backdrop.open .em-modal-box { transform: translateY(0); }
-.em-modal-box { background: var(--white); border-radius: 16px 16px 0 0; width: 100%; max-width: 540px; padding: 0 0 32px; transform: translateY(40px); transition: transform .24s cubic-bezier(.22,1,.36,1); max-height: 90vh; overflow-y: auto; }
+.em-modal-box { background: var(--white); border-radius: 16px 16px 0 0; width: 100%; max-width: 540px; padding: 0 0 32px; transform: translateY(40px); transition: transform .24s cubic-bezier(.22,1,.36,1), max-height .28s cubic-bezier(.22,1,.36,1), border-radius .28s; max-height: 90vh; overflow-y: auto; }
+.em-modal-box.expanded { max-height: 100dvh; border-radius: 0; }
+.em-modal-box.ad-modal.expanded { height: 100dvh; }
+/* Drag handle pill at top of every modal */
+.em-modal-handle-bar { display: flex; align-items: center; justify-content: center; padding: 10px 0 4px; cursor: grab; touch-action: none; flex-shrink: 0; }
+.em-modal-handle-bar::before { content: ''; display: block; width: 36px; height: 4px; background: var(--border); border-radius: 2px; transition: background .13s; }
+.em-modal-handle-bar:hover::before { background: var(--muted); }
 .em-modal-bar { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--border-lt); }
 .em-modal-bar h3 { font-size: 15px; font-weight: 800; color: var(--ink); }
 .em-modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--surf); border: none; cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: .13s; }
