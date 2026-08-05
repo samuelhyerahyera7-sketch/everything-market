@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/em-style.css?v=8">
+  <link rel="stylesheet" href="css/em-style.css?v=9">
 </head>
 <body>
 
@@ -49,8 +49,9 @@
     </div>
     <!-- Mobile search bar (hidden by default) -->
     <div class="srch-mob" id="srch-mob">
-      <input type="text" id="mob-search-input" placeholder="Search…" autocomplete="off">
+      <input type="text" id="mob-search-input" placeholder="Search…" autocomplete="off" onkeydown="if(event.key==='Enter'){_acSaveRecent&&_acSaveRecent(this.value.trim());runSearch()}">
       <button class="srch-mob-btn" onclick="toggleMobileSearch()">✕</button>
+      <div class="mob-ac-drop" id="mob-ac-drop"></div>
     </div>
     <div class="hdr-r">
       <a href="#" class="btn-signin" id="hdr-signin" onclick="openSignInModal(); return false;">Sign In</a>

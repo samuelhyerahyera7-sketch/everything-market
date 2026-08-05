@@ -199,9 +199,13 @@ function openProvincePage(province) {
 }
 
 function runSearch() {
-  const q    = (document.getElementById('main-search').value || '').trim();
+  const mobVal = (document.getElementById('mob-search-input')?.value || '').trim();
+  const dskVal = (document.getElementById('main-search')?.value || '').trim();
+  const q    = mobVal || dskVal;
+  if (mobVal) { const d = document.getElementById('main-search'); if (d) d.value = mobVal; }
   const prov = (document.getElementById('srch-loc')?.value || '');
   if (!q && !prov) { toast('Enter something to search for.'); return; }
+  if (q && window._acSaveRecent) _acSaveRecent(q);
 
   _catId = 'all';
   _searchQuery = q.toLowerCase();
@@ -287,41 +291,65 @@ function renderCatResults(data) {
 
 /* ── Autocomplete ── */
 (function() {
-  const input = document.getElementById('main-search');
-  const drop = document.getElementById('ac-drop');
-  if (!input || !drop) return;
+  const CAT_LABELS = Object.fromEntries(CATS.filter(c => c.id !== 'all').map(c => [c.id, c.name]));
 
-  const STATIC = [
-    { text:'Cars & Bakkies', cat:'cars' },
-    { text:'Property for Sale', cat:'prop' },
-    { text:'Electronics', cat:'elec' },
-    { text:'Home & Garden', cat:'home' },
-    { text:'Fashion', cat:'fash' },
-    { text:'Jobs', cat:'jobs' },
-    { text:'Pets', cat:'pets' },
-    { text:'Baby & Kids', cat:'baby' },
+  const POPULAR = [
+    { text:'iPhone', cat:'elec' }, { text:'Samsung Galaxy', cat:'elec' },
+    { text:'Laptop', cat:'elec' }, { text:'Smart TV', cat:'elec' },
+    { text:'Fridge', cat:'home' }, { text:'Washing Machine', cat:'home' },
+    { text:'Microwave', cat:'home' }, { text:'Air conditioner', cat:'home' },
+    { text:'Toyota Hilux', cat:'cars' }, { text:'Ford Ranger', cat:'cars' },
+    { text:'Toyota Corolla', cat:'cars' }, { text:'Volkswagen Polo', cat:'cars' },
+    { text:'BMW', cat:'cars' }, { text:'Bakkie for sale', cat:'cars' },
+    { text:'Used car', cat:'cars' }, { text:'Car under R100 000', cat:'cars' },
+    { text:'Honda CBR', cat:'moto' }, { text:'Yamaha motorcycle', cat:'moto' },
+    { text:'House for sale', cat:'prop' }, { text:'Flat to rent', cat:'prop' },
+    { text:'Apartment Johannesburg', cat:'prop' }, { text:'3 bedroom house', cat:'prop' },
+    { text:'Plot for sale', cat:'prop' }, { text:'Sectional title', cat:'prop' },
+    { text:'Sofa & couch', cat:'furn' }, { text:'Dining table', cat:'furn' },
+    { text:'Bed & mattress', cat:'furn' }, { text:'Office chair', cat:'furn' },
+    { text:'Puppy for sale', cat:'pets' }, { text:'Kitten', cat:'pets' },
+    { text:'Dog food', cat:'pets' }, { text:'Parrot', cat:'pets' },
+    { text:'Baby clothes', cat:'baby' }, { text:'Pram & stroller', cat:'baby' },
+    { text:'Cot & crib', cat:'baby' },
+    { text:'Nike sneakers', cat:'fash' }, { text:'Adidas', cat:'fash' },
+    { text:'Dress', cat:'fash' }, { text:'Jeans', cat:'fash' },
+    { text:'Running shoes', cat:'sport' }, { text:'Gym equipment', cat:'sport' },
+    { text:'Bicycle', cat:'sport' }, { text:'Treadmill', cat:'sport' },
+    { text:'Golf clubs', cat:'sport' }, { text:'Surfboard', cat:'sport' },
+    { text:'Guitar', cat:'music' }, { text:'Piano & keyboard', cat:'music' },
+    { text:'Drums', cat:'music' }, { text:'Violin', cat:'music' },
+    { text:'PlayStation 5', cat:'game' }, { text:'Xbox Series X', cat:'game' },
+    { text:'Nintendo Switch', cat:'game' }, { text:'Gaming PC', cat:'game' },
+    { text:'Power drill', cat:'tools' }, { text:'Lawnmower', cat:'tools' },
+    { text:'Generator', cat:'tools' }, { text:'Angle grinder', cat:'tools' },
+    { text:'Caravan', cat:'camp' }, { text:'Camping tent', cat:'camp' },
+    { text:'Off-road trailer', cat:'camp' },
+    { text:'Skincare', cat:'beauty' }, { text:'Makeup', cat:'beauty' },
+    { text:'Hair extensions', cat:'beauty' },
+    { text:'Plumber', cat:'serv' }, { text:'Electrician', cat:'serv' },
+    { text:'Painter', cat:'serv' }, { text:'Domestic worker', cat:'serv' },
+    { text:'Driver', cat:'jobs' }, { text:'Engineer', cat:'jobs' },
+    { text:'Accountant', cat:'jobs' }, { text:'Nurse', cat:'jobs' },
+    { text:'Tractor', cat:'agri' }, { text:'Irrigation equipment', cat:'agri' },
+    { text:'Livestock', cat:'agri' }, { text:'Farm implements', cat:'agri' },
+    { text:'Textbook', cat:'books' }, { text:'Novel', cat:'books' },
+    ...CATS.filter(c => c.id !== 'all').map(c => ({ text: c.name, cat: c.id, isCat: true })),
   ];
-  const CAT_LABELS = { cars:'Vehicles', prop:'Property', elec:'Electronics', home:'Home', fash:'Fashion', jobs:'Jobs', pets:'Pets', baby:'Baby & Kids' };
-  let focusIdx = -1;
 
-  function suggestions() {
-    return [...LISTINGS.map(l => ({ text: l.title, cat: l.cat })), ...STATIC];
+  function getRecent() {
+    try { return JSON.parse(localStorage.getItem('em_recent_searches') || '[]').slice(0, 6); } catch(e) { return []; }
   }
+  window._acSaveRecent = function(q) {
+    try {
+      let r = getRecent().filter(x => x.toLowerCase() !== q.toLowerCase());
+      r.unshift(q);
+      localStorage.setItem('em_recent_searches', JSON.stringify(r.slice(0, 8)));
+    } catch(e) {}
+  };
 
-  function show(q) {
-    const lq = q.toLowerCase().trim();
-    if (!lq) { drop.classList.remove('open'); return; }
-    const hits = suggestions().filter(s => s.text.toLowerCase().includes(lq)).slice(0, 7);
-    if (!hits.length) { drop.classList.remove('open'); return; }
-    focusIdx = -1;
-    drop.innerHTML = hits.map((s, i) =>
-      `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${s.text.replace(/'/g,"\\'")}';drop.classList.remove('open');runSearch()">
-        <span class="ac-item-text">${highlight(s.text, lq)}</span>
-        ${s.cat ? `<span class="ac-item-cat">${CAT_LABELS[s.cat] || s.cat}</span>` : ''}
-      </div>`
-    ).join('');
-    drop.classList.add('open');
-  }
+  const ICO_SEARCH = `<svg class="ac-item-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>`;
+  const ICO_CLOCK  = `<svg class="ac-item-ico ac-item-ico--recent" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg>`;
 
   function highlight(text, q) {
     const i = text.toLowerCase().indexOf(q);
@@ -329,16 +357,82 @@ function renderCatResults(data) {
     return text.slice(0, i) + '<strong>' + text.slice(i, i + q.length) + '</strong>' + text.slice(i + q.length);
   }
 
-  input.addEventListener('input', () => show(input.value));
-  input.addEventListener('focus', () => show(input.value));
-  input.addEventListener('keydown', e => {
-    const items = drop.querySelectorAll('.ac-item');
-    if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
-    else if (e.key === 'Enter' && focusIdx >= 0) { items[focusIdx]?.click(); }
-    else if (e.key === 'Escape') { drop.classList.remove('open'); }
-  });
-  document.addEventListener('click', e => { if (!e.target.closest('.srch-wrap')) drop.classList.remove('open'); });
+  function buildDropHTML(hits, lq) {
+    const rows = hits.map((s, i) => {
+      const label = s.text.replace(/'/g, "\\'");
+      const catImg = CATS.find(c => c.id === s.cat)?.img || '';
+      const thumb = s.isCat && catImg
+        ? `<img class="ac-item-img" src="${catImg}" alt="">`
+        : ICO_SEARCH;
+      return `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${label}';_acSaveRecent('${label}');document.getElementById('ac-drop').classList.remove('open');runSearch()">
+        ${thumb}
+        <span class="ac-item-text">${lq ? highlight(s.text, lq) : s.text}</span>
+        ${s.cat ? `<span class="ac-item-cat">${CAT_LABELS[s.cat] || s.cat}</span>` : ''}
+      </div>`;
+    });
+    if (lq) {
+      const safe = lq.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,"\\'");
+      rows.push(`<div class="ac-see-all" onclick="document.getElementById('main-search').value='${safe}';document.getElementById('ac-drop').classList.remove('open');runSearch()">Search for &ldquo;<strong>${lq.replace(/</g,'&lt;')}</strong>&rdquo; &rarr;</div>`);
+    }
+    return rows.join('');
+  }
+
+  function initFor(inputEl, dropEl) {
+    if (!inputEl || !dropEl) return;
+    let focusIdx = -1;
+
+    function show(q) {
+      const lq = q.toLowerCase().trim();
+      if (!lq) {
+        const recent = getRecent();
+        if (!recent.length) { dropEl.classList.remove('open'); return; }
+        dropEl.innerHTML =
+          `<div class="ac-section-label">Recent searches</div>` +
+          recent.map(r => {
+            const safe = r.replace(/'/g,"\\'");
+            return `<div class="ac-item" onclick="inputEl.value='${safe}';_acSaveRecent('${safe}');dropEl.classList.remove('open');runSearch()">
+              ${ICO_CLOCK}
+              <span class="ac-item-text">${r}</span>
+              <span class="ac-item-recent-tag">Recent</span>
+            </div>`;
+          }).join('') +
+          `<div class="ac-see-all" onclick="dropEl.classList.remove('open');openCategoryPage('all','All Ads')">Browse all categories &rarr;</div>`;
+        dropEl.classList.add('open');
+        return;
+      }
+      const seen = new Set();
+      const hits = [
+        ...LISTINGS.map(l => ({ text: l.title, cat: l.cat })),
+        ...POPULAR,
+      ].filter(s => {
+        if (!s.text.toLowerCase().includes(lq)) return false;
+        const k = s.text.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).slice(0, 8);
+      if (!hits.length) { dropEl.classList.remove('open'); return; }
+      focusIdx = -1;
+      dropEl.innerHTML = buildDropHTML(hits, lq);
+      dropEl.classList.add('open');
+    }
+
+    inputEl.addEventListener('input', () => show(inputEl.value));
+    inputEl.addEventListener('focus', () => show(inputEl.value));
+    inputEl.addEventListener('keydown', e => {
+      const items = dropEl.querySelectorAll('.ac-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
+      else if (e.key === 'Enter' && focusIdx >= 0) { items[focusIdx]?.click(); }
+      else if (e.key === 'Escape') { dropEl.classList.remove('open'); }
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.srch-wrap') && !e.target.closest('.srch-mob')) dropEl.classList.remove('open');
+    });
+  }
+
+  initFor(document.getElementById('main-search'), document.getElementById('ac-drop'));
+  initFor(document.getElementById('mob-search-input'), document.getElementById('mob-ac-drop'));
 })();
 
 /* ── BidorBuy grid render ── */
