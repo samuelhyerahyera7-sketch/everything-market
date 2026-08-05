@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/em-style.css?v=7">
+  <link rel="stylesheet" href="css/em-style.css?v=10">
 </head>
 <body>
 
@@ -49,8 +49,9 @@
     </div>
     <!-- Mobile search bar (hidden by default) -->
     <div class="srch-mob" id="srch-mob">
-      <input type="text" id="mob-search-input" placeholder="Search…" autocomplete="off">
+      <input type="text" id="mob-search-input" placeholder="Search…" autocomplete="off" onkeydown="if(event.key==='Enter'){_acSaveRecent&&_acSaveRecent(this.value.trim());runSearch()}">
       <button class="srch-mob-btn" onclick="toggleMobileSearch()">✕</button>
+      <div class="mob-ac-drop" id="mob-ac-drop"></div>
     </div>
     <div class="hdr-r">
       <a href="#" class="btn-signin" id="hdr-signin" onclick="openSignInModal(); return false;">Sign In</a>
@@ -63,7 +64,6 @@
         <div class="hdr-user-drop" id="hdr-user-drop">
           <button onclick="openMyAds()">My Ads</button>
           <button onclick="openSavedAds()">Saved Ads</button>
-          <button onclick="openInbox()" style="position:relative;">Inbox <span id="inbox-badge" style="display:none;position:absolute;top:6px;right:10px;background:var(--forest);color:#fff;border-radius:10px;font-size:10px;font-weight:800;padding:1px 6px;"></span></button>
           <button class="sign-out" onclick="signOut()">Sign Out</button>
         </div>
       </div>
@@ -88,10 +88,6 @@
         Back
       </button>
       <h2 id="cat-page-title">Category</h2>
-      <button class="cat-filter-toggle" id="cat-filter-toggle" onclick="toggleCatFilters()">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-        Filters
-      </button>
     </div>
   </div>
   <div class="wrap cat-page-body">
@@ -115,9 +111,9 @@
         </div>
       </div>
 
-      <div class="cf-section" id="cf-cond-section">
+      <div class="cf-section">
         <div class="cf-section-label">Condition</div>
-        <div class="cat-check-row" id="cf-cond-row">
+        <div class="cat-check-row">
           <label><input type="checkbox" class="cf-cond" value="New" onchange="applyCatFilters()"> New</label>
           <label><input type="checkbox" class="cf-cond" value="Used – Like New" onchange="applyCatFilters()"> Like New</label>
           <label><input type="checkbox" class="cf-cond" value="Used – Good" onchange="applyCatFilters()"> Good</label>
@@ -141,8 +137,16 @@
 <!-- Shop by Category -->
 <div class="shopcat">
   <div class="wrap">
-    <div class="shopcat-hd"><h2>Shop by Category</h2></div>
-    <div class="shopcat-grid" id="shopcat-grid"></div>
+    <button class="shopcat-toggle" id="shopcat-toggle" onclick="toggleShopcat()">
+      <div class="shopcat-toggle-left">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>All Categories</span>
+      </div>
+      <svg class="shopcat-arrow" id="shopcat-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="shopcat-panel" id="shopcat-panel">
+      <div class="shopcat-grid" id="shopcat-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -150,6 +154,8 @@
 <div class="sponsored-strip">
   <div class="wrap">
     <div class="sec-head" style="border-bottom:none;padding-bottom:4px;"><h2>Sponsored</h2></div>
+  </div>
+  <div class="spons-scroll-wrap">
     <div class="spons-grid" id="spons-grid"></div>
   </div>
 </div>
@@ -161,14 +167,14 @@
       <!-- Featured: BidorBuy grid -->
       <div class="sec-head">
         <h2>All Ads</h2>
-        <a href="#" onclick="openCategoryPage('all','All Ads');return false;">View all</a>
+        <a href="#" onclick="return toast('Viewing all featured…')">View all</a>
       </div>
       <div class="bb-grid" id="bb-grid"></div>
 
       <!-- Latest: Gumtree horizontal list -->
       <div class="sec-head" style="margin-top: 28px;">
         <h2>Latest Ads</h2>
-        <a href="#" onclick="openCategoryPage('all','All Ads');return false;">View all</a>
+        <a href="#" onclick="return toast('Viewing all ads…')">View all</a>
       </div>
       <div class="gt-list" id="gt-list"></div>
       <div class="load-more">
@@ -328,6 +334,21 @@
         </div>
       </div>
 
+      <div class="ftr-divider"></div>
+
+      <div class="ftr-payments">
+        <span class="ftr-pay-label">Secure Payments</span>
+        <div class="ftr-pay-icons">
+          <span class="ftr-pay-badge">Visa</span>
+          <span class="ftr-pay-badge">Mastercard</span>
+          <span class="ftr-pay-badge">Amex</span>
+          <span class="ftr-pay-badge">EFT</span>
+          <span class="ftr-pay-badge">Capitec Pay</span>
+          <span class="ftr-pay-badge">PayFlex</span>
+          <span class="ftr-pay-badge">SnapScan</span>
+          <span class="ftr-pay-badge">Ozow</span>
+        </div>
+      </div>
     </div>
   </div>
 

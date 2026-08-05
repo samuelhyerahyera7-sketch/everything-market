@@ -1,6 +1,10 @@
 /* ── Wishlist ── */
 let wl = new Set(JSON.parse(localStorage.getItem('em_wl2') || '[]'));
 function toggleWL(id, btn) {
+  if (!_getSession()) {
+    openSignInModal('Sign in to save ads to your wishlist.');
+    return;
+  }
   wl.has(id) ? wl.delete(id) : wl.add(id);
   localStorage.setItem('em_wl2', JSON.stringify([...wl]));
   btn.classList.toggle('on', wl.has(id));
@@ -54,17 +58,46 @@ async function _loadSupabaseAds() {
 _loadUserAds();
 
 /* ── Image helper ── */
+const _ART_ICON = {
+  phone:    { emoji:'📱', color:'#E3F0FF', icon:'M17 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2zM12 18h.01' },
+  truck:    { emoji:'🚙', color:'#E8F5E9', icon:'M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z' },
+  house:    { emoji:'🏠', color:'#FFF8E1', icon:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10' },
+  tv:       { emoji:'📺', color:'#F3E5F5', icon:'M33 3H-9v16h42zM8 19v4M16 19v4M9 23h6' },
+  dog:      { emoji:'🐕', color:'#FFF3E0', icon:'M10 5.172C10 3.782 8.423 2.679 6.5 3c-2 .324-3.5 1.858-3.5 3.5 0 .796.479 1.54 1.179 1.98-.287.18-.529.41-.679.72C3.135 9.77 3 10.09 3 10.5c0 .83.67 1.5 1.5 1.5 1 0 2.5-1 3.5-1 2.5 0 4 1.5 7 1.5 2.55 0 4-1.5 4-3.5C19 6.996 14 4 10 5.172z' },
+  tools:    { emoji:'🔧', color:'#E8EAF6', icon:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' },
+  moto:     { emoji:'🏍', color:'#FCE4EC', icon:'M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v9h-2M14 17H9M9 17a3 3 0 11-6 0 3 3 0 016 0zM22 17a3 3 0 11-6 0 3 3 0 016 0z' },
+  table:    { emoji:'🪑', color:'#F1F8E9', icon:'M4 6h16v2H4zM4 12h16v2H4zM4 3h16v2H4zM6 6v16M18 6v16' },
+  sneakers: { emoji:'👟', color:'#E0F2F1', icon:'M2 12l2-8h14l2 8M2 12h20M6 12v8M18 12v8M6 20h12' },
+  ps5:      { emoji:'🎮', color:'#EDE7F6', icon:'M6 11h4M8 9v4M15 12h.01M18 10h.01M17.32 5H6.68a4 4 0 00-3.978 3.59l-1 9A4 4 0 005.68 22h12.64a4 4 0 003.978-4.41l-1-9A4 4 0 0017.32 5z' },
+  design:   { emoji:'🎨', color:'#FFF9C4', icon:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2v-.5c0-.55-.22-1.05-.59-1.41a.75.75 0 01.53-1.29H16c3.31 0 6-2.69 6-6 0-4.96-4.48-9-10-9z' },
+  apt:      { emoji:'🏢', color:'#E3F2FD', icon:'M3 21V7l9-4 9 4v14H3zM3 21h18M9 21V9M15 21V9M9 9h6M9 13h6M9 17h6' },
+};
+
 function _renderImg(el, l) {
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
     img.src = l.photos[0];
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
-    img.onerror = () => { img.remove(); if (l.art) el.appendChild(drawSVG(l.art)); };
+    img.onerror = () => { img.remove(); _renderArtIcon(el, l.art); };
     el.appendChild(img);
-  } else if (l.art) {
-    el.appendChild(drawSVG(l.art));
+  } else {
+    _renderArtIcon(el, l.art);
   }
+}
+
+function _renderArtIcon(el, artKey) {
+  const a = _ART_ICON[artKey];
+  el.style.background = a ? a.color : 'var(--surf2)';
+  el.style.display = 'flex';
+  el.style.alignItems = 'center';
+  el.style.justifyContent = 'center';
+  el.style.flexDirection = 'column';
+  el.style.gap = '6px';
+  const span = document.createElement('span');
+  span.style.cssText = 'font-size:48px;line-height:1;';
+  span.textContent = a ? a.emoji : '📦';
+  el.appendChild(span);
 }
 
 /* ── Sponsored Ads ── */
@@ -72,11 +105,15 @@ const SPONSORED = [
   { title:'Samsung Galaxy S24 Ultra', price:'R 18 999', tag:'Electronics', loc:'Sandton, Gauteng', img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=260&fit=crop&auto=format' },
   { title:'2022 Toyota Hilux 2.8 GD-6', price:'R 649 900', tag:'Cars & Bakkies', loc:'Pretoria, Gauteng', img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=260&fit=crop&auto=format' },
   { title:'3 Bedroom House – Sandton', price:'R 2 450 000', tag:'Property', loc:'Sandton, Gauteng', img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop&auto=format' },
+  { title:'iPhone 15 Pro Max 256GB', price:'R 22 499', tag:'Electronics', loc:'Cape Town, Western Cape', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=260&fit=crop&auto=format' },
+  { title:'2021 Volkswagen Polo Vivo', price:'R 189 900', tag:'Cars & Bakkies', loc:'Durban, KwaZulu-Natal', img:'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=260&fit=crop&auto=format' },
+  { title:'2-Bed Apartment to Rent', price:'R 8 500 /mo', tag:'Property', loc:'Fourways, Gauteng', img:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=260&fit=crop&auto=format' },
 ];
 (function() {
   const grid = document.getElementById('spons-grid');
   if (!grid) return;
-  SPONSORED.forEach(s => {
+
+  function makeCard(s) {
     const card = document.createElement('div');
     card.className = 'spons-card';
     card.onclick = () => toast('Opening sponsored ad…');
@@ -91,22 +128,42 @@ const SPONSORED = [
         <div class="spons-price">${s.price}</div>
         <div class="spons-loc">${s.loc}</div>
       </div>`;
-    grid.appendChild(card);
-  });
+    return card;
+  }
+
+  // Render original set then a duplicate so the CSS loop is seamless
+  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
+  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
 })();
 
 /* ── Shop by Category ── */
-const scatGrid = document.getElementById('shopcat-grid');
-CATS.filter(c => c.id !== 'all').forEach(cat => {
-  const card = document.createElement('a');
-  card.href = '#';
-  card.className = 'scat-card';
-  card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
-  card.innerHTML = `
-    <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8e6e0'"></div>
-    <div class="scat-name">${cat.name}</div>`;
-  scatGrid.appendChild(card);
-});
+function toggleShopcat() {
+  const panel = document.getElementById('shopcat-panel');
+  const arrow = document.getElementById('shopcat-arrow');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', open);
+}
+
+(function() {
+  const scatGrid = document.getElementById('shopcat-grid');
+  if (!scatGrid) return;
+  CATS.filter(c => c.id !== 'all').forEach(cat => {
+    const card = document.createElement('a');
+    card.href = '#';
+    card.className = 'scat-card';
+    card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
+    card.innerHTML = `
+      <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8e6e0'"></div>
+      <div class="scat-name">${cat.name}</div>`;
+    scatGrid.appendChild(card);
+  });
+  // Start expanded
+  const panel = document.getElementById('shopcat-panel');
+  const arrow = document.getElementById('shopcat-arrow');
+  if (panel) panel.classList.add('open');
+  if (arrow) arrow.classList.add('open');
+})();
 
 /* ── Category Page ── */
 let _catId = 'all', _catName = 'All Ads', _searchQuery = '';
@@ -122,47 +179,13 @@ function _getCatListings() {
 
 function _openResultsPage(title) {
   document.getElementById('cat-page-title').textContent = title;
-  const catPage = document.getElementById('cat-page');
-  /* Position overlay below combined topbar+header height */
-  const hdr = document.querySelector('.hdr');
-  const hdrBottom = hdr ? Math.max(40, Math.round(hdr.getBoundingClientRect().bottom)) : 54;
-  catPage.style.top = hdrBottom + 'px';
-  catPage.style.display = 'block';
-  catPage.scrollTop = 0;
+  document.getElementById('cat-page').style.display = 'block';
+  document.getElementById('cat-page').scrollTop = 0;
   document.getElementById('cf-min').value = '';
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
-  if (!_catLocked && !_modalLocked) _applyLock();
-  _catLocked = true;
-}
-
-function _updateCondFilter(catId) {
-  const section = document.getElementById('cf-cond-section');
-  const row     = document.getElementById('cf-cond-row');
-  if (!section || !row) return;
-
-  const noCondCats  = ['jobs', 'pets', 'prop'];
-  const carCats     = ['cars'];
-  const fashCats    = ['fash'];
-
-  if (noCondCats.includes(catId)) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = '';
-
-  let opts;
-  if (carCats.includes(catId)) {
-    opts = [['New','New'],['Demo','Demo / Ex-demo'],['Pre-owned','Pre-owned']];
-  } else if (fashCats.includes(catId)) {
-    opts = [['New with tags','New with tags'],['New without tags','New without tags'],['Used – Good','Used – Good'],['Used – Fair','Used – Fair']];
-  } else {
-    opts = [['New','New'],['Used – Like New','Like New'],['Used – Good','Used – Good'],['Used – Fair','Used – Fair']];
-  }
-  row.innerHTML = opts.map(([v,l]) =>
-    `<label><input type="checkbox" class="cf-cond" value="${v}" onchange="applyCatFilters()"> ${l}</label>`
-  ).join('');
+  _lockScroll();
 }
 
 function openCategoryPage(catId, catName) {
@@ -172,7 +195,6 @@ function openCategoryPage(catId, catName) {
   _openResultsPage(catName);
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = '';
-  _updateCondFilter(catId);
   applyCatFilters();
   if (window.emTrack) emTrack('category_view', { cat: catId });
 }
@@ -182,31 +204,26 @@ function openProvincePage(province) {
   _catName = province;
   _searchQuery = '';
   _openResultsPage('Ads in ' + province);
-  _updateCondFilter('all');
   const locEl = document.getElementById('cf-loc');
-  if (locEl) locEl.value = '';
-  const allListings = _getCatListings();
-  const filtered = allListings.filter(l => (l.loc || '').toLowerCase().includes(province.toLowerCase()));
-  if (filtered.length > 0) {
-    if (locEl) locEl.value = province;
-    renderCatResults(filtered);
-  } else {
-    renderCatResults(allListings);
-  }
+  if (locEl) locEl.value = province;
+  applyCatFilters();
   if (window.emTrack) emTrack('province_view', { province });
 }
 
 function runSearch() {
-  const q    = (document.getElementById('main-search').value || '').trim();
+  const mobVal = (document.getElementById('mob-search-input')?.value || '').trim();
+  const dskVal = (document.getElementById('main-search')?.value || '').trim();
+  const q    = mobVal || dskVal;
+  if (mobVal) { const d = document.getElementById('main-search'); if (d) d.value = mobVal; }
   const prov = (document.getElementById('srch-loc')?.value || '');
   if (!q && !prov) { toast('Enter something to search for.'); return; }
+  if (q && window._acSaveRecent) _acSaveRecent(q);
 
   _catId = 'all';
   _searchQuery = q.toLowerCase();
 
   const title = q && prov ? `"${q}" in ${prov}` : q ? `Results for "${q}"` : `Ads in ${prov}`;
   _openResultsPage(title);
-  _updateCondFilter('all');
 
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = prov;
@@ -217,25 +234,10 @@ function runSearch() {
   if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
-function toggleCatFilters() {
-  const aside = document.querySelector('.cat-filters');
-  const btn   = document.getElementById('cat-filter-toggle');
-  if (!aside) return;
-  const open = aside.classList.toggle('open');
-  if (btn) btn.classList.toggle('active', open);
-}
-
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
-  const aside = document.querySelector('.cat-filters');
-  if (aside) aside.classList.remove('open');
-  const btn = document.getElementById('cat-filter-toggle');
-  if (btn) btn.classList.remove('active');
-  const condSection = document.getElementById('cf-cond-section');
-  if (condSection) condSection.style.display = '';
   _searchQuery = '';
-  _catLocked = false;
-  if (!_modalLocked) _removeLock();
+  _unlockScroll();
 }
 
 function applyCatFilters() {
@@ -270,13 +272,8 @@ function clearCatFilters() {
 
 function renderCatResults(data) {
   const container = document.getElementById('cat-results');
-  if (!container) return;
   if (!data.length) {
-    container.innerHTML = `<div class="cat-empty">
-      <div style="font-size:32px;margin-bottom:8px;">📭</div>
-      <strong>No ads found here yet</strong><br>
-      <span style="font-size:12px;margin-top:6px;display:block;">Try clearing the filters or <a href="#" onclick="closeModal();return false;" style="color:var(--forest)">post the first ad</a>.</span>
-    </div>`;
+    container.innerHTML = '<div class="cat-empty">No ads found in this category yet. Be the first to post one!</div>';
     return;
   }
   container.innerHTML = '';
@@ -306,41 +303,65 @@ function renderCatResults(data) {
 
 /* ── Autocomplete ── */
 (function() {
-  const input = document.getElementById('main-search');
-  const drop = document.getElementById('ac-drop');
-  if (!input || !drop) return;
+  const CAT_LABELS = Object.fromEntries(CATS.filter(c => c.id !== 'all').map(c => [c.id, c.name]));
 
-  const STATIC = [
-    { text:'Cars & Bakkies', cat:'cars' },
-    { text:'Property for Sale', cat:'prop' },
-    { text:'Electronics', cat:'elec' },
-    { text:'Home & Garden', cat:'home' },
-    { text:'Fashion', cat:'fash' },
-    { text:'Jobs', cat:'jobs' },
-    { text:'Pets', cat:'pets' },
-    { text:'Baby & Kids', cat:'baby' },
+  const POPULAR = [
+    { text:'iPhone', cat:'elec' }, { text:'Samsung Galaxy', cat:'elec' },
+    { text:'Laptop', cat:'elec' }, { text:'Smart TV', cat:'elec' },
+    { text:'Fridge', cat:'home' }, { text:'Washing Machine', cat:'home' },
+    { text:'Microwave', cat:'home' }, { text:'Air conditioner', cat:'home' },
+    { text:'Toyota Hilux', cat:'cars' }, { text:'Ford Ranger', cat:'cars' },
+    { text:'Toyota Corolla', cat:'cars' }, { text:'Volkswagen Polo', cat:'cars' },
+    { text:'BMW', cat:'cars' }, { text:'Bakkie for sale', cat:'cars' },
+    { text:'Used car', cat:'cars' }, { text:'Car under R100 000', cat:'cars' },
+    { text:'Honda CBR', cat:'moto' }, { text:'Yamaha motorcycle', cat:'moto' },
+    { text:'House for sale', cat:'prop' }, { text:'Flat to rent', cat:'prop' },
+    { text:'Apartment Johannesburg', cat:'prop' }, { text:'3 bedroom house', cat:'prop' },
+    { text:'Plot for sale', cat:'prop' }, { text:'Sectional title', cat:'prop' },
+    { text:'Sofa & couch', cat:'furn' }, { text:'Dining table', cat:'furn' },
+    { text:'Bed & mattress', cat:'furn' }, { text:'Office chair', cat:'furn' },
+    { text:'Puppy for sale', cat:'pets' }, { text:'Kitten', cat:'pets' },
+    { text:'Dog food', cat:'pets' }, { text:'Parrot', cat:'pets' },
+    { text:'Baby clothes', cat:'baby' }, { text:'Pram & stroller', cat:'baby' },
+    { text:'Cot & crib', cat:'baby' },
+    { text:'Nike sneakers', cat:'fash' }, { text:'Adidas', cat:'fash' },
+    { text:'Dress', cat:'fash' }, { text:'Jeans', cat:'fash' },
+    { text:'Running shoes', cat:'sport' }, { text:'Gym equipment', cat:'sport' },
+    { text:'Bicycle', cat:'sport' }, { text:'Treadmill', cat:'sport' },
+    { text:'Golf clubs', cat:'sport' }, { text:'Surfboard', cat:'sport' },
+    { text:'Guitar', cat:'music' }, { text:'Piano & keyboard', cat:'music' },
+    { text:'Drums', cat:'music' }, { text:'Violin', cat:'music' },
+    { text:'PlayStation 5', cat:'game' }, { text:'Xbox Series X', cat:'game' },
+    { text:'Nintendo Switch', cat:'game' }, { text:'Gaming PC', cat:'game' },
+    { text:'Power drill', cat:'tools' }, { text:'Lawnmower', cat:'tools' },
+    { text:'Generator', cat:'tools' }, { text:'Angle grinder', cat:'tools' },
+    { text:'Caravan', cat:'camp' }, { text:'Camping tent', cat:'camp' },
+    { text:'Off-road trailer', cat:'camp' },
+    { text:'Skincare', cat:'beauty' }, { text:'Makeup', cat:'beauty' },
+    { text:'Hair extensions', cat:'beauty' },
+    { text:'Plumber', cat:'serv' }, { text:'Electrician', cat:'serv' },
+    { text:'Painter', cat:'serv' }, { text:'Domestic worker', cat:'serv' },
+    { text:'Driver', cat:'jobs' }, { text:'Engineer', cat:'jobs' },
+    { text:'Accountant', cat:'jobs' }, { text:'Nurse', cat:'jobs' },
+    { text:'Tractor', cat:'agri' }, { text:'Irrigation equipment', cat:'agri' },
+    { text:'Livestock', cat:'agri' }, { text:'Farm implements', cat:'agri' },
+    { text:'Textbook', cat:'books' }, { text:'Novel', cat:'books' },
+    ...CATS.filter(c => c.id !== 'all').map(c => ({ text: c.name, cat: c.id, isCat: true })),
   ];
-  const CAT_LABELS = { cars:'Vehicles', prop:'Property', elec:'Electronics', home:'Home', fash:'Fashion', jobs:'Jobs', pets:'Pets', baby:'Baby & Kids' };
-  let focusIdx = -1;
 
-  function suggestions() {
-    return [...LISTINGS.map(l => ({ text: l.title, cat: l.cat })), ...STATIC];
+  function getRecent() {
+    try { return JSON.parse(localStorage.getItem('em_recent_searches') || '[]').slice(0, 6); } catch(e) { return []; }
   }
+  window._acSaveRecent = function(q) {
+    try {
+      let r = getRecent().filter(x => x.toLowerCase() !== q.toLowerCase());
+      r.unshift(q);
+      localStorage.setItem('em_recent_searches', JSON.stringify(r.slice(0, 8)));
+    } catch(e) {}
+  };
 
-  function show(q) {
-    const lq = q.toLowerCase().trim();
-    if (!lq) { drop.classList.remove('open'); return; }
-    const hits = suggestions().filter(s => s.text.toLowerCase().includes(lq)).slice(0, 7);
-    if (!hits.length) { drop.classList.remove('open'); return; }
-    focusIdx = -1;
-    drop.innerHTML = hits.map((s, i) =>
-      `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${s.text.replace(/'/g,"\\'")}';drop.classList.remove('open');runSearch()">
-        <span class="ac-item-text">${highlight(s.text, lq)}</span>
-        ${s.cat ? `<span class="ac-item-cat">${CAT_LABELS[s.cat] || s.cat}</span>` : ''}
-      </div>`
-    ).join('');
-    drop.classList.add('open');
-  }
+  const ICO_SEARCH = `<svg class="ac-item-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>`;
+  const ICO_CLOCK  = `<svg class="ac-item-ico ac-item-ico--recent" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg>`;
 
   function highlight(text, q) {
     const i = text.toLowerCase().indexOf(q);
@@ -348,31 +369,95 @@ function renderCatResults(data) {
     return text.slice(0, i) + '<strong>' + text.slice(i, i + q.length) + '</strong>' + text.slice(i + q.length);
   }
 
-  input.addEventListener('input', () => show(input.value));
-  input.addEventListener('focus', () => show(input.value));
-  input.addEventListener('keydown', e => {
-    const items = drop.querySelectorAll('.ac-item');
-    if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
-    else if (e.key === 'Enter' && focusIdx >= 0) { items[focusIdx]?.click(); }
-    else if (e.key === 'Escape') { drop.classList.remove('open'); }
-  });
-  document.addEventListener('click', e => { if (!e.target.closest('.srch-wrap')) drop.classList.remove('open'); });
+  function buildDropHTML(hits, lq) {
+    const rows = hits.map((s, i) => {
+      const label = s.text.replace(/'/g, "\\'");
+      const catImg = CATS.find(c => c.id === s.cat)?.img || '';
+      const thumb = s.isCat && catImg
+        ? `<img class="ac-item-img" src="${catImg}" alt="">`
+        : ICO_SEARCH;
+      return `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${label}';_acSaveRecent('${label}');document.getElementById('ac-drop').classList.remove('open');runSearch()">
+        ${thumb}
+        <span class="ac-item-text">${lq ? highlight(s.text, lq) : s.text}</span>
+        ${s.cat ? `<span class="ac-item-cat">${CAT_LABELS[s.cat] || s.cat}</span>` : ''}
+      </div>`;
+    });
+    if (lq) {
+      const safe = lq.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,"\\'");
+      rows.push(`<div class="ac-see-all" onclick="document.getElementById('main-search').value='${safe}';document.getElementById('ac-drop').classList.remove('open');runSearch()">Search for &ldquo;<strong>${lq.replace(/</g,'&lt;')}</strong>&rdquo; &rarr;</div>`);
+    }
+    return rows.join('');
+  }
+
+  function initFor(inputEl, dropEl) {
+    if (!inputEl || !dropEl) return;
+    let focusIdx = -1;
+
+    function show(q) {
+      const lq = q.toLowerCase().trim();
+      if (!lq) {
+        const recent = getRecent();
+        if (!recent.length) { dropEl.classList.remove('open'); return; }
+        dropEl.innerHTML =
+          `<div class="ac-section-label">Recent searches</div>` +
+          recent.map(r => {
+            const safe = r.replace(/'/g,"\\'");
+            return `<div class="ac-item" onclick="inputEl.value='${safe}';_acSaveRecent('${safe}');dropEl.classList.remove('open');runSearch()">
+              ${ICO_CLOCK}
+              <span class="ac-item-text">${r}</span>
+              <span class="ac-item-recent-tag">Recent</span>
+            </div>`;
+          }).join('') +
+          `<div class="ac-see-all" onclick="dropEl.classList.remove('open');openCategoryPage('all','All Ads')">Browse all categories &rarr;</div>`;
+        dropEl.classList.add('open');
+        return;
+      }
+      const seen = new Set();
+      const hits = [
+        ...LISTINGS.map(l => ({ text: l.title, cat: l.cat })),
+        ...POPULAR,
+      ].filter(s => {
+        if (!s.text.toLowerCase().includes(lq)) return false;
+        const k = s.text.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).slice(0, 8);
+      if (!hits.length) { dropEl.classList.remove('open'); return; }
+      focusIdx = -1;
+      dropEl.innerHTML = buildDropHTML(hits, lq);
+      dropEl.classList.add('open');
+    }
+
+    inputEl.addEventListener('input', () => show(inputEl.value));
+    inputEl.addEventListener('focus', () => show(inputEl.value));
+    inputEl.addEventListener('keydown', e => {
+      const items = dropEl.querySelectorAll('.ac-item');
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
+      else if (e.key === 'Enter' && focusIdx >= 0) { items[focusIdx]?.click(); }
+      else if (e.key === 'Escape') { dropEl.classList.remove('open'); }
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.srch-wrap') && !e.target.closest('.srch-mob')) dropEl.classList.remove('open');
+    });
+  }
+
+  initFor(document.getElementById('main-search'), document.getElementById('ac-drop'));
+  initFor(document.getElementById('mob-search-input'), document.getElementById('mob-ac-drop'));
 })();
 
 /* ── BidorBuy grid render ── */
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
-  const userAds  = data.filter(l => l.isUserAd);
-  const featured = data.filter(l => l.badge && !l.isUserAd);
-  const items = [...userAds.slice(0, 3), ...featured].slice(0, 6);
-  const finalItems = items.length ? items : data.slice(0, 6);
-  if (!finalItems.length) {
+  const featured = data.filter(l => l.badge);
+  const items = featured.length ? featured.slice(0, 6) : data.slice(0, 6);
+  if (!items.length) {
     grid.innerHTML = '<p class="em-empty-state">No ads yet. Be the first to post one!</p>';
     return;
   }
   grid.innerHTML = '';
-  finalItems.forEach(l => {
+  items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'bb-card';
     const ribClass = l.badge === 'Hot' ? 'r-hot' : l.badge === 'Featured' ? 'r-feat' : 'r-new';
@@ -398,12 +483,11 @@ function renderBB(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">Contact Seller</button>
-          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>x.id==${l.id}))">Make Offer</button>` : ''}
-          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">${ICO.wa}</button>
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">Contact Seller</button>
+          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>x.id===${l.id}))">Make Offer</button>` : ''}
+          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa}</button>
         </div>
       </div>`;
-    card.onclick = () => openBuyNow(l);
     grid.appendChild(card);
     _renderImg(card.querySelector(`#bb-img-${l.id}`), l);
   });
@@ -443,7 +527,7 @@ function renderGT(data) {
         </div>
         <div class="gt-foot">
           <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span></div>
-          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">${ICO.wa} WhatsApp</button>
+          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa} WhatsApp</button>
         </div>
       </div>`;
     list.appendChild(card);
@@ -466,20 +550,32 @@ PROVINCES.forEach(p => {
   pg.innerHTML += `<button class="prov-btn" onclick="openProvincePage('${p}')">${p} <span class="prov-arr">›</span></button>`;
 });
 
-/* ── Scroll lock — one boolean per overlay, never double-counts ── */
+/* ── Scroll lock (prevents background scroll behind overlays on iOS/Android) ── */
 let _scrollLockY = 0;
-let _catLocked   = false;
-let _modalLocked = false;
-
-function _applyLock() {
-  _scrollLockY = window.scrollY;
-  document.documentElement.style.overflow = 'hidden';
-  document.body.style.overflow = 'hidden';
+let _scrollLockDepth = 0;
+function _lockScroll() {
+  if (_scrollLockDepth === 0) {
+    _scrollLockY = window.scrollY;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + _scrollLockY + 'px';
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+  }
+  _scrollLockDepth++;
 }
-function _removeLock() {
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow = '';
-  window.scrollTo(0, _scrollLockY);
+function _unlockScroll() {
+  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
+  if (_scrollLockDepth === 0) {
+    document.documentElement.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, _scrollLockY);
+  }
 }
 
 /* ── Toast ── */
@@ -507,65 +603,23 @@ const modalBox = modal.querySelector('.em-modal-box');
 
 function closeModal() {
   modal.classList.remove('open');
-  setTimeout(() => { modalBox.innerHTML = ''; modalBox.classList.remove('ad-modal', 'expanded'); }, 250);
-  _modalLocked = false;
-  if (!_catLocked) _removeLock();
+  setTimeout(() => { modalBox.innerHTML = ''; }, 250);
+  _unlockScroll();
 }
-
 function _openModal() {
-  if (!_modalLocked && !_catLocked) _applyLock();
-  _modalLocked = true;
-  // Prepend drag handle if not already present
-  if (!modalBox.querySelector('.em-modal-handle-bar')) {
-    const h = document.createElement('div');
-    h.className = 'em-modal-handle-bar';
-    modalBox.insertBefore(h, modalBox.firstChild);
-    // Swipe up on handle = expand; swipe down = collapse/close
-    let hy0 = 0;
-    h.addEventListener('touchstart', e => { hy0 = e.touches[0].clientY; }, { passive: true });
-    h.addEventListener('touchend', e => {
-      const dy = hy0 - e.changedTouches[0].clientY;
-      if (dy > 30) {
-        modalBox.classList.add('expanded');
-      } else if (dy < -30) {
-        if (modalBox.classList.contains('expanded')) modalBox.classList.remove('expanded');
-        else closeModal();
-      }
-    }, { passive: true });
-    // Click handle to toggle expand
-    h.addEventListener('click', () => modalBox.classList.toggle('expanded'));
-  }
-  modal.classList.add('open');
+  _lockScroll();
+  _openModal();
 }
-
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-
-/* ── Swipe down from top of modal box to close ── */
-(function() {
-  let t0x = 0, t0y = 0;
-  modalBox.addEventListener('touchstart', e => {
-    t0x = e.touches[0].clientX;
-    t0y = e.touches[0].clientY;
-  }, { passive: true });
-  modalBox.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - t0x;
-    const dy = e.changedTouches[0].clientY - t0y;
-    const scroller = modalBox.querySelector('.ad-modal-scroller') || modalBox;
-    const atTop = scroller.scrollTop === 0;
-    const isDown = dy > 80 && dy > Math.abs(dx) * 1.5;
-    const isLeft = dx < -80 && Math.abs(dx) > Math.abs(dy) * 1.5;
-    if (isLeft) { closeModal(); return; }
-    if (isDown && atTop) {
-      if (modalBox.classList.contains('expanded')) modalBox.classList.remove('expanded');
-      else closeModal();
-    }
-  }, { passive: true });
-})();
 
 /* ── Post Ad modal ── */
 window._paPhotos = [];
 
 function openPostAdModal() {
+  if (!_getSession()) {
+    openSignInModal('Sign in to post a free ad.');
+    return;
+  }
   window._paPhotos = [];
   const catOpts = CATS.filter(c => c.id !== 'all')
     .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -585,18 +639,19 @@ function openPostAdModal() {
       <div class="em-post-row">
         <div class="em-post-field">
           <label class="em-post-label" for="pa-cat">Category <span>(required)</span></label>
-          <select class="em-post-select" id="pa-cat" onchange="_paUpdateCond(this.value)">
+          <select class="em-post-select" id="pa-cat">
             <option value="">— Select a category —</option>
             ${catOpts}
           </select>
         </div>
-        <div class="em-post-field" id="pa-cond-wrap">
+        <div class="em-post-field">
           <label class="em-post-label" for="pa-cond">Condition</label>
           <select class="em-post-select" id="pa-cond">
             <option value="New">New</option>
             <option value="Used – Like New">Used – Like New</option>
             <option value="Used – Good" selected>Used – Good</option>
             <option value="Used – Fair">Used – Fair</option>
+            <option value="N/A">N/A (Service / Property)</option>
           </select>
         </div>
       </div>
@@ -666,38 +721,6 @@ function openPostAdModal() {
 window._paSetStype = function(btn) {
   document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-};
-
-window._paUpdateCond = function(cat) {
-  const wrap = document.getElementById('pa-cond-wrap');
-  const sel  = document.getElementById('pa-cond');
-  if (!wrap || !sel) return;
-
-  const noCondition  = ['jobs', 'pets'];
-  const propLike     = ['prop'];
-  const vehicleLike  = ['cars'];
-  const fashionLike  = ['fash'];
-
-  if (noCondition.includes(cat)) {
-    wrap.style.display = 'none';
-    sel.value = 'N/A';
-    return;
-  }
-  wrap.style.display = '';
-
-  let opts;
-  if (propLike.includes(cat)) {
-    opts = [['N/A', 'N/A']];
-  } else if (vehicleLike.includes(cat)) {
-    opts = [['New', 'New'], ['Demo', 'Demo / Ex-demo'], ['Pre-owned', 'Pre-owned']];
-  } else if (fashionLike.includes(cat)) {
-    opts = [['New with tags', 'New – with tags'], ['New without tags', 'New – without tags'], ['Used – Good', 'Used – Good'], ['Used – Fair', 'Used – Fair']];
-  } else {
-    opts = [['New', 'New'], ['Used – Like New', 'Used – Like New'], ['Used – Good', 'Used – Good'], ['Used – Fair', 'Used – Fair']];
-  }
-
-  sel.innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
-  if (opts.length > 1) sel.value = opts[opts.length > 2 ? 2 : 0][0];
 };
 
 window._paAddPhotos = function(files) {
@@ -820,214 +843,67 @@ function showAdPostedConfirm(title) {
     </div>`;
 }
 
-/* ── Photo gallery state ── */
-let _galPhotos = [];
-let _galIdx = 0;
-
-function _galNav(dir) {
-  _galIdx = (_galIdx + dir + _galPhotos.length) % _galPhotos.length;
-  const img = document.getElementById('ad-gal-img');
-  const counter = document.getElementById('ad-gal-counter');
-  if (img) {
-    img.innerHTML = '';
-    const el = document.createElement('img');
-    el.src = _galPhotos[_galIdx];
-    el.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;';
-    el.onclick = () => _openLightbox(_galIdx);
-    img.appendChild(el);
-  }
-  if (counter) counter.textContent = (_galIdx + 1) + ' / ' + _galPhotos.length;
-}
-
-function _openLightbox(startIdx) {
-  let idx = startIdx;
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-  const renderLb = () => {
-    overlay.innerHTML = `
-      <button onclick="this.closest('[style]').remove()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
-      <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.6);font-size:13px;">${idx+1} / ${_galPhotos.length}</div>
-      <img src="${_galPhotos[idx]}" style="max-width:100%;max-height:85vh;object-fit:contain;display:block;border-radius:6px;" alt="">
-      ${_galPhotos.length > 1 ? `
-      <div style="display:flex;gap:16px;margin-top:16px;">
-        <button onclick="_lbNav(${idx},-1)" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8249;</button>
-        <button onclick="_lbNav(${idx},1)" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:24px;cursor:pointer;">&#8250;</button>
-      </div>` : ''}`;
-  };
-  window._lbNav = (cur, dir) => { idx = (cur + dir + _galPhotos.length) % _galPhotos.length; renderLb(); };
-  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-  renderLb();
-  document.body.appendChild(overlay);
-}
-
-/* ── Ad detail / Contact modal ── */
+/* ── Contact / Buy Now modal ── */
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
-  const sess     = _getSession();
-  const isOwner  = sess && String(listing.userId) === String(sess.userId);
-  const sd       = BB_SELLER_DATA[listing.id] || { delivery: false };
-  const price    = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
-  const sellerName = listing.seller || 'Everything Market';
-  const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
+  const price = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
+  const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  /* Use real seller phone if available, otherwise use a placeholder */
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
-  const phone    = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
-  const waMsg    = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
-  const timeStr  = fmtTime(listing.postedAt);
-  const hasPhotos = listing.photos && listing.photos.length > 0;
-  const multiPhoto = hasPhotos && listing.photos.length > 1;
-  const safeId   = String(listing.id).replace(/'/g, '');
-  const safeTitle = listing.title.replace(/'/g, "\\'");
-  const catName  = (CATS.find(c => c.id === listing.cat) || {}).name || listing.cat;
-
-  // Set up gallery state
-  _galPhotos = hasPhotos ? listing.photos : [];
-  _galIdx = 0;
-
-  // Store listing ref for contact screens
-  window._currentListing = listing;
-
-  // General Details rows
-  const details = [];
-  if (listing.loc) details.push(['Location', listing.loc]);
-  details.push(['For Sale By', listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller']);
-  if (listing.cond && listing.cond !== 'N/A') details.push(['Condition', listing.cond]);
-  details.push(['Category', catName]);
-  if (timeStr) details.push(['Posted', timeStr]);
-
-  // Related ads: same category, excluding this listing
-  const related = LISTINGS.filter(l => l.cat === listing.cat && l.id !== listing.id).slice(0, 6);
-
-  // Use flex-column layout so sticky bar always sits at the bottom
-  modalBox.classList.add('ad-modal');
+  const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
+  const waMsg = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
+      <h3>Contact Seller</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-      <h3>${isOwner ? 'My Ad' : 'Ad Details'}</h3>
-      <span style="width:28px"></span>
     </div>
-
-    <div class="ad-modal-scroller">
-      <div class="ad-gal-wrap">
-        <div class="ad-gal-img" id="ad-gal-img"></div>
-        ${multiPhoto ? `
-        <div class="ad-gal-controls">
-          <button class="ad-gal-nav" onclick="_galNav(-1)">&#8249;</button>
-          <span class="ad-gal-counter" id="ad-gal-counter">1 / ${listing.photos.length}</span>
-          <button class="ad-gal-nav" onclick="_galNav(1)">&#8250;</button>
-        </div>` : ''}
-      </div>
-
-      <div class="ad-detail-body2">
-        <div class="ad-detail-price2">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
-        <h2 class="ad-detail-title2">${listing.title}</h2>
-
-        <div class="ad-general-section">
-          <div class="ad-section-heading">General Details</div>
-          <div class="ad-general-table">
-            ${details.map(([k,v]) => `
-              <div class="ad-general-row">
-                <span class="ad-general-key">${k}</span>
-                <span class="ad-general-val">${v}</span>
-              </div>`).join('')}
-          </div>
-        </div>
-
-        ${listing.desc ? `
-        <div class="ad-desc-section">
-          <div class="ad-section-heading">Description</div>
-          <div class="ad-desc-text collapsed" id="ad-desc-text">${listing.desc.replace(/\n/g,'<br>')}</div>
-          <button class="ad-desc-toggle" id="ad-desc-toggle" onclick="toggleAdDesc()">View More</button>
-        </div>` : ''}
-
-        <div class="ad-seller-card">
-          <div class="em-modal-avatar">${initials}</div>
-          <div style="flex:1;min-width:0">
-            <div class="em-modal-seller-name">${sellerName}${listing.verified ? ' <span class="em-modal-verified">Verified</span>' : ''}</div>
-            <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
-          </div>
-        </div>
-
-        ${related.length ? `
-        <div class="ad-related-section">
-          <div class="ad-section-heading">Similar Ads</div>
-          <div class="ad-related-scroll" id="ad-related-scroll"></div>
-        </div>` : ''}
-
-        ${!isOwner ? `<div class="ad-report-link"><button onclick="openReportModal('${safeId}','${safeTitle}')">⚑ Report this ad</button></div>` : ''}
+    <div class="em-modal-listing">
+      <div class="em-modal-listing-img" id="modal-img"></div>
+      <div class="em-modal-listing-info">
+        <div class="em-modal-listing-title">${listing.title}</div>
+        <div class="em-modal-listing-price">${price}</div>
+        ${listing.cond !== 'N/A' ? `<div class="em-modal-listing-cond">${listing.cond}</div>` : ''}
       </div>
     </div>
-
-    ${isOwner ? `
-    <div class="ad-sticky-bar">
-      <button class="ad-sticky-delete" onclick="_confirmDeleteAd('${safeId}','${safeTitle}')">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        Delete Ad
+    <div class="em-modal-seller">
+      <div class="em-modal-avatar">${initials}</div>
+      <div>
+        <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
+        <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
+      </div>
+    </div>
+    <div class="em-modal-divider"></div>
+    <div class="em-modal-section-label">Choose how to connect</div>
+    <div class="em-contact-btns">
+      ${phone
+        ? `<button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
+        <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+        <div><span>Chat on WhatsApp</span><span class="em-contact-btn-sub">Fastest response — usually within minutes</span></div>
       </button>
-    </div>` : `
-    <div class="ad-sticky-bar">
-      ${phone ? `
-      <button class="ad-sticky-wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-        Chat with Seller
+      <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
+        <div class="em-contact-btn-icon" style="background:#E3F0FF;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+        <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal phone number</span></div>
+      </button>`
+        : ''}
+      <button class="em-contact-btn" onclick="showMessageScreen(${listing.id})">
+        <div class="em-contact-btn-icon" style="background:var(--surf2);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div><span>Send a Message</span><span class="em-contact-btn-sub">Get a reply via Everything Market</span></div>
       </button>
-      <button class="ad-sticky-icon" onclick="showCallScreen('${sellerName.replace(/'/g,"\\'")}','${phone}')" title="Call Seller">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg>
-      </button>` : ''}
-      <button class="ad-sticky-icon" onclick="showMessageScreen('${safeId}')" title="Send Message">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      </button>
-    </div>`}`;
+      <div style="text-align:center;padding-top:4px;">
+        <button onclick="openReportModal(${listing.id},'${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
+          ⚑ Report this ad
+        </button>
+      </div>
+    </div>`;
 
   _openModal();
-
-  // Always render image area — photos get img tag, art gets SVG icon
   setTimeout(() => {
-    const imgEl = document.getElementById('ad-gal-img');
-    if (!imgEl) return;
-    if (hasPhotos) {
-      const img = document.createElement('img');
-      img.src = listing.photos[0];
-      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;';
-      img.alt = listing.title;
-      img.onerror = () => { img.remove(); _renderImg(imgEl, listing); };
-      img.onclick = () => _openLightbox(0);
-      imgEl.appendChild(img);
-    } else {
-      _renderImg(imgEl, listing);
-    }
+    const imgEl = document.getElementById('modal-img');
+    if (imgEl) _renderImg(imgEl, listing);
   }, 10);
-
-  if (related.length) {
-    setTimeout(() => {
-      const scrollEl = document.getElementById('ad-related-scroll');
-      if (!scrollEl) return;
-      related.forEach(l => {
-        const card = document.createElement('div');
-        card.className = 'ad-related-card';
-        card.onclick = () => openBuyNow(l);
-        const rPrice = l.price === 0 ? 'Free' : 'R ' + l.price.toLocaleString('en-ZA');
-        card.innerHTML = `
-          <div class="ad-related-img" id="arel-img-${l.id}"></div>
-          <div class="ad-related-body">
-            <div class="ad-related-price">${rPrice}</div>
-            <div class="ad-related-title">${l.title}</div>
-            <div class="ad-related-loc">${l.loc || ''}</div>
-          </div>`;
-        scrollEl.appendChild(card);
-        _renderImg(card.querySelector(`#arel-img-${l.id}`), l);
-      });
-    }, 20);
-  }
-}
-
-function toggleAdDesc() {
-  const el = document.getElementById('ad-desc-text');
-  const btn = document.getElementById('ad-desc-toggle');
-  if (!el || !btn) return;
-  el.classList.toggle('collapsed');
-  btn.textContent = el.classList.contains('collapsed') ? 'View More' : 'View Less';
 }
 
 function openReportModal(adId, adTitle) {
@@ -1076,125 +952,24 @@ function submitReport(adId, adTitle) {
 
 function showCallScreen(seller, phone) {
   const formatted = '+' + phone.slice(0,2) + ' ' + phone.slice(2,5) + ' ' + phone.slice(5,8) + ' ' + phone.slice(8);
-  modalBox.classList.remove('ad-modal');
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <button class="em-modal-close" onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()">&#8592;</button>
-      <h3>Call Seller</h3>
-      <span style="width:28px"></span>
-    </div>
-    <div style="text-align:center;padding:32px 20px 24px;">
-      <div style="margin-bottom:12px;"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+  modalBox.querySelector('.em-contact-btns').innerHTML = `
+    <div style="text-align:center;padding:20px 0 8px;">
+      <div style="margin-bottom:10px;"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">${seller}'s number</div>
       <div style="font-size:22px;font-weight:900;color:var(--ink);letter-spacing:.05em;">${formatted}</div>
       <a href="tel:${phone}" style="display:block;margin-top:16px;padding:13px;background:var(--forest);color:#fff;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;">Call Now</a>
-      <button onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()" style="margin-top:8px;width:100%;padding:11px;background:var(--surf);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);">Back to Ad</button>
+      <button onclick="closeModal()" style="margin-top:8px;width:100%;padding:11px;background:var(--surf);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);">Close</button>
     </div>`;
 }
 
 function showMessageScreen(listingId) {
-  const l = LISTINGS.find(x => x.id == listingId);
+  const l = LISTINGS.find(x => x.id === listingId);
   if (!l) return;
-  const sess = _getSession();
-  const safeId = String(listingId).replace(/'/g, '');
-  modalBox.classList.remove('ad-modal');
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <button class="em-modal-close" onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()">&#8592;</button>
-      <h3>Send Message</h3>
-      <span style="width:28px"></span>
-    </div>
-    <div class="em-offer-body" style="padding-top:16px;">
-      <div class="em-offer-ref" style="margin-bottom:16px;">
-        <span style="font-size:12px;color:var(--muted);">Re: </span>
-        <strong style="font-size:13px;color:var(--ink);">${l.title}</strong>
-      </div>
-      ${!sess ? `
-      <label class="em-offer-label">Your name</label>
-      <input id="msg-from-name" class="em-offer-input" placeholder="Your name">
-      <label class="em-offer-label">Your email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-      <input id="msg-from-email" class="em-offer-input" placeholder="email@example.com" type="email">` : ''}
-      <label class="em-offer-label">Message</label>
-      <textarea id="msg-body" class="em-offer-textarea" style="height:110px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
-      <div id="msg-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
-      <button class="em-offer-submit" onclick="_sendMessage('${safeId}')">Send Message</button>
+  modalBox.querySelector('.em-contact-btns').innerHTML = `
+    <div style="padding:4px 0;">
+      <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
+      <button class="em-offer-submit" onclick="showSentConfirm('message')">Send Message</button>
     </div>`;
-}
-
-window._sendMessage = function(listingId) {
-  const l = LISTINGS.find(x => x.id == listingId);
-  const body = (document.getElementById('msg-body')?.value || '').trim();
-  if (!body) return;
-  const sess = _getSession();
-  const fromName  = sess ? sess.name  : (document.getElementById('msg-from-name')?.value || 'Anonymous');
-  const fromEmail = sess ? sess.email : (document.getElementById('msg-from-email')?.value || null);
-
-  // Save to local inbox
-  if (l && l.userId) {
-    try {
-      const key = 'em_inbox_' + l.userId;
-      const inbox = JSON.parse(localStorage.getItem(key) || '[]');
-      inbox.push({ from: fromName, fromEmail, listingTitle: l.title, listingId: l.id, body, time: Date.now() });
-      localStorage.setItem(key, JSON.stringify(inbox));
-      _updateInboxBadge();
-    } catch(e) {}
-  }
-
-  // Fire email notification via Supabase Edge Function (non-blocking)
-  try {
-    fetch('https://jucphfbaueowzlbjhxmm.supabase.co/functions/v1/notify-message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fromName,
-        fromEmail: fromEmail || '',
-        listingTitle: l ? l.title : '',
-        listingId: String(listingId),
-        body,
-        sellerEmail: (l && l.sellerEmail) ? l.sellerEmail : '',
-      }),
-    }).catch(() => {});
-  } catch(e) {}
-
-  showSentConfirm('message');
-};
-
-function _updateInboxBadge() {
-  const sess = _getSession();
-  const badge = document.getElementById('inbox-badge');
-  if (!badge || !sess) return;
-  try {
-    const msgs = JSON.parse(localStorage.getItem('em_inbox_' + sess.userId) || '[]');
-    badge.textContent = msgs.length || '';
-    badge.style.display = msgs.length ? '' : 'none';
-  } catch(e) {}
-}
-
-function openInbox() {
-  const sess = _getSession();
-  if (!sess) { openSignInModal(); return; }
-  document.getElementById('hdr-user-drop')?.classList.remove('open');
-  let msgs = [];
-  try { msgs = JSON.parse(localStorage.getItem('em_inbox_' + sess.userId) || '[]'); } catch(e) {}
-  const sorted = msgs.slice().reverse();
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <h3>Inbox</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <div class="em-myads-body">
-      ${!sorted.length
-        ? `<div class="em-myads-empty"><p>No messages yet.<br>When buyers contact you about your ads, their messages will appear here.</p></div>`
-        : sorted.map(m => `
-          <div class="em-msg-row">
-            <div class="em-msg-from">${m.from || 'Anonymous'}${m.fromEmail ? ` <span class="em-msg-email">&lt;${m.fromEmail}&gt;</span>` : ''}</div>
-            <div class="em-msg-listing">Re: ${m.listingTitle || 'Your listing'}</div>
-            <div class="em-msg-body">${m.body}</div>
-            <div class="em-msg-time">${fmtTime(m.time)}</div>
-          </div>`).join('')
-      }
-    </div>`;
-  modal.classList.add('open');
 }
 
 /* ── Make Offer modal ── */
@@ -1321,11 +1096,9 @@ async function _initAuth() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _updateAuthUI();
-  _updateInboxBadge();
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     _updateAuthUI();
-    _updateInboxBadge();
   });
 }
 _initAuth();
@@ -1347,13 +1120,14 @@ async function signOut() {
   toast('You have been signed out.');
 }
 
-function openSignInModal() {
+function openSignInModal(hint) {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Sign In</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <form class="em-post-form" onsubmit="submitSignIn(event)" novalidate>
+      ${hint ? `<p class="em-signin-hint">${hint}</p>` : ''}
       <div class="em-post-field">
         <label class="em-post-label" for="si-email">Email address</label>
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
@@ -1542,7 +1316,7 @@ function openSavedAds() {
       ${!saved.length
         ? `<div class="em-myads-empty"><p>You haven't saved any ads yet.<br>Tap the heart on any listing to save it.</p></div>`
         : saved.map(l => `
-          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id==${l.id})),200)" style="cursor:pointer;">
+          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id===${l.id})),200)" style="cursor:pointer;">
             <div class="em-myad-img" id="svad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
@@ -1558,43 +1332,12 @@ function openSavedAds() {
   });
 }
 
-window._confirmDeleteAd = function(id, title) {
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <h3>Delete Ad</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <div class="em-confirm">
-      <div class="em-confirm-icon">
-        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-        </svg>
-      </div>
-      <div class="em-confirm-title">Delete this ad?</div>
-      <div class="em-confirm-sub">Are you sure you want to delete <strong>"${title}"</strong>? This cannot be undone.</div>
-      <div style="display:flex;gap:10px;padding:0 20px 8px;">
-        <button onclick="closeModal()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;">Cancel</button>
-        <button onclick="_deleteMyAd('${String(id).replace(/'/g,'')}',true)" style="flex:1;padding:13px;border-radius:10px;border:none;background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Yes, Delete</button>
-      </div>
-    </div>`;
-};
-
-window._deleteMyAd = function(id, fromDetail) {
-  const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
+window._deleteMyAd = function(id) {
+  const idx = LISTINGS.findIndex(l => l.id === id);
   if (idx !== -1) LISTINGS.splice(idx, 1);
   _saveUserAds();
   renderAll('all');
-  if (fromDetail) {
-    modalBox.innerHTML = `
-      <div class="em-confirm">
-        <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
-        <div class="em-confirm-title">Ad Deleted</div>
-        <div class="em-confirm-sub">Your ad has been removed from Everything Market.</div>
-        <button class="em-confirm-close" onclick="closeModal()">Done</button>
-      </div>`;
-  } else {
-    openMyAds();
-  }
+  openMyAds();
 };
 
 /* ── Info modals (footer links) ── */
