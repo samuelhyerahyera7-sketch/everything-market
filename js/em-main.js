@@ -1173,99 +1173,327 @@ window._deleteMyAd = function(id) {
 };
 
 /* ── Info modals (footer links) ── */
-const INFO_CONTENT = {
-  'buy-safe': {
-    title: 'How to Buy Safely',
-    html: `<div class="info-section"><h4>1. Meet in a safe public place</h4><p>Always meet the seller in a busy, well-lit public area such as a shopping centre or police station. Never go alone.</p></div>
-<div class="info-section"><h4>2. Inspect before you pay</h4><p>Check the item carefully before handing over any money. Test electronics, check vehicle papers, and never pay a deposit without seeing the item first.</p></div>
-<div class="info-section"><h4>3. Use secure payment</h4><p>Pay via EFT to a verified account, or use cash in person. Avoid sending money via WhatsApp, SnapScan to unknown contacts, or cryptocurrency.</p></div>
-<div class="info-section"><h4>4. Verify the seller</h4><p>Ask for a SA ID or driver's licence. Verified sellers on Everything Market have completed our identity check.</p></div>
-<div class="info-section"><h4>5. Trust your instincts</h4><p>If a deal seems too good to be true, it probably is. Walk away from any pressure tactics or requests for upfront fees.</p></div>`
-  },
-  'safety-tips': {
-    title: 'Safety Tips',
-    html: `<div class="info-section"><h4>Online safety</h4><p>Never share your banking PIN, OTP, or passwords. Everything Market will never ask for your password via email or WhatsApp.</p></div>
-<div class="info-section"><h4>Vehicle scams</h4><p>Be wary of vehicles priced far below market value. Always check the VIN number and get an AA inspection before buying.</p></div>
-<div class="info-section"><h4>Property rentals</h4><p>Visit the property in person before paying any deposit. Ask for a lease agreement and verify the landlord owns the property.</p></div>
-<div class="info-section"><h4>Report suspicious ads</h4><p>Tap the <strong>⚑ Report this ad</strong> link on any listing to flag it for our safety team. We review all reports within 24 hours.</p></div>`
-  },
-  'buyer-protection': {
-    title: 'Buyer Protection',
-    html: `<div class="info-section"><h4>Our commitment to buyers</h4><p>Everything Market is a free classifieds platform. We connect buyers and sellers but we encourage safe trading practices.</p></div>
-<div class="info-section"><h4>Verified sellers</h4><p>Look for the <strong>Verified</strong> badge on listings. Verified sellers have submitted valid South African ID to our team.</p></div>
-<div class="info-section"><h4>Report & remove</h4><p>Fraudulent or misleading ads are removed within 24 hours of being reported. Use the report button on any listing.</p></div>
-<div class="info-section"><h4>Need help?</h4><p>Contact our support team at <strong>everythingmarket48@gmail.com</strong> for any disputes or safety concerns.</p></div>`
-  },
-  'report-scam': {
-    title: 'Report a Scam',
-    html: `<div class="info-section"><p>If you've encountered a scam or suspicious listing, please report it immediately.</p></div>
-<div class="info-section"><h4>On a listing</h4><p>Open the listing and tap <strong>⚑ Report this ad</strong> at the bottom of the Contact Seller screen.</p></div>
-<div class="info-section"><h4>Contact us directly</h4><p>Email <strong>everythingmarket48@gmail.com</strong> with details of the scam, the listing title, and any screenshots you have.</p></div>
-<div class="info-section"><h4>Report to authorities</h4><p>You can also report online fraud to the <strong>South African Police Service (SAPS)</strong> or the <strong>Cybercrime Division</strong> at <strong>www.saps.gov.za</strong>.</p></div>`
-  },
-  'seller-tips': {
-    title: 'Seller Tips',
-    html: `<div class="info-section"><h4>Take great photos</h4><p>Listings with clear, well-lit photos get up to 5× more views. Use natural light and photograph from multiple angles.</p></div>
-<div class="info-section"><h4>Write a clear description</h4><p>Include the condition, brand, model, size, and any defects. Honest descriptions build trust and reduce time-wasters.</p></div>
-<div class="info-section"><h4>Price it right</h4><p>Search for similar items on Everything Market to see what others are charging. Competitive pricing gets faster sales.</p></div>
-<div class="info-section"><h4>Respond quickly</h4><p>Buyers move on fast. Aim to reply to enquiries within an hour for the best chance of making a sale.</p></div>
-<div class="info-section"><h4>Stay safe</h4><p>Only share your phone number when you're ready to deal. Meet buyers in public places and bring someone with you.</p></div>`
-  },
-  'pricing-guide': {
-    title: 'Pricing Guide',
-    html: `<div class="info-section"><h4>Research the market</h4><p>Browse the same category on Everything Market to see what similar items are selling for right now in your area.</p></div>
-<div class="info-section"><h4>Condition affects value</h4><ul style="padding-left:18px;margin:8px 0;line-height:1.9;font-size:13px;color:var(--ink)"><li><strong>New / sealed:</strong> 80–95% of retail price</li><li><strong>Like New:</strong> 60–80% of retail</li><li><strong>Used – Good:</strong> 40–60% of retail</li><li><strong>Used – Fair:</strong> 20–40% of retail</li></ul></div>
-<div class="info-section"><h4>Mark as Negotiable</h4><p>Ticking "Negotiable" on your listing signals flexibility to buyers and increases the number of enquiries you receive.</p></div>
-<div class="info-section"><h4>Free listings</h4><p>All ads on Everything Market are completely free to post. No commissions, no listing fees — ever.</p></div>`
-  },
-  'advertise': {
-    title: 'Advertise with Us',
-    html: `<div class="info-section"><h4>Reach South African buyers</h4><p>Everything Market is growing fast across all nine provinces. Advertise your business or brand to thousands of active South African shoppers.</p></div>
-<div class="info-section"><h4>Sponsored listings</h4><p>Feature your ads at the top of search results and category pages to get maximum visibility.</p></div>
-<div class="info-section"><h4>Get in touch</h4><p>Email us at <strong>everythingmarket48@gmail.com</strong> with your business name and what you'd like to promote. We'll get back to you within 24 hours.</p></div>`
-  },
-  'about': {
-    title: 'About Everything Market',
-    html: `<div class="info-section"><p style="font-size:15px;font-weight:700;color:var(--forest);">South Africa's free online classifieds marketplace.</p></div>
-<div class="info-section"><p>Everything Market connects millions of South Africans to buy and sell anything — from cars and property to electronics, fashion, jobs, and services — safely and for free.</p></div>
-<div class="info-section"><h4>Our mission</h4><p>To make buying and selling simple, safe, and accessible to every South African, no matter where they live.</p></div>
-<div class="info-section"><h4>Based in South Africa</h4><p>We are proudly South African, built for local communities across all nine provinces.</p></div>
-<div class="info-section"><h4>Contact us</h4><p><strong>everythingmarket48@gmail.com</strong></p></div>`
-  },
-  'contact': {
-    title: 'Contact Us',
-    html: `<div class="info-section"><h4>Email support</h4><p><strong>everythingmarket48@gmail.com</strong></p><p style="margin-top:6px;font-size:12px;color:var(--muted)">We respond to all enquiries within 24 hours, Monday to Friday.</p></div>
-<div class="info-section"><h4>Report an ad</h4><p>To report a suspicious or fraudulent listing, open the ad and tap <strong>⚑ Report this ad</strong>.</p></div>
-<div class="info-section"><h4>Business enquiries</h4><p>For advertising, partnerships, or press enquiries, email us at <strong>everythingmarket48@gmail.com</strong> with the subject line "Business Enquiry".</p></div>`
-  },
-  'careers': {
-    title: 'Careers at Everything Market',
-    html: `<div class="info-section"><p>We're a growing South African startup and we're always looking for talented, passionate people to join our team.</p></div>
-<div class="info-section"><h4>Open roles</h4><p>We currently have openings in product, engineering, customer support, and marketing. Send your CV and a short note about yourself to <strong>everythingmarket48@gmail.com</strong> with the subject line "Careers".</p></div>
-<div class="info-section"><h4>What we look for</h4><p>We value curiosity, hustle, and a genuine passion for making South Africa's marketplace better for everyone.</p></div>`
-  },
-  'press': {
-    title: 'Press & Media',
-    html: `<div class="info-section"><p>For press enquiries, interviews, or media assets, please contact our team directly.</p></div>
-<div class="info-section"><h4>Media contact</h4><p>Email <strong>everythingmarket48@gmail.com</strong> with the subject line "Press Enquiry". We aim to respond within one business day.</p></div>`
-  },
-  'blog': {
-    title: 'Everything Market Blog',
-    html: `<div class="info-section"><p>Our blog is coming soon! We'll be sharing selling tips, buyer guides, success stories, and South African marketplace insights.</p></div>
-<div class="info-section"><h4>Get notified</h4><p>Register for an account to be the first to know when the blog launches.</p></div>`
-  },
-};
-
 function openInfoModal(key) {
-  const content = INFO_CONTENT[key];
-  if (!content) return;
+  const builders = {
+    'buy-safe': _infoStaticPage.bind(null, 'How to Buy Safely', `
+      <div class="info-section"><div class="info-step-num">1</div><h4>Meet in a safe public place</h4><p>Always meet the seller in a busy, well-lit public area — a shopping centre, petrol station, or police station. Never at a private home for a first meeting.</p></div>
+      <div class="info-section"><div class="info-step-num">2</div><h4>Inspect before you pay</h4><p>Test electronics, check vehicle papers, and try on clothing. Never pay a deposit without seeing the item in person first.</p></div>
+      <div class="info-section"><div class="info-step-num">3</div><h4>Use secure payment</h4><p>Pay via EFT to a verified account or use cash. Avoid sending money via crypto, gift cards, or third-party apps to strangers.</p></div>
+      <div class="info-section"><div class="info-step-num">4</div><h4>Verify the seller</h4><p>Ask for a SA ID. Look for the <strong>Verified</strong> badge on listings — those sellers have completed our identity check.</p></div>
+      <div class="info-section"><div class="info-step-num">5</div><h4>Trust your instincts</h4><p>If a deal feels too good to be true, it probably is. Walk away from pressure tactics or any request for upfront fees before delivery.</p></div>`),
+
+    'safety-tips': _infoStaticPage.bind(null, 'Safety Tips', `
+      <div class="info-section"><h4>🔒 Protect your accounts</h4><p>Never share your banking PIN, OTP, or password with anyone. Everything Market will never ask for your password via message or call.</p></div>
+      <div class="info-section"><h4>🚗 Vehicle scams</h4><p>Be wary of vehicles priced far below market value. Always check the VIN number, get an AA inspection, and confirm ownership papers match the seller's ID.</p></div>
+      <div class="info-section"><h4>🏠 Property & rentals</h4><p>Visit the property in person before paying anything. Ask for a signed lease agreement and confirm the landlord owns the property via the deeds office.</p></div>
+      <div class="info-section"><h4>📦 Delivery scams</h4><p>Avoid sellers who insist on upfront payment for delivery before you've seen the item. Legitimate sellers will meet you or use a trackable courier.</p></div>
+      <div class="info-section"><h4>⚑ Report suspicious ads</h4><p>Tap <strong>Report this ad</strong> on any listing. Our team reviews and removes fraudulent ads within 24 hours.</p></div>`),
+
+    'buyer-protection': _infoStaticPage.bind(null, 'Buyer Protection', `
+      <div class="info-section"><h4>Our commitment</h4><p>Everything Market is free for buyers and sellers. We actively monitor listings and remove fraudulent ads quickly.</p></div>
+      <div class="info-section"><h4>✅ Verified sellers</h4><p>The <strong>Verified</strong> badge means the seller has submitted valid South African ID. Always prefer verified sellers for high-value purchases.</p></div>
+      <div class="info-section"><h4>⚑ Report & remove</h4><p>Fraudulent or misleading ads are removed within 24 hours of being reported. Use the <strong>Report this ad</strong> button inside any listing.</p></div>
+      <div class="info-section"><h4>🛡️ Safe trading checklist</h4><ul class="info-list"><li>Inspect items before paying</li><li>Meet in public, never alone</li><li>Pay via EFT or cash only</li><li>Never pay a deposit before seeing the item</li><li>Check seller's ID for high-value items</li></ul></div>`),
+
+    'report-scam': () => {
+      modalBox.innerHTML = `
+        <div class="em-modal-bar"><h3>Report a Scam</h3><button class="em-modal-close" onclick="closeModal()">&#x2715;</button></div>
+        <div class="info-modal-body">
+          <div class="info-section"><p>Tell us what happened and we'll investigate immediately. All reports are reviewed by our safety team.</p></div>
+          <div class="em-post-field" style="margin-top:4px">
+            <label class="em-post-label" for="sc-name">Your name <span>(required)</span></label>
+            <input class="em-post-input" id="sc-name" type="text" placeholder="e.g. Sipho Dlamini">
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="sc-email">Your email <span>(so we can follow up)</span></label>
+            <input class="em-post-input" id="sc-email" type="email" placeholder="you@example.com">
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="sc-type">Type of scam</label>
+            <select class="em-post-select" id="sc-type">
+              <option value="">Select a type…</option>
+              <option>Fake listing / item never delivered</option>
+              <option>Upfront payment scam</option>
+              <option>Vehicle / property fraud</option>
+              <option>Impersonation of a seller</option>
+              <option>Phishing / fake website link</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="sc-desc">Describe what happened <span>(required)</span></label>
+            <textarea class="em-post-input" id="sc-desc" rows="4" placeholder="Include the ad title, seller name, amount lost (if any), and how the scam happened…" style="resize:vertical;height:90px;"></textarea>
+          </div>
+          <div id="sc-err" class="em-post-error" style="display:none;"></div>
+          <button class="em-post-submit" onclick="_submitScamReport()">Submit Report</button>
+        </div>`;
+      _openModal();
+    },
+
+    'seller-tips': _infoStaticPage.bind(null, 'Seller Tips', `
+      <div class="info-section"><h4>📸 Take great photos</h4><p>Listings with clear, well-lit photos get up to 5× more views. Use natural light, a plain background, and shoot from multiple angles. The first photo is your cover image.</p></div>
+      <div class="info-section"><h4>✍️ Write an honest description</h4><p>Include brand, model, size, age, and any defects. Buyers trust honest sellers — you'll get fewer time-wasters and better offers.</p></div>
+      <div class="info-section"><h4>💰 Price it right</h4><p>Search Everything Market for similar items in your area. A fair price sells faster than holding out for top rand.</p></div>
+      <div class="info-section"><h4>⚡ Respond fast</h4><p>Buyers move on quickly. Aim to reply within an hour. Enable WhatsApp notifications so you never miss an enquiry.</p></div>
+      <div class="info-section"><h4>🔄 Refresh your ad</h4><p>Delete and repost your ad if it's been up for more than 2 weeks without a sale — fresh listings appear higher in results.</p></div>
+      <div class="info-section"><h4>🛡️ Stay safe</h4><p>Meet buyers in public places. Bring a friend for high-value items. Only share your phone number with serious buyers.</p></div>
+      <div style="padding:16px 0 4px;"><button class="em-post-submit" onclick="closeModal();openPostAdModal()">Post a Free Ad Now</button></div>`),
+
+    'pricing-guide': _infoStaticPage.bind(null, 'Pricing Guide', `
+      <div class="info-section"><h4>Research before you list</h4><p>Browse the same category on Everything Market to see what similar items are selling for right now in your area.</p></div>
+      <div class="info-section"><h4>Condition affects value</h4>
+        <div class="info-price-table">
+          <div class="info-price-row"><span class="info-cond-badge" style="background:#E8F5E9;color:#2E7D32">New / sealed</span><span class="info-price-pct">80–95% of retail</span></div>
+          <div class="info-price-row"><span class="info-cond-badge" style="background:#E3F0FF;color:#1565C0">Used – Like New</span><span class="info-price-pct">60–80% of retail</span></div>
+          <div class="info-price-row"><span class="info-cond-badge" style="background:#FFF8E1;color:#F57F17">Used – Good</span><span class="info-price-pct">40–60% of retail</span></div>
+          <div class="info-price-row"><span class="info-cond-badge" style="background:#FBE9E7;color:#BF360C">Used – Fair</span><span class="info-price-pct">20–40% of retail</span></div>
+        </div>
+      </div>
+      <div class="info-section"><h4>Mark as Negotiable</h4><p>Ticking <strong>Negotiable</strong> on your listing attracts more enquiries and lets buyers feel confident making an offer.</p></div>
+      <div class="info-section"><h4>High-value items</h4><p>For cars, property, and electronics over R5 000, include a detailed description and multiple photos — buyers will pay more for well-presented listings.</p></div>
+      <div class="info-section"><h4>Free to list</h4><p>All ads on Everything Market are completely free. No commission, no listing fees, no catches — ever.</p></div>`),
+
+    'advertise': () => {
+      modalBox.innerHTML = `
+        <div class="em-modal-bar"><h3>Advertise with Us</h3><button class="em-modal-close" onclick="closeModal()">&#x2715;</button></div>
+        <div class="info-modal-body">
+          <div class="info-section">
+            <div class="info-adv-options">
+              <div class="info-adv-card"><div class="info-adv-icon">📌</div><strong>Sponsored Listings</strong><p>Your ad appears at the top of search results and category pages across South Africa.</p></div>
+              <div class="info-adv-card"><div class="info-adv-icon">🏷️</div><strong>Featured Badge</strong><p>Stand out with a Featured badge that makes your listing impossible to miss.</p></div>
+              <div class="info-adv-card"><div class="info-adv-icon">📢</div><strong>Banner Ads</strong><p>Reach thousands of South African buyers with banner placements on the homepage.</p></div>
+            </div>
+          </div>
+          <div class="info-section"><p style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:12px">Send us your enquiry and we'll get back to you within 24 hours.</p>
+            <div class="em-post-field">
+              <label class="em-post-label" for="adv-biz">Business / brand name <span>(required)</span></label>
+              <input class="em-post-input" id="adv-biz" type="text" placeholder="e.g. Motus Ford Johannesburg">
+            </div>
+            <div class="em-post-field">
+              <label class="em-post-label" for="adv-email">Your email <span>(required)</span></label>
+              <input class="em-post-input" id="adv-email" type="email" placeholder="you@yourbusiness.co.za">
+            </div>
+            <div class="em-post-field">
+              <label class="em-post-label" for="adv-phone">Phone number</label>
+              <input class="em-post-input" id="adv-phone" type="tel" placeholder="082 123 4567">
+            </div>
+            <div class="em-post-field">
+              <label class="em-post-label" for="adv-msg">What would you like to advertise?</label>
+              <textarea class="em-post-input" id="adv-msg" rows="3" placeholder="Describe your product, service, or campaign…" style="resize:vertical;height:72px;"></textarea>
+            </div>
+            <div id="adv-err" class="em-post-error" style="display:none;"></div>
+            <button class="em-post-submit" onclick="_submitAdvertiseEnquiry()">Send Enquiry</button>
+          </div>
+        </div>`;
+      _openModal();
+    },
+
+    'about': _infoStaticPage.bind(null, 'About Everything Market', `
+      <div class="info-section" style="text-align:center;padding:20px 0 10px;">
+        <div style="font-size:28px;font-weight:900;color:var(--forest);letter-spacing:-.03em;">Everything <span style="color:var(--leaf)">Market</span></div>
+        <p style="margin-top:8px;font-size:13px;color:var(--muted);">South Africa's free online classifieds marketplace</p>
+      </div>
+      <div class="info-section"><p>Everything Market connects South Africans to buy and sell anything — from cars and property to electronics, fashion, jobs, and services — safely and completely free.</p></div>
+      <div class="info-section"><h4>🇿🇦 Proudly South African</h4><p>We are built for local communities across all nine provinces. Whether you're in Johannesburg, Cape Town, Durban, or a small town in the Karoo — Everything Market is for you.</p></div>
+      <div class="info-section"><h4>Our mission</h4><p>To make buying and selling simple, safe, and accessible to every South African, no matter where they live or what device they use.</p></div>
+      <div class="info-section"><h4>Why free?</h4><p>We believe everyone deserves the chance to sell their goods and find great deals without paying listing fees or commissions. Everything Market will always be free to use.</p></div>
+      <div class="info-section">
+        <div class="info-stats">
+          <div class="info-stat"><strong>9</strong><span>Provinces</span></div>
+          <div class="info-stat"><strong>Free</strong><span>Always</span></div>
+          <div class="info-stat"><strong>24h</strong><span>Support</span></div>
+        </div>
+      </div>`),
+
+    'contact': () => {
+      modalBox.innerHTML = `
+        <div class="em-modal-bar"><h3>Contact Us</h3><button class="em-modal-close" onclick="closeModal()">&#x2715;</button></div>
+        <div class="info-modal-body">
+          <div class="info-section"><p>Fill in the form below and our team will get back to you within 24 hours.</p></div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="ct-name">Your name <span>(required)</span></label>
+            <input class="em-post-input" id="ct-name" type="text" placeholder="e.g. Thabo Nkosi">
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="ct-email">Email address <span>(required)</span></label>
+            <input class="em-post-input" id="ct-email" type="email" placeholder="you@example.com">
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="ct-subject">Subject</label>
+            <select class="em-post-select" id="ct-subject">
+              <option value="General">General enquiry</option>
+              <option value="Safety">Safety concern</option>
+              <option value="Account">Account help</option>
+              <option value="Ad">Problem with an ad</option>
+              <option value="Business">Business / partnership</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="em-post-field">
+            <label class="em-post-label" for="ct-msg">Message <span>(required)</span></label>
+            <textarea class="em-post-input" id="ct-msg" rows="4" placeholder="How can we help you?" style="resize:vertical;height:90px;"></textarea>
+          </div>
+          <div id="ct-err" class="em-post-error" style="display:none;"></div>
+          <button class="em-post-submit" onclick="_submitContactForm()">Send Message</button>
+        </div>`;
+      _openModal();
+    },
+
+    'careers': () => {
+      modalBox.innerHTML = `
+        <div class="em-modal-bar"><h3>Careers</h3><button class="em-modal-close" onclick="closeModal()">&#x2715;</button></div>
+        <div class="info-modal-body">
+          <div class="info-section"><p>We're a fast-growing South African startup. Join us and help build the country's best marketplace.</p></div>
+          <div class="info-section">
+            <h4>Open positions</h4>
+            <div class="info-job-list">
+              <div class="info-job-card">
+                <div class="info-job-title">Customer Support Agent</div>
+                <div class="info-job-meta">Remote · Full-time · Cape Town / Johannesburg</div>
+                <p>Help our buyers and sellers resolve issues quickly. Must be fluent in English and at least one other SA language.</p>
+                <button class="info-job-apply" onclick="_openCareerApply('Customer Support Agent')">Apply Now</button>
+              </div>
+              <div class="info-job-card">
+                <div class="info-job-title">Social Media & Marketing</div>
+                <div class="info-job-meta">Remote · Part-time or Full-time</div>
+                <p>Grow our presence on Instagram, TikTok, and Facebook. Creative, data-driven, and knows the South African market.</p>
+                <button class="info-job-apply" onclick="_openCareerApply('Social Media & Marketing')">Apply Now</button>
+              </div>
+              <div class="info-job-card">
+                <div class="info-job-title">Sales Representative</div>
+                <div class="info-job-meta">Field-based · Gauteng / Western Cape</div>
+                <p>Sign up dealerships and businesses as verified sellers on Everything Market. Commission-based with strong earning potential.</p>
+                <button class="info-job-apply" onclick="_openCareerApply('Sales Representative')">Apply Now</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      _openModal();
+    },
+
+    'press': _infoStaticPage.bind(null, 'Press & Media', `
+      <div class="info-section"><h4>About Everything Market</h4><p>Everything Market is South Africa's free online classifieds platform, connecting buyers and sellers across all nine provinces for free.</p></div>
+      <div class="info-section"><h4>Key facts</h4><ul class="info-list"><li>Founded: 2025</li><li>Headquarters: South Africa</li><li>Coverage: All 9 provinces</li><li>Listing fee: Free (always)</li><li>Categories: Cars, Property, Electronics, Fashion, Jobs, Pets, Home, Baby & Kids, and more</li></ul></div>
+      <div class="info-section"><h4>Brand assets</h4><p>Our brand name is <strong>Everything Market</strong>. Our primary colour is forest green <span style="display:inline-block;width:14px;height:14px;background:#2D6A4F;border-radius:3px;vertical-align:middle;margin-left:4px;"></span>. Please do not alter our logo or name in press coverage.</p></div>
+      <div class="info-section"><h4>Media enquiries</h4><p>For interviews, quotes, or media partnerships, tap the <strong>Contact Us</strong> button below and select <em>Business / partnership</em> as the subject.</p>
+        <button class="em-post-submit" style="margin-top:14px;" onclick="openInfoModal('contact')">Contact Us</button>
+      </div>`),
+
+    'blog': _infoStaticPage.bind(null, 'Blog', `
+      <div class="info-blog-post">
+        <div class="info-blog-tag">Selling Tips</div>
+        <h4>5 Photos That Sell Your Item Faster</h4>
+        <p>The single biggest difference between a listing that sells in 24 hours and one that sits for weeks? Photos. Buyers decide in seconds whether to click. Here's how to nail it every time: shoot in natural daylight near a window, use a plain white or neutral background, photograph every angle, show any damage honestly, and make the first photo your best one.</p>
+      </div>
+      <div class="info-blog-post">
+        <div class="info-blog-tag">Buying Guide</div>
+        <h4>How to Spot a Fake Listing Before You Lose Money</h4>
+        <p>Red flags to watch for: prices that are 40%+ below market value, sellers who only communicate via WhatsApp and refuse calls, requests for upfront EFT before you've seen the item, and stock photos instead of real images. Always reverse-image-search the photos and meet in person before paying a cent.</p>
+      </div>
+      <div class="info-blog-post">
+        <div class="info-blog-tag">Market Trends</div>
+        <h4>What's Selling Fast in South Africa Right Now</h4>
+        <p>Based on our listings data, the fastest-moving categories this month are: smartphones (especially Samsung and iPhone), small appliances, baby gear, and second-hand school uniforms. If you have any of these, list them now — buyers are actively looking.</p>
+      </div>
+      <div style="padding:10px 0 4px;text-align:center;">
+        <button class="em-post-submit" onclick="closeModal();openPostAdModal()">Post a Free Ad</button>
+      </div>`),
+  };
+
+  const builder = builders[key];
+  if (!builder) return;
+  builder();
+}
+
+function _infoStaticPage(title, html) {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>${content.title}</h3>
+      <h3>${title}</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div class="info-modal-body">
-      ${content.html}
-    </div>`;
+    <div class="info-modal-body">${html}</div>`;
   _openModal();
+}
+
+function _infoConfirm(title, msg) {
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">${title}</div>
+      <div class="em-confirm-sub">${msg}</div>
+      <button class="em-confirm-close" onclick="closeModal()">Done</button>
+    </div>`;
+}
+
+function _submitContactForm() {
+  const name    = (document.getElementById('ct-name').value || '').trim();
+  const email   = (document.getElementById('ct-email').value || '').trim();
+  const subject = document.getElementById('ct-subject').value;
+  const msg     = (document.getElementById('ct-msg').value || '').trim();
+  const errEl   = document.getElementById('ct-err');
+  if (!name || !email || !msg) { errEl.textContent = 'Please fill in all required fields.'; errEl.style.display = ''; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (window.emTrack) emTrack('contact_form', { name, email, subject, msg: msg.slice(0, 400) });
+  _infoConfirm('Message Sent!', 'Thanks ' + name.split(' ')[0] + '! We\'ve received your message and will get back to you within 24 hours.');
+}
+
+function _submitScamReport() {
+  const name  = (document.getElementById('sc-name').value || '').trim();
+  const email = (document.getElementById('sc-email').value || '').trim();
+  const type  = document.getElementById('sc-type').value;
+  const desc  = (document.getElementById('sc-desc').value || '').trim();
+  const errEl = document.getElementById('sc-err');
+  if (!name || !desc) { errEl.textContent = 'Please fill in your name and describe what happened.'; errEl.style.display = ''; return; }
+  if (window.emReport) emReport('SCAM', 'General scam report', (type || 'Other') + ' — ' + desc.slice(0, 300));
+  if (window.emTrack) emTrack('scam_report', { name, email, type, desc: desc.slice(0, 300) });
+  _infoConfirm('Report Submitted', 'Thank you ' + name.split(' ')[0] + '. Our safety team will investigate and take action within 24 hours.');
+}
+
+function _submitAdvertiseEnquiry() {
+  const biz   = (document.getElementById('adv-biz').value || '').trim();
+  const email = (document.getElementById('adv-email').value || '').trim();
+  const phone = (document.getElementById('adv-phone').value || '').trim();
+  const msg   = (document.getElementById('adv-msg').value || '').trim();
+  const errEl = document.getElementById('adv-err');
+  if (!biz || !email) { errEl.textContent = 'Business name and email are required.'; errEl.style.display = ''; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (window.emTrack) emTrack('advertise_enquiry', { biz, email, phone, msg: msg.slice(0, 300) });
+  _infoConfirm('Enquiry Received!', 'Thanks ' + biz + '! Our team will be in touch within 24 hours to discuss advertising options.');
+}
+
+window._openCareerApply = function(role) {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar"><h3>Apply: ${role}</h3><button class="em-modal-close" onclick="closeModal()">&#x2715;</button></div>
+    <div class="info-modal-body">
+      <div class="em-post-field">
+        <label class="em-post-label" for="cv-name">Full name <span>(required)</span></label>
+        <input class="em-post-input" id="cv-name" type="text" placeholder="e.g. Nompumelelo Dlamini">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="cv-email">Email address <span>(required)</span></label>
+        <input class="em-post-input" id="cv-email" type="email" placeholder="you@example.com">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="cv-phone">Phone number</label>
+        <input class="em-post-input" id="cv-phone" type="tel" placeholder="082 123 4567">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="cv-why">Why do you want this role? <span>(required)</span></label>
+        <textarea class="em-post-input" id="cv-why" rows="4" placeholder="Tell us about yourself and why you'd be great for this role…" style="resize:vertical;height:90px;"></textarea>
+      </div>
+      <div id="cv-err" class="em-post-error" style="display:none;"></div>
+      <button class="em-post-submit" onclick="_submitCareerForm('${role.replace(/'/g,"\\'")}')">Submit Application</button>
+    </div>`;
+};
+
+function _submitCareerForm(role) {
+  const name  = (document.getElementById('cv-name').value || '').trim();
+  const email = (document.getElementById('cv-email').value || '').trim();
+  const phone = (document.getElementById('cv-phone').value || '').trim();
+  const why   = (document.getElementById('cv-why').value || '').trim();
+  const errEl = document.getElementById('cv-err');
+  if (!name || !email || !why) { errEl.textContent = 'Please fill in all required fields.'; errEl.style.display = ''; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (window.emTrack) emTrack('career_application', { role, name, email, phone, why: why.slice(0, 400) });
+  _infoConfirm('Application Received!', 'Thanks ' + name.split(' ')[0] + '! We\'ll review your application and get back to you within 5 business days.');
 }

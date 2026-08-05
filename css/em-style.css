@@ -469,9 +469,47 @@ svg { display: block; }
 /* ── Info modals (footer links) ── */
 .info-modal-body { padding: 4px 20px 24px; }
 .info-section { padding: 14px 0; border-bottom: 1px solid var(--border-lt); }
-.info-section:last-child { border-bottom: none; }
+.info-section:last-child { border-bottom: none; padding-bottom: 4px; }
 .info-section h4 { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
 .info-section p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.info-list { padding-left: 18px; margin: 8px 0 0; font-size: 13px; color: var(--muted); line-height: 2; }
+.info-step-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--forest); color: #fff; font-size: 11px; font-weight: 800; margin-bottom: 6px; }
+
+/* Info pricing table */
+.info-price-table { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.info-price-row { display: flex; align-items: center; justify-content: space-between; }
+.info-cond-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+.info-price-pct { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+/* Info stats */
+.info-stats { display: flex; gap: 0; border: 1px solid var(--border-lt); border-radius: 10px; overflow: hidden; }
+.info-stat { flex: 1; text-align: center; padding: 14px 8px; border-right: 1px solid var(--border-lt); }
+.info-stat:last-child { border-right: none; }
+.info-stat strong { display: block; font-size: 18px; font-weight: 900; color: var(--forest); }
+.info-stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+/* Advertise options */
+.info-adv-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+.info-adv-card { background: var(--surf); border-radius: 10px; padding: 14px; }
+.info-adv-icon { font-size: 20px; margin-bottom: 6px; }
+.info-adv-card strong { display: block; font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
+.info-adv-card p { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+/* Careers */
+.info-job-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.info-job-card { border: 1.5px solid var(--border-lt); border-radius: 10px; padding: 14px; }
+.info-job-title { font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 3px; }
+.info-job-meta { font-size: 11px; color: var(--forest); font-weight: 600; margin-bottom: 8px; }
+.info-job-card p { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0 0 10px; }
+.info-job-apply { background: var(--forest); color: #fff; border: none; border-radius: 7px; padding: 8px 16px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit; }
+.info-job-apply:hover { background: var(--leaf); }
+
+/* Blog */
+.info-blog-post { padding: 16px 0; border-bottom: 1px solid var(--border-lt); }
+.info-blog-post:last-of-type { border-bottom: none; }
+.info-blog-tag { display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--forest); background: #E8F5E9; padding: 2px 7px; border-radius: 4px; margin-bottom: 6px; }
+.info-blog-post h4 { font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 6px; line-height: 1.4; }
+.info-blog-post p { font-size: 12.5px; color: var(--muted); line-height: 1.75; margin: 0; }
 
 /* ── My Ads modal ── */
 .em-myads-body { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 2px; }
