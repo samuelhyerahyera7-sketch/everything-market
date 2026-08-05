@@ -751,61 +751,67 @@ function showSentConfirm(type, detail) {
     </div>`;
 }
 
-/* ── Account system ── */
-function _getAccounts() {
-  try { return JSON.parse(localStorage.getItem('em_accounts') || '[]'); } catch(e) { return []; }
-}
-function _saveAccounts(a) { localStorage.setItem('em_accounts', JSON.stringify(a)); }
+/* ── Supabase Auth ── */
+const _sb = supabase.createClient(
+  'https://jucphfbaueowzlbjhxmm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw'
+);
+
+let _sbUser = null;
+
 function _getSession() {
-  try { return JSON.parse(localStorage.getItem('em_session') || 'null'); } catch(e) { return null; }
-}
-function _setSession(s) {
-  s ? localStorage.setItem('em_session', JSON.stringify(s)) : localStorage.removeItem('em_session');
+  if (!_sbUser) return null;
+  return {
+    userId: _sbUser.id,
+    name: _sbUser.user_metadata?.name || _sbUser.email.split('@')[0],
+    email: _sbUser.email
+  };
 }
 
 function _updateAuthUI() {
   const sess = _getSession();
-  const tbSignIn   = document.getElementById('tb-signin');
-  const tbRegister = document.getElementById('tb-register');
-  const tbUser     = document.getElementById('tb-user');
   const hdrSignIn  = document.getElementById('hdr-signin');
-  const hdrRegister= document.getElementById('hdr-register');
+  const hdrRegister = document.getElementById('hdr-register');
   const hdrUser    = document.getElementById('hdr-user');
   const hdrName    = document.getElementById('hdr-user-name');
   const hdrAvatar  = document.getElementById('hdr-user-avatar');
   const sbAuth     = document.getElementById('sb-auth');
   const sbAuthIn   = document.getElementById('sb-auth-in');
   const sbWelcome  = document.getElementById('sb-welcome');
-
   const mobAuthBtn = document.getElementById('mob-auth-btn');
+
   if (sess) {
     const first = sess.name.split(' ')[0];
     const initials = sess.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    if (tbSignIn)   tbSignIn.style.display = 'none';
-    if (tbRegister) tbRegister.style.display = 'none';
-    if (tbUser)     { tbUser.style.display = ''; tbUser.textContent = first; }
-    if (hdrSignIn)  hdrSignIn.style.display = 'none';
-    if (hdrRegister)hdrRegister.style.display = 'none';
-    if (hdrUser)    hdrUser.style.display = '';
-    if (hdrName)    hdrName.textContent = first;
-    if (hdrAvatar)  hdrAvatar.textContent = initials;
-    if (sbAuth)     sbAuth.style.display = 'none';
-    if (sbAuthIn)   sbAuthIn.style.display = '';
-    if (sbWelcome)  sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
-    if (mobAuthBtn) { mobAuthBtn.title = first; mobAuthBtn.onclick = () => toggleUserMenu(); }
+    if (hdrSignIn)   hdrSignIn.style.display = 'none';
+    if (hdrRegister) hdrRegister.style.display = 'none';
+    if (hdrUser)     hdrUser.style.display = '';
+    if (hdrName)     hdrName.textContent = first;
+    if (hdrAvatar)   hdrAvatar.textContent = initials;
+    if (sbAuth)      sbAuth.style.display = 'none';
+    if (sbAuthIn)    sbAuthIn.style.display = '';
+    if (sbWelcome)   sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
+    if (mobAuthBtn)  { mobAuthBtn.title = first; mobAuthBtn.onclick = () => toggleUserMenu(); }
   } else {
-    if (tbSignIn)   tbSignIn.style.display = '';
-    if (tbRegister) tbRegister.style.display = '';
-    if (tbUser)     tbUser.style.display = 'none';
-    if (hdrSignIn)  hdrSignIn.style.display = '';
-    if (hdrRegister)hdrRegister.style.display = '';
-    if (hdrUser)    hdrUser.style.display = 'none';
-    if (sbAuth)     sbAuth.style.display = '';
-    if (sbAuthIn)   sbAuthIn.style.display = 'none';
-    if (mobAuthBtn) { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = openSignInModal; }
+    if (hdrSignIn)   hdrSignIn.style.display = '';
+    if (hdrRegister) hdrRegister.style.display = '';
+    if (hdrUser)     hdrUser.style.display = 'none';
+    if (sbAuth)      sbAuth.style.display = '';
+    if (sbAuthIn)    sbAuthIn.style.display = 'none';
+    if (mobAuthBtn)  { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = openSignInModal; }
   }
 }
-_updateAuthUI();
+
+async function _initAuth() {
+  const { data: { session } } = await _sb.auth.getSession();
+  _sbUser = session?.user || null;
+  _updateAuthUI();
+  _sb.auth.onAuthStateChange((_event, session) => {
+    _sbUser = session?.user || null;
+    _updateAuthUI();
+  });
+}
+_initAuth();
 
 function toggleUserMenu(e) {
   e && e.stopPropagation();
@@ -816,8 +822,9 @@ document.addEventListener('click', () => {
   document.getElementById('hdr-user-drop')?.classList.remove('open');
 });
 
-function signOut() {
-  _setSession(null);
+async function signOut() {
+  await _sb.auth.signOut();
+  _sbUser = null;
   _updateAuthUI();
   closeModal();
   toast('You have been signed out.');
@@ -846,18 +853,28 @@ function openSignInModal() {
   setTimeout(() => document.getElementById('si-email')?.focus(), 80);
 }
 
-function submitSignIn(e) {
+async function submitSignIn(e) {
   e.preventDefault();
   const email = (document.getElementById('si-email').value || '').trim().toLowerCase();
   const pass  = document.getElementById('si-pass').value || '';
   const errEl = document.getElementById('auth-error');
+  const btn   = e.target.querySelector('[type=submit]');
   if (!email || !pass) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = ''; return; }
-  const acc = _getAccounts().find(a => a.email === email && a.password === pass);
-  if (!acc) { errEl.textContent = 'Incorrect email or password.'; errEl.style.display = ''; return; }
-  _setSession({ userId: acc.id, name: acc.name, email: acc.email });
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  btn.textContent = 'Sign In'; btn.disabled = false;
+  if (error) {
+    errEl.textContent = error.message === 'Email not confirmed'
+      ? 'Please verify your email first — check your inbox.'
+      : 'Incorrect email or password.';
+    errEl.style.display = '';
+    return;
+  }
+  _sbUser = data.user;
   _updateAuthUI();
   closeModal();
-  toast('Welcome back, ' + acc.name.split(' ')[0] + '!');
+  const name = data.user.user_metadata?.name || email.split('@')[0];
+  toast('Welcome back, ' + name.split(' ')[0] + '!');
 }
 
 function openRegisterModal() {
@@ -887,41 +904,37 @@ function openRegisterModal() {
   setTimeout(() => document.getElementById('reg-name')?.focus(), 80);
 }
 
-function submitRegister(e) {
+async function submitRegister(e) {
   e.preventDefault();
   const name  = (document.getElementById('reg-name').value  || '').trim();
   const email = (document.getElementById('reg-email').value || '').trim().toLowerCase();
   const pass  = document.getElementById('reg-pass').value   || '';
   const errEl = document.getElementById('auth-error');
+  const btn   = e.target.querySelector('[type=submit]');
 
-  if (!name)                  { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
-  if (!email.includes('@'))   { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
-  if (pass.length < 6)        { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
+  if (!name)               { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (pass.length < 6)     { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
 
-  const accounts = _getAccounts();
-  if (accounts.find(a => a.email === email)) {
-    errEl.textContent = 'An account with that email already exists.';
-    errEl.style.display = '';
-    return;
-  }
+  btn.textContent = 'Creating account…'; btn.disabled = true;
+  const { error } = await _sb.auth.signUp({
+    email, password: pass, options: { data: { name } }
+  });
+  btn.textContent = 'Create Account'; btn.disabled = false;
 
-  const acc = { id: Date.now(), name, email, password: pass, createdAt: Date.now() };
-  accounts.push(acc);
-  _saveAccounts(accounts);
-  _setSession({ userId: acc.id, name: acc.name, email: acc.email });
-  _updateAuthUI();
+  if (error) { errEl.textContent = error.message; errEl.style.display = ''; return; }
   if (window.emTrack) emTrack('register');
 
   modalBox.innerHTML = `
     <div class="em-confirm">
       <div class="em-confirm-icon">
         <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--leaf)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
+          <circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/>
         </svg>
       </div>
-      <div class="em-confirm-title">Welcome, ${name.split(' ')[0]}!</div>
-      <div class="em-confirm-sub">Your account has been created. You can now post free ads and save your favourites.</div>
-      <button class="em-confirm-close" onclick="closeModal()">Get Started</button>
+      <div class="em-confirm-title">Check Your Email!</div>
+      <div class="em-confirm-sub">We sent a verification link to <strong>${email}</strong>. Click the link to activate your account, then come back and sign in.</div>
+      <button class="em-confirm-close" onclick="closeModal();openSignInModal()">Sign In</button>
     </div>`;
 }
 

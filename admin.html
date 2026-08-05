@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EM Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     :root {
       --forest: #0A3D22; --leaf: #1A7A42; --mid: #145C35;
@@ -109,11 +110,13 @@
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">Everything<span>Market</span></div>
-    <div class="login-sub">Admin Dashboard · everythingmarket48@gmail.com</div>
-    <label class="login-label" for="adm-pass">Admin Password</label>
-    <input class="login-input" id="adm-pass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
-    <button class="login-btn" onclick="adminLogin()">Sign In</button>
-    <div class="login-err" id="login-err">Incorrect password. Try again.</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <label class="login-label" for="adm-email">Email address</label>
+    <input class="login-input" id="adm-email" type="email" placeholder="admin@email.com" autocomplete="email">
+    <label class="login-label" for="adm-pass">Password</label>
+    <input class="login-input" id="adm-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" id="adm-login-btn" onclick="adminLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
@@ -199,8 +202,12 @@
 const SB_URL = 'https://jucphfbaueowzlbjhxmm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 
-/* ── Change this password ── */
-const ADMIN_PASSWORD = 'Everythingmarket14!';
+/* ── Admin whitelist: add any admin email here ── */
+const ADMIN_EMAILS = [
+  'everythingmarket48@gmail.com'
+];
+
+const _sb = supabase.createClient(SB_URL, SB_KEY);
 
 function sbGet(table, params) {
   const url = new URL(SB_URL + '/rest/v1/' + table);
@@ -222,32 +229,61 @@ async function sbPatch(table, id, data) {
 }
 
 /* ── Auth ── */
-function adminLogin() {
-  const pass = document.getElementById('adm-pass').value;
-  const errEl = document.getElementById('login-err');
-  if (pass === ADMIN_PASSWORD) {
-    sessionStorage.setItem('em_admin', '1');
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    loadAll();
-  } else {
-    errEl.style.display = 'block';
-    document.getElementById('adm-pass').value = '';
-    document.getElementById('adm-pass').focus();
-  }
-}
-function adminSignOut() {
-  sessionStorage.removeItem('em_admin');
-  location.reload();
-}
-if (sessionStorage.getItem('em_admin') === '1') {
+function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   loadAll();
 }
-document.getElementById('adm-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') adminLogin();
-});
+
+async function adminLogin() {
+  const email = (document.getElementById('adm-email').value || '').trim().toLowerCase();
+  const pass  = document.getElementById('adm-pass').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('adm-login-btn');
+  errEl.style.display = 'none'; errEl.textContent = '';
+
+  if (!email || !pass) { errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  btn.textContent = 'Sign In'; btn.disabled = false;
+
+  if (error) {
+    errEl.textContent = 'Incorrect email or password.';
+    errEl.style.display = 'block';
+    document.getElementById('adm-pass').value = '';
+    document.getElementById('adm-pass').focus();
+    return;
+  }
+
+  const userEmail = data.user?.email?.toLowerCase() || '';
+  if (!ADMIN_EMAILS.includes(userEmail)) {
+    await _sb.auth.signOut();
+    errEl.textContent = 'This account does not have admin access.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  showDashboard();
+}
+
+async function adminSignOut() {
+  await _sb.auth.signOut();
+  location.reload();
+}
+
+/* ── Restore session on page load ── */
+(async function() {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session?.user) {
+    const email = session.user.email?.toLowerCase() || '';
+    if (ADMIN_EMAILS.includes(email)) {
+      showDashboard();
+    } else {
+      await _sb.auth.signOut();
+    }
+  }
+})();
 
 /* ── Tabs ── */
 function switchTab(name) {
