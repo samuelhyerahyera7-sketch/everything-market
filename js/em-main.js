@@ -135,6 +135,14 @@ const SPONSORED = [
 })();
 
 /* ── Shop by Category ── */
+function toggleShopcat() {
+  const panel = document.getElementById('shopcat-panel');
+  const arrow = document.getElementById('shopcat-arrow');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', open);
+}
+
 (function() {
   const scatGrid = document.getElementById('shopcat-grid');
   if (!scatGrid) return;
@@ -436,7 +444,7 @@ function renderCatResults(data) {
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
   const featured = data.filter(l => l.badge);
-  const items = featured.length ? featured.slice(0, 6) : data.slice(0, 6);
+  const items = featured.length ? featured.slice(0, 4) : data.slice(0, 4);
   if (!items.length) {
     grid.innerHTML = '<p class="em-empty-state">No ads yet. Be the first to post one!</p>';
     return;
@@ -481,7 +489,7 @@ function renderBB(data) {
 /* ── Gumtree list render ── */
 function renderGT(data) {
   const list = document.getElementById('gt-list');
-  const items = data.slice(0, 8);
+  const items = data.slice(0, 4);
   list.innerHTML = '';
   items.forEach(l => {
     const card = document.createElement('div');

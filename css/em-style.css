@@ -117,10 +117,15 @@ svg { display: block; }
 @media (max-width: 600px) { .spons-card { flex: 0 0 170px; } .spons-img { height: 105px; } }
 
 /* ── Shop by Category ── */
-.shopcat { background: var(--white); border-bottom: 1.5px solid var(--border-lt); padding-bottom: 16px; }
-.shopcat-hd { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--ink); padding: 14px 0 10px; }
-.shopcat-hd svg { color: var(--ink); flex-shrink: 0; }
-.shopcat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.shopcat { background: var(--white); border-bottom: 1.5px solid var(--border-lt); }
+.shopcat-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 0; background: none; border: none; cursor: pointer; color: var(--ink); }
+.shopcat-toggle-left { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 800; color: var(--ink); }
+.shopcat-toggle-left svg { color: var(--ink); flex-shrink: 0; }
+.shopcat-arrow { transition: transform .28s cubic-bezier(.22,1,.36,1); flex-shrink: 0; color: var(--muted); }
+.shopcat-arrow.open { transform: rotate(180deg); }
+.shopcat-panel { max-height: 0; overflow: hidden; transition: max-height .35s cubic-bezier(.22,1,.36,1); }
+.shopcat-panel.open { max-height: 1400px; }
+.shopcat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 4px 0 20px; }
 @media (max-width: 600px) { .shopcat-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; } }
 .scat-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 2px; background: none; border: none; box-shadow: none; cursor: pointer; text-decoration: none; min-width: 0; }
 .scat-card:hover .scat-img-wrap { box-shadow: 0 4px 16px rgba(0,0,0,.18); transform: translateY(-3px); }
@@ -209,7 +214,7 @@ svg { display: block; }
 .vfy-no  { background: #F5F5F5; color: #999; }
 
 /* ── GT list ── */
-.gt-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.gt-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
 .gt-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; overflow: hidden; transition: box-shadow .17s; cursor: pointer; position: relative; }
 .gt-card:hover { box-shadow: var(--shadow-sm); }
 .gt-card:hover .gt-title { color: var(--leaf); }
