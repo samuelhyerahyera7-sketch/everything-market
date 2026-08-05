@@ -104,7 +104,7 @@ svg { display: block; }
 .spons-label { font-size: 10px; font-weight: 700; color: #333; background: #FFD700; border-radius: 3px; padding: 1px 6px; letter-spacing: .04em; margin-left: 6px; }
 .spons-scroll-wrap { overflow: hidden; margin-top: 12px; cursor: grab; }
 .spons-scroll-wrap:active { cursor: grabbing; }
-.spons-grid { display: flex; gap: 14px; width: max-content; animation: sponsScroll 28s linear infinite; }
+.spons-grid { display: flex; gap: 14px; width: max-content; animation: sponsScroll 40s linear infinite; will-change: transform; }
 .spons-scroll-wrap:hover .spons-grid { animation-play-state: paused; }
 @keyframes sponsScroll {
   0%   { transform: translateX(0); }

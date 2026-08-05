@@ -102,12 +102,12 @@ function _renderArtIcon(el, artKey) {
 
 /* ── Sponsored Ads ── */
 const SPONSORED = [
-  { title:'Samsung Galaxy S24 Ultra',  price:'R 18 999',     tag:'Electronics',   loc:'Sandton, Gauteng',         emoji:'📱', color:'#EDE7F6' },
-  { title:'2022 Toyota Hilux 2.8 GD-6',price:'R 649 900',   tag:'Cars & Bakkies',loc:'Pretoria, Gauteng',         emoji:'🚙', color:'#E3F2FD' },
-  { title:'3 Bedroom House – Sandton', price:'R 2 450 000',  tag:'Property',      loc:'Sandton, Gauteng',         emoji:'🏠', color:'#FFF8E1' },
-  { title:'iPhone 15 Pro Max 256GB',   price:'R 22 499',     tag:'Electronics',   loc:'Cape Town, Western Cape',  emoji:'📲', color:'#E8EAF6' },
-  { title:'2021 Volkswagen Polo Vivo', price:'R 189 900',    tag:'Cars & Bakkies',loc:'Durban, KwaZulu-Natal',    emoji:'🚗', color:'#E0F2F1' },
-  { title:'2-Bed Apartment to Rent',   price:'R 8 500 /mo',  tag:'Property',      loc:'Fourways, Gauteng',        emoji:'🏢', color:'#F3E5F5' },
+  { title:'Samsung Galaxy S24 Ultra',   price:'R 18 999',    tag:'Electronics',   loc:'Sandton, Gauteng',        img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=260&fit=crop&auto=format' },
+  { title:'2022 Toyota Hilux 2.8 GD-6', price:'R 649 900',  tag:'Cars & Bakkies',loc:'Pretoria, Gauteng',       img:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=260&fit=crop&auto=format' },
+  { title:'3 Bedroom House – Sandton',  price:'R 2 450 000', tag:'Property',      loc:'Sandton, Gauteng',        img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop&auto=format' },
+  { title:'iPhone 15 Pro Max 256GB',    price:'R 22 499',    tag:'Electronics',   loc:'Cape Town, Western Cape', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=260&fit=crop&auto=format' },
+  { title:'2021 Volkswagen Polo Vivo',  price:'R 189 900',   tag:'Cars & Bakkies',loc:'Durban, KwaZulu-Natal',   img:'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=260&fit=crop&auto=format' },
+  { title:'2-Bed Apartment to Rent',    price:'R 8 500 /mo', tag:'Property',      loc:'Fourways, Gauteng',       img:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=260&fit=crop&auto=format' },
 ];
 (function() {
   const grid = document.getElementById('spons-grid');
@@ -119,9 +119,7 @@ const SPONSORED = [
     card.onclick = () => toast('Opening sponsored ad…');
     card.innerHTML = `
       <div style="position:relative;">
-        <div class="spons-img" style="background:${s.color};display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:52px;line-height:1;">${s.emoji}</span>
-        </div>
+        <img src="${s.img}" alt="${s.title}" class="spons-img" loading="lazy">
         <span class="spons-ad-badge">Ad</span>
       </div>
       <div class="spons-body">
@@ -148,9 +146,7 @@ const SPONSORED = [
     card.className = 'scat-card';
     card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
     card.innerHTML = `
-      <div class="scat-img-wrap" style="background:${cat.color};display:flex;align-items:center;justify-content:center;">
-        <span style="font-size:32px;line-height:1;">${cat.emoji}</span>
-      </div>
+      <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8f5e9'"></div>
       <div class="scat-name">${cat.name}</div>`;
     scatGrid.appendChild(card);
   });
