@@ -12,11 +12,11 @@ const CATS = [
   { id:'cars', name:'Cars & Bakkies', img:'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=200&h=200&fit=crop&auto=format' },
   { id:'prop', name:'Property',       img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=200&h=200&fit=crop&auto=format' },
   { id:'elec', name:'Electronics',    img:'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=200&h=200&fit=crop&auto=format' },
-  { id:'home', name:'Home & Garden',  img:'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=200&h=200&fit=crop&auto=format' },
+  { id:'home', name:'Home & Garden',  img:'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200&h=200&fit=crop&auto=format' },
   { id:'fash', name:'Fashion',        img:'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200&h=200&fit=crop&auto=format' },
   { id:'jobs', name:'Jobs',           img:'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=200&h=200&fit=crop&auto=format' },
   { id:'baby', name:'Baby & Kids',    img:'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=200&h=200&fit=crop&auto=format' },
-  { id:'pets', name:'Pets',           img:'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=200&h=200&fit=crop&auto=format' },
+  { id:'pets', name:'Pets',           img:'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=200&h=200&fit=crop&auto=format' },
 ];
 
 /* ── Canvas artwork ── */
