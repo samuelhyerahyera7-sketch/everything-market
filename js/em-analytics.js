@@ -59,20 +59,21 @@
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
     try {
-      const adId = String(listing.id);
+      /* Use a UUID-compatible key for the storage folder (safe for both text and uuid columns) */
+      const folderKey = 'ad-' + String(listing.id);
       const photoUrls = [];
       if (Array.isArray(listing.photos) && listing.photos.length) {
         for (let i = 0; i < listing.photos.length; i++) {
-          const url = await _uploadPhoto(adId, i, listing.photos[i]);
+          const url = await _uploadPhoto(folderKey, i, listing.photos[i]);
           if (url) photoUrls.push(url);
         }
       }
 
-      await fetch(SB_URL + '/rest/v1/ads', {
+      /* Omit 'id' so Supabase generates its own — avoids uuid vs text type conflicts */
+      const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
-        headers: sbHeaders(),
+        headers: Object.assign({}, sbHeaders(), { 'Prefer': 'return=representation' }),
         body: JSON.stringify({
-          id: adId,
           title: listing.title,
           cat: listing.cat,
           price: listing.price,
@@ -89,6 +90,14 @@
           created_at: new Date(listing.postedAt || Date.now()).toISOString()
         })
       });
+      /* Store the Supabase-assigned id on the local listing so duplicates are avoided */
+      if (r.ok) {
+        const rows = await r.json();
+        if (rows && rows[0] && rows[0].id && window.LISTINGS) {
+          const local = window.LISTINGS.find(l => l.id === listing.id);
+          if (local) local._sbId = rows[0].id;
+        }
+      }
     } catch (_) {}
   }
 
@@ -96,7 +105,7 @@
   async function loadAds() {
     try {
       const r = await fetch(
-        SB_URL + '/rest/v1/ads?select=*&flagged=neq.true&order=created_at.desc&limit=200',
+        SB_URL + '/rest/v1/ads?select=*&flagged=not.is.true&order=created_at.desc&limit=200',
         { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
       );
       if (!r.ok) return [];
