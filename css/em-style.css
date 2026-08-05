@@ -602,7 +602,26 @@ svg { display: block; }
   font-weight: 800;
   color: #fff;
   letter-spacing: -.02em;
+  flex: 1;
 }
+.cat-filter-toggle {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255,255,255,.8);
+  background: rgba(255,255,255,.1);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .13s;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.cat-filter-toggle.active { background: rgba(255,255,255,.25); color: #fff; }
+@media (max-width: 900px) { .cat-filter-toggle { display: inline-flex; } }
 
 .cat-page-body {
   padding: 20px 0 60px;
@@ -612,8 +631,9 @@ svg { display: block; }
   align-items: start;
 }
 @media (max-width: 900px) {
-  .cat-page-body { display: flex; flex-direction: column; }
-  .cat-results  { order: -1; }
+  .cat-page-body { grid-template-columns: 1fr; }
+  .cat-filters { display: none; }
+  .cat-filters.open { display: block; }
 }
 
 .cat-filters {

@@ -127,7 +127,6 @@ function _openResultsPage(title) {
   const hdr = document.querySelector('.hdr');
   const hdrBottom = hdr ? Math.max(40, Math.round(hdr.getBoundingClientRect().bottom)) : 54;
   catPage.style.top = hdrBottom + 'px';
-  catPage.style.height = `calc(100vh - ${hdrBottom}px)`;
   catPage.style.display = 'block';
   catPage.scrollTop = 0;
   document.getElementById('cf-min').value = '';
@@ -187,8 +186,20 @@ function runSearch() {
   if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
+function toggleCatFilters() {
+  const aside = document.querySelector('.cat-filters');
+  const btn   = document.getElementById('cat-filter-toggle');
+  if (!aside) return;
+  const open = aside.classList.toggle('open');
+  if (btn) btn.classList.toggle('active', open);
+}
+
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
+  const aside = document.querySelector('.cat-filters');
+  if (aside) aside.classList.remove('open');
+  const btn = document.getElementById('cat-filter-toggle');
+  if (btn) btn.classList.remove('active');
   _searchQuery = '';
   _catLocked = false;
   if (!_modalLocked) _removeLock();
