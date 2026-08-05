@@ -507,7 +507,7 @@ const modalBox = modal.querySelector('.em-modal-box');
 
 function closeModal() {
   modal.classList.remove('open');
-  setTimeout(() => { modalBox.innerHTML = ''; }, 250);
+  setTimeout(() => { modalBox.innerHTML = ''; modalBox.classList.remove('ad-modal'); }, 250);
   _modalLocked = false;
   if (!_catLocked) _removeLock();
 }
@@ -870,60 +870,65 @@ function openBuyNow(listing) {
   // Related ads: same category, excluding this listing
   const related = LISTINGS.filter(l => l.cat === listing.cat && l.id !== listing.id).slice(0, 6);
 
+  // Use flex-column layout so sticky bar always sits at the bottom
+  modalBox.classList.add('ad-modal');
+
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <button class="em-modal-close" onclick="closeModal()" style="margin-right:auto">&#x2715;</button>
-      <h3 style="margin:0 auto">${isOwner ? 'My Ad' : ''}</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      <h3>${isOwner ? 'My Ad' : 'Ad Details'}</h3>
+      <span style="width:28px"></span>
     </div>
 
-    ${hasPhotos ? `
-    <div class="ad-gal-wrap">
-      <div class="ad-gal-img" id="ad-gal-img"></div>
-      ${multiPhoto ? `
-      <div class="ad-gal-controls">
-        <button class="ad-gal-nav" onclick="_galNav(-1)">&#8249;</button>
-        <span class="ad-gal-counter" id="ad-gal-counter">1 / ${listing.photos.length}</span>
-        <button class="ad-gal-nav" onclick="_galNav(1)">&#8250;</button>
-      </div>` : ''}
-    </div>` : '<div class="ad-gal-placeholder"></div>'}
-
-    <div class="ad-detail-body2">
-      <div class="ad-detail-price2">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
-      <h2 class="ad-detail-title2">${listing.title}</h2>
-
-      <div class="ad-general-section">
-        <div class="ad-section-heading">General Details</div>
-        <div class="ad-general-table">
-          ${details.map(([k,v]) => `
-            <div class="ad-general-row">
-              <span class="ad-general-key">${k}</span>
-              <span class="ad-general-val">${v}</span>
-            </div>`).join('')}
-        </div>
+    <div class="ad-modal-scroller">
+      <div class="ad-gal-wrap">
+        <div class="ad-gal-img" id="ad-gal-img"></div>
+        ${multiPhoto ? `
+        <div class="ad-gal-controls">
+          <button class="ad-gal-nav" onclick="_galNav(-1)">&#8249;</button>
+          <span class="ad-gal-counter" id="ad-gal-counter">1 / ${listing.photos.length}</span>
+          <button class="ad-gal-nav" onclick="_galNav(1)">&#8250;</button>
+        </div>` : ''}
       </div>
 
-      ${listing.desc ? `
-      <div class="ad-desc-section">
-        <div class="ad-section-heading">Description</div>
-        <div class="ad-desc-text collapsed" id="ad-desc-text">${listing.desc.replace(/\n/g,'<br>')}</div>
-        <button class="ad-desc-toggle" id="ad-desc-toggle" onclick="toggleAdDesc()">View More</button>
-      </div>` : ''}
+      <div class="ad-detail-body2">
+        <div class="ad-detail-price2">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
+        <h2 class="ad-detail-title2">${listing.title}</h2>
 
-      <div class="ad-seller-card">
-        <div class="em-modal-avatar">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <div class="em-modal-seller-name">${sellerName}${listing.verified ? ' <span class="em-modal-verified">Verified</span>' : ''}</div>
-          <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
+        <div class="ad-general-section">
+          <div class="ad-section-heading">General Details</div>
+          <div class="ad-general-table">
+            ${details.map(([k,v]) => `
+              <div class="ad-general-row">
+                <span class="ad-general-key">${k}</span>
+                <span class="ad-general-val">${v}</span>
+              </div>`).join('')}
+          </div>
         </div>
+
+        ${listing.desc ? `
+        <div class="ad-desc-section">
+          <div class="ad-section-heading">Description</div>
+          <div class="ad-desc-text collapsed" id="ad-desc-text">${listing.desc.replace(/\n/g,'<br>')}</div>
+          <button class="ad-desc-toggle" id="ad-desc-toggle" onclick="toggleAdDesc()">View More</button>
+        </div>` : ''}
+
+        <div class="ad-seller-card">
+          <div class="em-modal-avatar">${initials}</div>
+          <div style="flex:1;min-width:0">
+            <div class="em-modal-seller-name">${sellerName}${listing.verified ? ' <span class="em-modal-verified">Verified</span>' : ''}</div>
+            <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
+          </div>
+        </div>
+
+        ${related.length ? `
+        <div class="ad-related-section">
+          <div class="ad-section-heading">Similar Ads</div>
+          <div class="ad-related-scroll" id="ad-related-scroll"></div>
+        </div>` : ''}
+
+        ${!isOwner ? `<div class="ad-report-link"><button onclick="openReportModal('${safeId}','${safeTitle}')">⚑ Report this ad</button></div>` : ''}
       </div>
-
-      ${related.length ? `
-      <div class="ad-related-section">
-        <div class="ad-section-heading">Similar Ads</div>
-        <div class="ad-related-scroll" id="ad-related-scroll"></div>
-      </div>` : ''}
-
-      ${!isOwner ? `<div class="ad-report-link"><button onclick="openReportModal('${safeId}','${safeTitle}')">⚑ Report this ad</button></div>` : ''}
     </div>
 
     ${isOwner ? `
@@ -949,18 +954,22 @@ function openBuyNow(listing) {
 
   _openModal();
 
-  if (hasPhotos) {
-    setTimeout(() => {
-      const imgEl = document.getElementById('ad-gal-img');
-      if (!imgEl) return;
+  // Always render image area — photos get img tag, art gets SVG icon
+  setTimeout(() => {
+    const imgEl = document.getElementById('ad-gal-img');
+    if (!imgEl) return;
+    if (hasPhotos) {
       const img = document.createElement('img');
       img.src = listing.photos[0];
       img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;';
       img.alt = listing.title;
+      img.onerror = () => { img.remove(); _renderImg(imgEl, listing); };
       img.onclick = () => _openLightbox(0);
       imgEl.appendChild(img);
-    }, 10);
-  }
+    } else {
+      _renderImg(imgEl, listing);
+    }
+  }, 10);
 
   if (related.length) {
     setTimeout(() => {
@@ -1039,18 +1048,19 @@ function submitReport(adId, adTitle) {
 
 function showCallScreen(seller, phone) {
   const formatted = '+' + phone.slice(0,2) + ' ' + phone.slice(2,5) + ' ' + phone.slice(5,8) + ' ' + phone.slice(8);
-  const listing = window._currentListing;
+  modalBox.classList.remove('ad-modal');
   modalBox.innerHTML = `
     <div class="em-modal-bar">
+      <button class="em-modal-close" onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()">&#8592;</button>
       <h3>Call Seller</h3>
-      <button class="em-modal-close" onclick="${listing ? `openBuyNow(window._currentListing)` : 'closeModal()'}">&#8592;</button>
+      <span style="width:28px"></span>
     </div>
     <div style="text-align:center;padding:32px 20px 24px;">
       <div style="margin-bottom:12px;"><svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--forest)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">${seller}'s number</div>
       <div style="font-size:22px;font-weight:900;color:var(--ink);letter-spacing:.05em;">${formatted}</div>
       <a href="tel:${phone}" style="display:block;margin-top:16px;padding:13px;background:var(--forest);color:#fff;border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;">Call Now</a>
-      <button onclick="closeModal()" style="margin-top:8px;width:100%;padding:11px;background:var(--surf);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);">Close</button>
+      <button onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()" style="margin-top:8px;width:100%;padding:11px;background:var(--surf);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink);">Back to Ad</button>
     </div>`;
 }
 
@@ -1059,10 +1069,12 @@ function showMessageScreen(listingId) {
   if (!l) return;
   const sess = _getSession();
   const safeId = String(listingId).replace(/'/g, '');
+  modalBox.classList.remove('ad-modal');
   modalBox.innerHTML = `
     <div class="em-modal-bar">
+      <button class="em-modal-close" onclick="window._currentListing ? openBuyNow(window._currentListing) : closeModal()">&#8592;</button>
       <h3>Send Message</h3>
-      <button class="em-modal-close" onclick="openBuyNow(window._currentListing)">&#8592;</button>
+      <span style="width:28px"></span>
     </div>
     <div class="em-offer-body" style="padding-top:16px;">
       <div class="em-offer-ref" style="margin-bottom:16px;">
