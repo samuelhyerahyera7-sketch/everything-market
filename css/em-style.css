@@ -112,7 +112,7 @@ svg { display: block; }
 @media (max-width: 600px) { .spons-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } .spons-img { height: 100px; } }
 
 /* ── Shop by Category ── */
-.shopcat { background: var(--white); border-bottom: 1.5px solid var(--border); padding: 28px 0 24px; }
+.shopcat { background: var(--white); padding: 28px 0 24px; }
 .shopcat-hd { display: flex; align-items: baseline; gap: 10px; margin-bottom: 20px; }
 .shopcat-hd h2 { font-size: 1.05rem; font-weight: 800; color: var(--ink); }
 .shopcat { overflow: hidden; }
