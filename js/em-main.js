@@ -703,6 +703,8 @@ function showAdPostedConfirm(title) {
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
+  const sess     = _getSession();
+  const isOwner  = sess && String(listing.userId) === String(sess.userId);
   const sd       = BB_SELLER_DATA[listing.id] || { delivery: false };
   const price    = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -711,10 +713,12 @@ function openBuyNow(listing) {
   const waMsg    = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
   const timeStr  = fmtTime(listing.postedAt);
   const hasPhotos = listing.photos && listing.photos.length > 0;
+  const safeId   = String(listing.id).replace(/'/g, '');
+  const safeTitle = listing.title.replace(/'/g, "\\'");
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Ad Details</h3>
+      <h3>${isOwner ? 'My Ad' : 'Ad Details'}</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
 
@@ -743,26 +747,36 @@ function openBuyNow(listing) {
       </div>
 
       <div class="ad-detail-divider"></div>
-      <div class="em-modal-section-label" style="padding:0 0 10px">Contact the seller</div>
 
-      <div class="em-contact-btns">
-        ${phone ? `
-        <button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
-          <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-          <div><span>WhatsApp Seller</span><span class="em-contact-btn-sub">Fastest response</span></div>
-        </button>
-        <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
-          <div class="em-contact-btn-icon" style="background:#E3F0FF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
-          <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal number</span></div>
-        </button>` : ''}
-        <button class="em-contact-btn" onclick="showMessageScreen('${String(listing.id).replace(/'/g,'')}')">
-          <div class="em-contact-btn-icon" style="background:var(--surf2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-          <div><span>Send a Message</span><span class="em-contact-btn-sub">Reply via Everything Market</span></div>
-        </button>
-        <div style="text-align:center;padding-top:4px;">
-          <button onclick="openReportModal('${String(listing.id).replace(/'/g,'')}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">⚑ Report this ad</button>
+      ${isOwner ? `
+        <div class="em-modal-section-label" style="padding:0 0 10px">Manage your ad</div>
+        <div class="em-contact-btns">
+          <button class="em-contact-btn em-delete-btn" onclick="_confirmDeleteAd('${safeId}','${safeTitle}')">
+            <div class="em-contact-btn-icon" style="background:#FEF0EE"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+            <div><span style="color:var(--red)">Delete this ad</span><span class="em-contact-btn-sub">Permanently remove from Everything Market</span></div>
+          </button>
         </div>
-      </div>
+      ` : `
+        <div class="em-modal-section-label" style="padding:0 0 10px">Contact the seller</div>
+        <div class="em-contact-btns">
+          ${phone ? `
+          <button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
+            <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+            <div><span>WhatsApp Seller</span><span class="em-contact-btn-sub">Fastest response</span></div>
+          </button>
+          <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
+            <div class="em-contact-btn-icon" style="background:#E3F0FF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+            <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal number</span></div>
+          </button>` : ''}
+          <button class="em-contact-btn" onclick="showMessageScreen('${safeId}')">
+            <div class="em-contact-btn-icon" style="background:var(--surf2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <div><span>Send a Message</span><span class="em-contact-btn-sub">Reply via Everything Market</span></div>
+          </button>
+          <div style="text-align:center;padding-top:4px;">
+            <button onclick="openReportModal('${safeId}','${safeTitle}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">⚑ Report this ad</button>
+          </div>
+        </div>
+      `}
     </div>`;
 
   _openModal();
@@ -1261,12 +1275,43 @@ function openSavedAds() {
   });
 }
 
-window._deleteMyAd = function(id) {
-  const idx = LISTINGS.findIndex(l => l.id === id);
+window._confirmDeleteAd = function(id, title) {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Delete Ad</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-confirm">
+      <div class="em-confirm-icon">
+        <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </div>
+      <div class="em-confirm-title">Delete this ad?</div>
+      <div class="em-confirm-sub">Are you sure you want to delete <strong>"${title}"</strong>? This cannot be undone.</div>
+      <div style="display:flex;gap:10px;padding:0 20px 8px;">
+        <button onclick="closeModal()" style="flex:1;padding:13px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;">Cancel</button>
+        <button onclick="_deleteMyAd('${String(id).replace(/'/g,'')}',true)" style="flex:1;padding:13px;border-radius:10px;border:none;background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Yes, Delete</button>
+      </div>
+    </div>`;
+};
+
+window._deleteMyAd = function(id, fromDetail) {
+  const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
   if (idx !== -1) LISTINGS.splice(idx, 1);
   _saveUserAds();
   renderAll('all');
-  openMyAds();
+  if (fromDetail) {
+    modalBox.innerHTML = `
+      <div class="em-confirm">
+        <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+        <div class="em-confirm-title">Ad Deleted</div>
+        <div class="em-confirm-sub">Your ad has been removed from Everything Market.</div>
+        <button class="em-confirm-close" onclick="closeModal()">Done</button>
+      </div>`;
+  } else {
+    openMyAds();
+  }
 };
 
 /* ── Info modals (footer links) ── */
