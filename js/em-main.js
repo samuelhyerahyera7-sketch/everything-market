@@ -54,16 +54,46 @@ async function _loadSupabaseAds() {
 _loadUserAds();
 
 /* ── Image helper ── */
+const _ART_ICON = {
+  phone:    { emoji:'📱', color:'#E3F0FF', icon:'M17 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2zM12 18h.01' },
+  truck:    { emoji:'🚙', color:'#E8F5E9', icon:'M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z' },
+  house:    { emoji:'🏠', color:'#FFF8E1', icon:'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10' },
+  tv:       { emoji:'📺', color:'#F3E5F5', icon:'M33 3H-9v16h42zM8 19v4M16 19v4M9 23h6' },
+  dog:      { emoji:'🐕', color:'#FFF3E0', icon:'M10 5.172C10 3.782 8.423 2.679 6.5 3c-2 .324-3.5 1.858-3.5 3.5 0 .796.479 1.54 1.179 1.98-.287.18-.529.41-.679.72C3.135 9.77 3 10.09 3 10.5c0 .83.67 1.5 1.5 1.5 1 0 2.5-1 3.5-1 2.5 0 4 1.5 7 1.5 2.55 0 4-1.5 4-3.5C19 6.996 14 4 10 5.172z' },
+  tools:    { emoji:'🔧', color:'#E8EAF6', icon:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' },
+  moto:     { emoji:'🏍', color:'#FCE4EC', icon:'M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v9h-2M14 17H9M9 17a3 3 0 11-6 0 3 3 0 016 0zM22 17a3 3 0 11-6 0 3 3 0 016 0z' },
+  table:    { emoji:'🪑', color:'#F1F8E9', icon:'M4 6h16v2H4zM4 12h16v2H4zM4 3h16v2H4zM6 6v16M18 6v16' },
+  sneakers: { emoji:'👟', color:'#E0F2F1', icon:'M2 12l2-8h14l2 8M2 12h20M6 12v8M18 12v8M6 20h12' },
+  ps5:      { emoji:'🎮', color:'#EDE7F6', icon:'M6 11h4M8 9v4M15 12h.01M18 10h.01M17.32 5H6.68a4 4 0 00-3.978 3.59l-1 9A4 4 0 005.68 22h12.64a4 4 0 003.978-4.41l-1-9A4 4 0 0017.32 5z' },
+  design:   { emoji:'🎨', color:'#FFF9C4', icon:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2v-.5c0-.55-.22-1.05-.59-1.41a.75.75 0 01.53-1.29H16c3.31 0 6-2.69 6-6 0-4.96-4.48-9-10-9z' },
+  apt:      { emoji:'🏢', color:'#E3F2FD', icon:'M3 21V7l9-4 9 4v14H3zM3 21h18M9 21V9M15 21V9M9 9h6M9 13h6M9 17h6' },
+};
+
 function _renderImg(el, l) {
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
     img.src = l.photos[0];
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
+    img.onerror = () => { img.remove(); _renderArtIcon(el, l.art); };
     el.appendChild(img);
-  } else if (l.art) {
-    el.appendChild(drawSVG(l.art));
+  } else {
+    _renderArtIcon(el, l.art);
   }
+}
+
+function _renderArtIcon(el, artKey) {
+  const a = _ART_ICON[artKey];
+  el.style.background = a ? a.color : 'var(--surf2)';
+  el.style.display = 'flex';
+  el.style.alignItems = 'center';
+  el.style.justifyContent = 'center';
+  el.style.flexDirection = 'column';
+  el.style.gap = '6px';
+  const span = document.createElement('span');
+  span.style.cssText = 'font-size:48px;line-height:1;';
+  span.textContent = a ? a.emoji : '📦';
+  el.appendChild(span);
 }
 
 /* ── Sponsored Ads ── */
@@ -95,17 +125,33 @@ const SPONSORED = [
 })();
 
 /* ── Shop by Category ── */
-const scatGrid = document.getElementById('shopcat-grid');
-CATS.filter(c => c.id !== 'all').forEach(cat => {
-  const card = document.createElement('a');
-  card.href = '#';
-  card.className = 'scat-card';
-  card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
-  card.innerHTML = `
-    <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8e6e0'"></div>
-    <div class="scat-name">${cat.name}</div>`;
-  scatGrid.appendChild(card);
-});
+function toggleShopcat() {
+  const panel = document.getElementById('shopcat-panel');
+  const arrow = document.getElementById('shopcat-arrow');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open', open);
+}
+
+(function() {
+  const scatGrid = document.getElementById('shopcat-grid');
+  if (!scatGrid) return;
+  CATS.filter(c => c.id !== 'all').forEach(cat => {
+    const card = document.createElement('a');
+    card.href = '#';
+    card.className = 'scat-card';
+    card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
+    card.innerHTML = `
+      <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8e6e0'"></div>
+      <div class="scat-name">${cat.name}</div>`;
+    scatGrid.appendChild(card);
+  });
+  // Start expanded
+  const panel = document.getElementById('shopcat-panel');
+  const arrow = document.getElementById('shopcat-arrow');
+  if (panel) panel.classList.add('open');
+  if (arrow) arrow.classList.add('open');
+})();
 
 /* ── Category Page ── */
 let _catId = 'all', _catName = 'All Ads', _searchQuery = '';
