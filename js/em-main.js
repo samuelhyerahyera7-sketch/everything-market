@@ -116,7 +116,7 @@ const SPONSORED = [
   function makeCard(s) {
     const card = document.createElement('div');
     card.className = 'spons-card';
-    card.onclick = () => toast('Opening sponsored ad…');
+    card.onclick = () => openSponsoredAd(s);
     card.innerHTML = `
       <div style="position:relative;">
         <img src="${s.img}" alt="${s.title}" class="spons-img" loading="lazy">
@@ -847,16 +847,55 @@ function showAdPostedConfirm(title) {
 }
 
 /* ── Contact / Buy Now modal ── */
+function openSponsoredAd(s) {
+  const tagCatMap = { 'Electronics':'electronics','Cars & Bakkies':'cars','Property':'property','Furniture':'furniture','Jobs':'jobs','Fashion':'fashion','Pets':'pets','Garden':'garden','Sport':'sport' };
+  openBuyNow({
+    id: 'spons_' + s.title.replace(/\W/g,''),
+    title: s.title,
+    price: 0,
+    _priceStr: s.price,
+    cat: tagCatMap[s.tag] || 'all',
+    loc: s.loc,
+    cond: 'N/A',
+    seller: 'Sponsored Seller',
+    sellerType: 'dealer',
+    verified: true,
+    desc: 'Contact the seller for more details about this item.',
+    postedAt: Date.now(),
+    art: 'tools',
+    neg: false,
+    photos: [s.img],
+    badge: 'SPONSORED',
+    phone: '',
+  });
+}
+
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
   const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
-  const price = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
+  const price = listing._priceStr || (listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA'));
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  /* Use real seller phone if available, otherwise use a placeholder */
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
   const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
   const waMsg = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
+
+  const related = LISTINGS.filter(l => l.cat === listing.cat && String(l.id) !== String(listing.id)).slice(0, 4);
+  const relatedHTML = related.length ? `
+    <div class="em-related">
+      <div class="em-related-hdr">Similar Ads</div>
+      <div class="em-related-list">
+        ${related.map(r => `
+          <div class="em-related-card" onclick="openBuyNow(LISTINGS.find(x=>String(x.id)==='${r.id}'))">
+            <div class="em-related-img" id="rel-img-${r.id}"></div>
+            <div class="em-related-body">
+              <div class="em-related-title">${r.title}</div>
+              <div class="em-related-price">${r.price === 0 ? 'Free' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
+              <div class="em-related-loc">${r.loc}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -903,12 +942,18 @@ function openBuyNow(listing) {
           ⚑ Report this ad
         </button>
       </div>
-    </div>`;
+    </div>
+    ${relatedHTML}`;
 
+  modalBox.scrollTop = 0;
   _openModal();
   setTimeout(() => {
     const imgEl = document.getElementById('modal-img');
     if (imgEl) _renderImg(imgEl, listing);
+    related.forEach(r => {
+      const relEl = document.getElementById(`rel-img-${r.id}`);
+      if (relEl) _renderImg(relEl, r);
+    });
   }, 10);
 }
 
