@@ -1009,14 +1009,35 @@ async function submitRegister(e) {
   if (pass.length < 6)     { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
 
   btn.textContent = 'Creating account…'; btn.disabled = true;
-  const { error } = await _sb.auth.signUp({
-    email, password: pass, options: { data: { name } }
+  const { data, error } = await _sb.auth.signUp({
+    email, password: pass,
+    options: { data: { name }, emailRedirectTo: window.location.origin }
   });
   btn.textContent = 'Create Account'; btn.disabled = false;
 
-  if (error) { errEl.textContent = error.message; errEl.style.display = ''; return; }
+  if (error) {
+    const msg = (error.message || '').toLowerCase();
+    if (msg.includes('already registered') || msg.includes('already in use') || msg.includes('user already')) {
+      errEl.textContent = 'An account with this email already exists. ';
+      errEl.innerHTML += '<a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();closeModal();openSignInModal()">Sign in instead</a>';
+    } else {
+      errEl.textContent = error.message;
+    }
+    errEl.style.display = '';
+    return;
+  }
   if (window.emTrack) emTrack('register');
 
+  /* Email confirmation disabled — signed in immediately */
+  if (data.session) {
+    _sbUser = data.user;
+    _updateAuthUI();
+    closeModal();
+    toast('Welcome to EverythingMarket, ' + name.split(' ')[0] + '! 🎉');
+    return;
+  }
+
+  /* Email confirmation enabled — ask them to check inbox */
   modalBox.innerHTML = `
     <div class="em-confirm">
       <div class="em-confirm-icon">
@@ -1025,7 +1046,7 @@ async function submitRegister(e) {
         </svg>
       </div>
       <div class="em-confirm-title">Check Your Email!</div>
-      <div class="em-confirm-sub">We sent a verification link to <strong>${email}</strong>. Click the link to activate your account, then come back and sign in.</div>
+      <div class="em-confirm-sub">We sent a verification link to <strong>${email}</strong>. Click the link to activate your account, then come back to sign in.</div>
       <button class="em-confirm-close" onclick="closeModal();openSignInModal()">Sign In</button>
     </div>`;
 }
