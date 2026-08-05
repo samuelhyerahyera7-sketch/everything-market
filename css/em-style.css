@@ -496,6 +496,7 @@ svg { display: block; }
   background: var(--surf);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 @media (max-width: 600px) { #cat-page { top: 50px; } }
 

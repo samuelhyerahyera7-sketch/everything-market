@@ -122,10 +122,12 @@ function _getCatListings() {
 function _openResultsPage(title) {
   document.getElementById('cat-page-title').textContent = title;
   document.getElementById('cat-page').style.display = 'block';
+  document.getElementById('cat-page').scrollTop = 0;
   document.getElementById('cf-min').value = '';
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
+  _lockScroll();
 }
 
 function openCategoryPage(catId, catName) {
@@ -173,6 +175,7 @@ function runSearch() {
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
   _searchQuery = '';
+  _unlockScroll();
 }
 
 function applyCatFilters() {
@@ -395,6 +398,23 @@ PROVINCES.forEach(p => {
   pg.innerHTML += `<button class="prov-btn" onclick="openProvincePage('${p}')">${p} <span class="prov-arr">›</span></button>`;
 });
 
+/* ── Scroll lock (prevents background scroll behind overlays on iOS/Android) ── */
+let _scrollLockY = 0;
+function _lockScroll() {
+  _scrollLockY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = '-' + _scrollLockY + 'px';
+  document.body.style.width = '100%';
+  document.body.style.overflow = 'hidden';
+}
+function _unlockScroll() {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  document.body.style.overflow = '';
+  window.scrollTo(0, _scrollLockY);
+}
+
 /* ── Toast ── */
 let _toastTimer;
 function toast(msg) {
@@ -421,6 +441,11 @@ const modalBox = modal.querySelector('.em-modal-box');
 function closeModal() {
   modal.classList.remove('open');
   setTimeout(() => { modalBox.innerHTML = ''; }, 250);
+  _unlockScroll();
+}
+function _openModal() {
+  _lockScroll();
+  _openModal();
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
@@ -523,7 +548,7 @@ function openPostAdModal() {
       <button type="submit" class="em-post-submit">Post Ad Now</button>
     </form>`;
 
-  modal.classList.add('open');
+  _openModal();
 }
 
 window._paSetStype = function(btn) {
@@ -707,7 +732,7 @@ function openBuyNow(listing) {
       </div>
     </div>`;
 
-  modal.classList.add('open');
+  _openModal();
   setTimeout(() => {
     const imgEl = document.getElementById('modal-img');
     if (imgEl) _renderImg(imgEl, listing);
@@ -739,7 +764,7 @@ function openReportModal(adId, adTitle) {
       <div id="rpt-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
       <button class="em-offer-submit" onclick="submitReport('${String(adId).replace(/'/g,"\\'")}','${adTitle.replace(/'/g,"\\'")}')">Submit Report</button>
     </div>`;
-  modal.classList.add('open');
+  _openModal();
 }
 
 function submitReport(adId, adTitle) {
@@ -805,7 +830,7 @@ function openMakeOffer(listing) {
       <button class="em-offer-submit" onclick="submitOffer()">Send Offer</button>
     </div>`;
 
-  modal.classList.add('open');
+  _openModal();
   setTimeout(() => {
     const imgEl = document.getElementById('modal-img2');
     if (imgEl) _renderImg(imgEl, listing);
@@ -947,7 +972,7 @@ function openSignInModal() {
       <button type="submit" class="em-post-submit">Sign In</button>
       <p class="em-auth-switch">Don't have an account? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
-  modal.classList.add('open');
+  _openModal();
   setTimeout(() => document.getElementById('si-email')?.focus(), 80);
 }
 
@@ -1015,7 +1040,7 @@ function openRegisterModal() {
       <button type="submit" class="em-post-submit">Create Account</button>
       <p class="em-auth-switch">Already have an account? <button type="button" onclick="openSignInModal()">Sign in</button></p>
     </form>`;
-  modal.classList.add('open');
+  _openModal();
   setTimeout(() => document.getElementById('reg-name')?.focus(), 80);
 }
 
@@ -1104,7 +1129,7 @@ function openMyAds() {
           </div>`).join('')
       }
     </div>`;
-  modal.classList.add('open');
+  _openModal();
   myAds.forEach(l => {
     const el = document.getElementById('myad-img-' + l.id);
     if (el) _renderImg(el, l);
@@ -1132,7 +1157,7 @@ function openSavedAds() {
           </div>`).join('')
       }
     </div>`;
-  modal.classList.add('open');
+  _openModal();
   saved.forEach(l => {
     const el = document.getElementById('svad-img-' + l.id);
     if (el) _renderImg(el, l);
