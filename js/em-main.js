@@ -389,12 +389,6 @@ function toast(msg) {
   return false;
 }
 
-/* ── Theme toggle ── */
-let _dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-function toggleTheme() {
-  _dark = !_dark;
-  document.documentElement.setAttribute('data-theme', _dark ? 'dark' : 'light');
-}
 
 function toggleMobileSearch() {
   const bar = document.getElementById('srch-mob');
@@ -911,9 +905,13 @@ async function submitSignIn(e) {
   const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
   btn.textContent = 'Sign In'; btn.disabled = false;
   if (error) {
-    errEl.textContent = error.message === 'Email not confirmed'
-      ? 'Please verify your email first — check your inbox.'
-      : 'Incorrect email or password.';
+    const msg = (error.message || '').toLowerCase();
+    const isUnverified = msg.includes('email') && (msg.includes('confirm') || msg.includes('verif'));
+    if (isUnverified) {
+      errEl.innerHTML = 'Your email isn\'t verified yet. <a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();resendVerification(\'' + email.replace(/'/g, '') + '\')">Resend verification email</a>';
+    } else {
+      errEl.textContent = 'Incorrect email or password. Please try again.';
+    }
     errEl.style.display = '';
     return;
   }
@@ -922,6 +920,19 @@ async function submitSignIn(e) {
   closeModal();
   const name = data.user.user_metadata?.name || email.split('@')[0];
   toast('Welcome back, ' + name.split(' ')[0] + '!');
+}
+
+async function resendVerification(email) {
+  const errEl = document.getElementById('auth-error');
+  if (!email) return;
+  const { error } = await _sb.auth.resend({ type: 'signup', email });
+  if (error) {
+    errEl.textContent = 'Could not resend email. Try again in a minute.';
+  } else {
+    errEl.style.color = 'var(--leaf)';
+    errEl.textContent = 'Verification email sent! Check your inbox.';
+  }
+  errEl.style.display = '';
 }
 
 function openRegisterModal() {
