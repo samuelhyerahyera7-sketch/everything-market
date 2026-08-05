@@ -50,6 +50,25 @@ function _renderImg(el, l) {
   }
 }
 
+/* ── Sponsored Ads ── */
+const SPONSORED = [
+  { title:'Samsung Galaxy S24 Ultra', price:'R 18 999', tag:'Electronics', img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=260&fit=crop&auto=format' },
+  { title:'2022 Toyota Hilux 2.8 GD-6', price:'R 649 900', tag:'Cars & Bakkies', img:'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=260&fit=crop&auto=format' },
+  { title:'3 Bedroom House – Sandton', price:'R 2 450 000', tag:'Property', img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop&auto=format' },
+];
+(function() {
+  const grid = document.getElementById('spons-grid');
+  if (!grid) return;
+  SPONSORED.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'spons-card';
+    card.onclick = () => toast('Opening sponsored ad…');
+    card.innerHTML = `<img src="${s.img}" alt="${s.title}" class="spons-img" loading="lazy">
+      <div class="spons-body"><div class="spons-tag">Sponsored · ${s.tag}</div><div class="spons-title">${s.title}</div><div class="spons-price">${s.price}</div></div>`;
+    grid.appendChild(card);
+  });
+})();
+
 /* ── Shop by Category ── */
 const scatGrid = document.getElementById('shopcat-grid');
 CATS.filter(c => c.id !== 'all').forEach(cat => {
