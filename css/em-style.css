@@ -319,12 +319,57 @@ svg { display: block; }
 .em-modal-bar h3 { font-size: 15px; font-weight: 800; color: var(--ink); }
 .em-modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--surf); border: none; cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: .13s; }
 .em-modal-close:hover { background: var(--surf2); color: var(--ink); }
-/* ── Ad detail modal ── */
+/* ── Ad detail modal (Gumtree-style) ── */
+.ad-gal-wrap { width: 100%; background: #111; overflow: hidden; }
+.ad-gal-img { width: 100%; height: 260px; overflow: hidden; background: var(--surf2); display: flex; align-items: center; justify-content: center; }
+.ad-gal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-gal-placeholder { width: 100%; height: 8px; background: var(--surf2); }
+.ad-detail-body2 { padding: 16px 20px 100px; }
+.ad-detail-price2 { font-size: 24px; font-weight: 900; color: var(--forest); letter-spacing: -.02em; margin-bottom: 4px; }
+.ad-detail-neg { font-size: 13px; font-weight: 600; color: var(--muted); }
+.ad-detail-title2 { font-size: 17px; font-weight: 800; color: var(--ink); margin: 0 0 18px; line-height: 1.3; }
+/* General Details */
+.ad-section-heading { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+.ad-general-section { margin-bottom: 20px; }
+.ad-general-table { display: flex; flex-direction: column; gap: 0; }
+.ad-general-row { display: flex; padding: 9px 0; border-bottom: 1px solid var(--border-lt); }
+.ad-general-row:last-child { border-bottom: none; }
+.ad-general-key { font-size: 12.5px; color: var(--muted); width: 120px; flex-shrink: 0; padding-right: 8px; }
+.ad-general-val { font-size: 12.5px; font-weight: 600; color: var(--ink); flex: 1; }
+/* Description */
+.ad-desc-section { margin-bottom: 20px; }
+.ad-desc-text { font-size: 13.5px; color: var(--ink); line-height: 1.75; overflow: hidden; }
+.ad-desc-text.collapsed { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.ad-desc-toggle { background: none; border: none; color: var(--forest); font-size: 13px; font-weight: 700; cursor: pointer; padding: 6px 0 0; font-family: inherit; }
+/* Seller card */
+.ad-seller-card { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-lt); border-bottom: 1px solid var(--border-lt); margin-bottom: 20px; }
+/* Related ads */
+.ad-related-section { margin-bottom: 16px; }
+.ad-related-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.ad-related-scroll::-webkit-scrollbar { display: none; }
+.ad-related-card { flex: 0 0 140px; background: var(--white); border: 1.5px solid var(--border-lt); border-radius: 10px; overflow: hidden; cursor: pointer; transition: .13s; }
+.ad-related-card:hover { border-color: var(--forest); }
+.ad-related-img { width: 100%; height: 90px; background: var(--surf2); overflow: hidden; }
+.ad-related-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-related-body { padding: 8px 9px 10px; }
+.ad-related-price { font-size: 13px; font-weight: 900; color: var(--forest); }
+.ad-related-title { font-size: 11px; font-weight: 600; color: var(--ink); margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-related-loc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Report link */
+.ad-report-link { text-align: center; padding: 4px 0 8px; }
+.ad-report-link button { background: none; border: none; font-size: 11px; color: var(--muted); cursor: pointer; text-decoration: underline; font-family: inherit; }
+/* Sticky contact bar */
+.ad-sticky-bar { position: sticky; bottom: 0; background: var(--white); border-top: 1.5px solid var(--border-lt); padding: 12px 16px; display: flex; align-items: center; gap: 10px; z-index: 10; }
+.ad-sticky-wa { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; color: #fff; border: none; border-radius: 10px; padding: 13px 16px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .13s; font-family: inherit; }
+.ad-sticky-wa:hover { background: #1BB256; }
+.ad-sticky-icon { width: 46px; height: 46px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--ink2); transition: .13s; }
+.ad-sticky-icon:hover { border-color: var(--forest); background: var(--surf); }
+.ad-sticky-delete { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #FEF0EE; color: var(--red); border: 1.5px solid #FCA5A5; border-radius: 10px; padding: 13px 16px; font-size: 14px; font-weight: 800; cursor: pointer; font-family: inherit; }
+/* Legacy compat */
 .ad-detail-photo { width: 100%; height: 240px; overflow: hidden; background: var(--surf2); }
 .ad-detail-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ad-detail-body { padding: 16px 20px 28px; }
 .ad-detail-price { font-size: 22px; font-weight: 900; color: var(--forest); letter-spacing: -.02em; }
-.ad-detail-neg { font-size: 13px; font-weight: 600; color: var(--muted); }
 .ad-detail-title { font-size: 16px; font-weight: 800; color: var(--ink); margin: 4px 0 10px; line-height: 1.3; }
 .ad-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .ad-detail-chip { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surf); border: 1px solid var(--border-lt); border-radius: 5px; padding: 3px 8px; }

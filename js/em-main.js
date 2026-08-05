@@ -809,77 +809,125 @@ function openBuyNow(listing) {
   const hasPhotos = listing.photos && listing.photos.length > 0;
   const safeId   = String(listing.id).replace(/'/g, '');
   const safeTitle = listing.title.replace(/'/g, "\\'");
+  const catName  = (CATS.find(c => c.id === listing.cat) || {}).name || listing.cat;
+
+  // General Details rows
+  const details = [];
+  if (listing.loc) details.push(['Location', listing.loc]);
+  details.push(['For Sale By', listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller']);
+  if (listing.cond && listing.cond !== 'N/A') details.push(['Condition', listing.cond]);
+  details.push(['Category', catName]);
+  if (timeStr) details.push(['Posted', timeStr]);
+
+  // Related ads: same category, excluding this listing
+  const related = LISTINGS.filter(l => l.cat === listing.cat && l.id !== listing.id).slice(0, 6);
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>${isOwner ? 'My Ad' : 'Ad Details'}</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      <button class="em-modal-close" onclick="closeModal()" style="margin-right:auto">&#x2715;</button>
+      <h3 style="margin:0 auto">${isOwner ? 'My Ad' : ''}</h3>
     </div>
 
-    ${hasPhotos ? `<div class="ad-detail-photo" id="ad-detail-photo"></div>` : ''}
+    ${hasPhotos ? `<div class="ad-gal-wrap"><div class="ad-gal-img" id="ad-gal-img"></div></div>` : '<div class="ad-gal-placeholder"></div>'}
 
-    <div class="ad-detail-body">
-      <div class="ad-detail-price">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
-      <div class="ad-detail-title">${listing.title}</div>
-      <div class="ad-detail-meta">
-        ${listing.cond && listing.cond !== 'N/A' ? `<span class="ad-detail-chip">${listing.cond}</span>` : ''}
-        <span class="ad-detail-chip">${listing.cat}</span>
-        ${listing.loc ? `<span class="ad-detail-chip">${ICO.pin} ${listing.loc}</span>` : ''}
-        ${timeStr ? `<span class="ad-detail-chip">${ICO.time} ${timeStr}</span>` : ''}
+    <div class="ad-detail-body2">
+      <div class="ad-detail-price2">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
+      <h2 class="ad-detail-title2">${listing.title}</h2>
+
+      <div class="ad-general-section">
+        <div class="ad-section-heading">General Details</div>
+        <div class="ad-general-table">
+          ${details.map(([k,v]) => `
+            <div class="ad-general-row">
+              <span class="ad-general-key">${k}</span>
+              <span class="ad-general-val">${v}</span>
+            </div>`).join('')}
+        </div>
       </div>
 
-      ${listing.desc ? `<div class="ad-detail-desc">${listing.desc.replace(/\n/g,'<br>')}</div>` : ''}
+      ${listing.desc ? `
+      <div class="ad-desc-section">
+        <div class="ad-section-heading">Description</div>
+        <div class="ad-desc-text collapsed" id="ad-desc-text">${listing.desc.replace(/\n/g,'<br>')}</div>
+        <button class="ad-desc-toggle" id="ad-desc-toggle" onclick="toggleAdDesc()">View More</button>
+      </div>` : ''}
 
-      <div class="ad-detail-seller">
-        <div class="em-modal-avatar" style="flex-shrink:0">${initials}</div>
+      <div class="ad-seller-card">
+        <div class="em-modal-avatar">${initials}</div>
         <div style="flex:1;min-width:0">
-          <div class="em-modal-seller-name">${sellerName}
-            ${listing.verified ? '<span class="em-modal-verified">Verified</span>' : ''}
-          </div>
+          <div class="em-modal-seller-name">${sellerName}${listing.verified ? ' <span class="em-modal-verified">Verified</span>' : ''}</div>
           <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
         </div>
       </div>
 
-      <div class="ad-detail-divider"></div>
+      ${related.length ? `
+      <div class="ad-related-section">
+        <div class="ad-section-heading">Similar Ads</div>
+        <div class="ad-related-scroll" id="ad-related-scroll"></div>
+      </div>` : ''}
 
-      ${isOwner ? `
-        <div class="em-modal-section-label" style="padding:0 0 10px">Manage your ad</div>
-        <div class="em-contact-btns">
-          <button class="em-contact-btn em-delete-btn" onclick="_confirmDeleteAd('${safeId}','${safeTitle}')">
-            <div class="em-contact-btn-icon" style="background:#FEF0EE"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
-            <div><span style="color:var(--red)">Delete this ad</span><span class="em-contact-btn-sub">Permanently remove from Everything Market</span></div>
-          </button>
-        </div>
-      ` : `
-        <div class="em-modal-section-label" style="padding:0 0 10px">Contact the seller</div>
-        <div class="em-contact-btns">
-          ${phone ? `
-          <button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
-            <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-            <div><span>WhatsApp Seller</span><span class="em-contact-btn-sub">Fastest response</span></div>
-          </button>
-          <button class="em-contact-btn call" onclick="showCallScreen('${sellerName.replace(/'/g,"\\'")}','${phone}')">
-            <div class="em-contact-btn-icon" style="background:#E3F0FF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
-            <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal number</span></div>
-          </button>` : ''}
-          <button class="em-contact-btn" onclick="showMessageScreen('${safeId}')">
-            <div class="em-contact-btn-icon" style="background:var(--surf2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-            <div><span>Send a Message</span><span class="em-contact-btn-sub">Reply via Everything Market</span></div>
-          </button>
-          <div style="text-align:center;padding-top:4px;">
-            <button onclick="openReportModal('${safeId}','${safeTitle}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">⚑ Report this ad</button>
-          </div>
-        </div>
-      `}
-    </div>`;
+      ${!isOwner ? `<div class="ad-report-link"><button onclick="openReportModal('${safeId}','${safeTitle}')">⚑ Report this ad</button></div>` : ''}
+    </div>
+
+    ${isOwner ? `
+    <div class="ad-sticky-bar">
+      <button class="ad-sticky-delete" onclick="_confirmDeleteAd('${safeId}','${safeTitle}')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Delete Ad
+      </button>
+    </div>` : `
+    <div class="ad-sticky-bar">
+      ${phone ? `
+      <button class="ad-sticky-wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        Chat with Seller
+      </button>
+      <button class="ad-sticky-icon" onclick="showCallScreen('${sellerName.replace(/'/g,"\\'")}','${phone}')" title="Call Seller">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg>
+      </button>` : ''}
+      <button class="ad-sticky-icon" onclick="showMessageScreen('${safeId}')" title="Send Message">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </button>
+    </div>`}`;
 
   _openModal();
+
   if (hasPhotos) {
     setTimeout(() => {
-      const photoEl = document.getElementById('ad-detail-photo');
-      if (photoEl) _renderImg(photoEl, listing);
+      const imgEl = document.getElementById('ad-gal-img');
+      if (imgEl) _renderImg(imgEl, listing);
     }, 10);
   }
+
+  if (related.length) {
+    setTimeout(() => {
+      const scrollEl = document.getElementById('ad-related-scroll');
+      if (!scrollEl) return;
+      related.forEach(l => {
+        const card = document.createElement('div');
+        card.className = 'ad-related-card';
+        card.onclick = () => openBuyNow(l);
+        const rPrice = l.price === 0 ? 'Free' : 'R ' + l.price.toLocaleString('en-ZA');
+        card.innerHTML = `
+          <div class="ad-related-img" id="arel-img-${l.id}"></div>
+          <div class="ad-related-body">
+            <div class="ad-related-price">${rPrice}</div>
+            <div class="ad-related-title">${l.title}</div>
+            <div class="ad-related-loc">${l.loc || ''}</div>
+          </div>`;
+        scrollEl.appendChild(card);
+        _renderImg(card.querySelector(`#arel-img-${l.id}`), l);
+      });
+    }, 20);
+  }
+}
+
+function toggleAdDesc() {
+  const el = document.getElementById('ad-desc-text');
+  const btn = document.getElementById('ad-desc-toggle');
+  if (!el || !btn) return;
+  el.classList.toggle('collapsed');
+  btn.textContent = el.classList.contains('collapsed') ? 'View More' : 'View Less';
 }
 
 function openReportModal(adId, adTitle) {
