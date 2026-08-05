@@ -84,12 +84,93 @@ CATS.filter(c => c.id !== 'all').forEach(cat => {
   const card = document.createElement('a');
   card.href = '#';
   card.className = 'scat-card';
-  card.onclick = e => { e.preventDefault(); toast('Browsing ' + cat.name + '…'); };
+  card.onclick = e => { e.preventDefault(); openCategoryPage(cat.id, cat.name); };
   card.innerHTML = `
-    <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='${cat.bg}'"></div>
+    <div class="scat-img-wrap"><img src="${cat.img}" alt="${cat.name}" class="scat-img" loading="lazy" onerror="this.parentElement.style.background='#e8e6e0'"></div>
     <div class="scat-name">${cat.name}</div>`;
   scatGrid.appendChild(card);
 });
+
+/* ── Category Page ── */
+let _catId = 'all', _catName = 'All Ads';
+
+function openCategoryPage(catId, catName) {
+  _catId = catId;
+  _catName = catName;
+  document.getElementById('cat-page-title').textContent = catName;
+  document.getElementById('cat-page').style.display = 'block';
+  clearCatFilters();
+}
+
+function closeCategoryPage() {
+  document.getElementById('cat-page').style.display = 'none';
+}
+
+function _getCatListings() {
+  if (_catId === 'all') return LISTINGS;
+  return LISTINGS.filter(l => l.cat === _catId);
+}
+
+function applyCatFilters() {
+  const minV = Number(document.getElementById('cf-min').value) || 0;
+  const maxV = Number(document.getElementById('cf-max').value) || Infinity;
+  const conds = [...document.querySelectorAll('.cf-cond:checked')].map(el => el.value);
+  const sort = document.getElementById('cf-sort').value;
+
+  let data = _getCatListings().filter(l => {
+    if (l.price !== 0 && l.price < minV) return false;
+    if (maxV !== Infinity && l.price > maxV) return false;
+    if (conds.length && !conds.includes(l.cond)) return false;
+    return true;
+  });
+
+  if (sort === 'price-asc') data.sort((a, b) => a.price - b.price);
+  else if (sort === 'price-desc') data.sort((a, b) => b.price - a.price);
+
+  renderCatResults(data);
+}
+
+function clearCatFilters() {
+  const minEl = document.getElementById('cf-min');
+  const maxEl = document.getElementById('cf-max');
+  if (minEl) minEl.value = '';
+  if (maxEl) maxEl.value = '';
+  document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
+  const sortEl = document.getElementById('cf-sort');
+  if (sortEl) sortEl.value = 'newest';
+  renderCatResults(_getCatListings());
+}
+
+function renderCatResults(data) {
+  const container = document.getElementById('cat-results');
+  if (!data.length) {
+    container.innerHTML = '<div class="cat-empty">No ads found in this category yet. Be the first to post one!</div>';
+    return;
+  }
+  container.innerHTML = '';
+  data.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'bb-card';
+    card.onclick = () => openBuyNow(l);
+    const timeStr = fmtTime(l.postedAt);
+    card.innerHTML = `
+      <div class="bb-img" id="cr-img-${l.id}"></div>
+      <div class="bb-body">
+        <div class="bb-eyebrow">${l.cat}</div>
+        <div class="bb-price-tag">${fmtPrice(l, true)}</div>
+        <div class="bb-title">${l.title}</div>
+        <div class="bb-meta" style="margin-top:4px">
+          <span>${ICO.pin} ${l.loc}</span>
+          ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
+        </div>
+        <div class="bb-actions">
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">Contact Seller</button>
+        </div>
+      </div>`;
+    container.appendChild(card);
+    _renderImg(card.querySelector(`#cr-img-${l.id}`), l);
+  });
+}
 
 /* ── Autocomplete ── */
 (function() {
