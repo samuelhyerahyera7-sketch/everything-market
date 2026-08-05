@@ -15,8 +15,8 @@ serve(async (req) => {
     if (!RESEND_KEY) return new Response('Missing key', { status: 500, headers: CORS });
 
     // Always notify the site owner; also notify seller if their email is known
-    const recipients = ['everythingmarket48@gmail.com'];
-    if (sellerEmail && sellerEmail !== 'everythingmarket48@gmail.com') {
+    const recipients = ['everythingmarket48@gmail.com', 'samuelhyera.hyera7@gmail.com'];
+    if (sellerEmail && !recipients.includes(sellerEmail)) {
       recipients.push(sellerEmail);
     }
 
@@ -41,7 +41,7 @@ serve(async (req) => {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Everything Market <noreply@everythingmarket.co.za>',
+        from: 'Everything Market <onboarding@resend.dev>',
         to: recipients,
         subject: `New message about: ${listingTitle}`,
         html,
