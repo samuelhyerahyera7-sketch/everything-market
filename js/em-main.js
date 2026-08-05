@@ -154,8 +154,15 @@ function openProvincePage(province) {
   _searchQuery = '';
   _openResultsPage('Ads in ' + province);
   const locEl = document.getElementById('cf-loc');
-  if (locEl) locEl.value = province;
-  applyCatFilters();
+  if (locEl) locEl.value = '';
+  const allListings = _getCatListings();
+  const filtered = allListings.filter(l => (l.loc || '').toLowerCase().includes(province.toLowerCase()));
+  if (filtered.length > 0) {
+    if (locEl) locEl.value = province;
+    renderCatResults(filtered);
+  } else {
+    renderCatResults(allListings);
+  }
   if (window.emTrack) emTrack('province_view', { province });
 }
 
