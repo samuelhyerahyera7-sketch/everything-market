@@ -13,9 +13,9 @@
   --red:        #C0392B;
   --hdr:        #071A0F;
   --topbar:     #040F08;
-  --surf:       #F6F5F1;
-  --surf2:      #EFEDE8;
-  --surf3:      #E8E6E0;
+  --surf:       #FFFFFF;
+  --surf2:      #F4F4F4;
+  --surf3:      #EBEBEB;
   --white:      #FFFFFF;
   --border:     #CDD8D0;
   --border-lt:  #E2EAE4;
@@ -42,7 +42,7 @@
 :root[data-theme="light"] {
   --ink:#0C1510; --ink2:#253B2C; --muted:#5E7566;
   --hdr:#071A0F; --topbar:#040F08;
-  --surf:#F6F5F1; --surf2:#EFEDE8; --surf3:#E8E6E0; --white:#FFFFFF;
+  --surf:#FFFFFF; --surf2:#F4F4F4; --surf3:#EBEBEB; --white:#FFFFFF;
   --border:#CDD8D0; --border-lt:#E2EAE4;
   --leaf-lt:#D6F0E0; --ochre-lt:#FDF3DC;
 }

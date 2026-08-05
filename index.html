@@ -35,14 +35,14 @@
     <!-- Desktop search -->
     <div class="srch-wrap srch-desktop">
       <div class="srch">
-        <input type="text" id="main-search" placeholder="Search cars, property, electronics and more…" autocomplete="off">
-        <select class="srch-loc">
+        <input type="text" id="main-search" placeholder="Search cars, property, electronics and more…" autocomplete="off" onkeydown="if(event.key==='Enter')runSearch()">
+        <select class="srch-loc" id="srch-loc">
           <option value="">All Provinces</option>
           <option>Gauteng</option><option>Western Cape</option><option>KwaZulu-Natal</option>
           <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option>
           <option>North West</option><option>Northern Cape</option><option>Free State</option>
         </select>
-        <button class="srch-btn" onclick="if(window.emTrack){var q=document.getElementById('main-search').value.trim();if(q)emTrack('search',{q:q.slice(0,60)});}">Search</button>
+        <button class="srch-btn" onclick="runSearch()">Search</button>
       </div>
       <div class="ac-drop" id="ac-drop"></div>
     </div>

@@ -92,24 +92,71 @@ CATS.filter(c => c.id !== 'all').forEach(cat => {
 });
 
 /* ── Category Page ── */
-let _catId = 'all', _catName = 'All Ads';
+let _catId = 'all', _catName = 'All Ads', _searchQuery = '';
+
+function _getCatListings() {
+  let data = _catId === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === _catId);
+  if (_searchQuery) {
+    const q = _searchQuery;
+    data = data.filter(l => (l.title + ' ' + (l.desc || '')).toLowerCase().includes(q));
+  }
+  return data;
+}
+
+function _openResultsPage(title) {
+  document.getElementById('cat-page-title').textContent = title;
+  document.getElementById('cat-page').style.display = 'block';
+  document.getElementById('cf-min').value = '';
+  document.getElementById('cf-max').value = '';
+  document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
+  document.getElementById('cf-sort').value = 'newest';
+}
 
 function openCategoryPage(catId, catName) {
   _catId = catId;
   _catName = catName;
-  document.getElementById('cat-page-title').textContent = catName;
-  document.getElementById('cat-page').style.display = 'block';
-  clearCatFilters();
+  _searchQuery = '';
+  _openResultsPage(catName);
+  const locEl = document.getElementById('cf-loc');
+  if (locEl) locEl.value = '';
+  applyCatFilters();
   if (window.emTrack) emTrack('category_view', { cat: catId });
+}
+
+function openProvincePage(province) {
+  _catId = 'all';
+  _catName = province;
+  _searchQuery = '';
+  _openResultsPage('Ads in ' + province);
+  const locEl = document.getElementById('cf-loc');
+  if (locEl) locEl.value = province;
+  applyCatFilters();
+  if (window.emTrack) emTrack('province_view', { province });
+}
+
+function runSearch() {
+  const q    = (document.getElementById('main-search').value || '').trim();
+  const prov = (document.getElementById('srch-loc')?.value || '');
+  if (!q && !prov) { toast('Enter something to search for.'); return; }
+
+  _catId = 'all';
+  _searchQuery = q.toLowerCase();
+
+  const title = q && prov ? `"${q}" in ${prov}` : q ? `Results for "${q}"` : `Ads in ${prov}`;
+  _openResultsPage(title);
+
+  const locEl = document.getElementById('cf-loc');
+  if (locEl) locEl.value = prov;
+
+  applyCatFilters();
+  document.getElementById('ac-drop')?.classList.remove('open');
+
+  if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
-}
-
-function _getCatListings() {
-  if (_catId === 'all') return LISTINGS;
-  return LISTINGS.filter(l => l.cat === _catId);
+  _searchQuery = '';
 }
 
 function applyCatFilters() {
@@ -203,7 +250,7 @@ function renderCatResults(data) {
     if (!hits.length) { drop.classList.remove('open'); return; }
     focusIdx = -1;
     drop.innerHTML = hits.map((s, i) =>
-      `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${s.text.replace(/'/g,"\\'")}';document.getElementById('ac-drop').classList.remove('open');toast('Searching for ${s.text.replace(/'/g,"\\'")}…')">
+      `<div class="ac-item" data-idx="${i}" onclick="document.getElementById('main-search').value='${s.text.replace(/'/g,"\\'")}';drop.classList.remove('open');runSearch()">
         <span class="ac-item-text">${highlight(s.text, lq)}</span>
         ${s.cat ? `<span class="ac-item-cat">${CAT_LABELS[s.cat] || s.cat}</span>` : ''}
       </div>`
@@ -328,7 +375,7 @@ renderAll('all');
 /* ── Province grid ── */
 const pg = document.getElementById('prov-grid');
 PROVINCES.forEach(p => {
-  pg.innerHTML += `<button class="prov-btn" onclick="toast('Browsing ${p}…')">${p} <span class="prov-arr">›</span></button>`;
+  pg.innerHTML += `<button class="prov-btn" onclick="openProvincePage('${p}')">${p} <span class="prov-arr">›</span></button>`;
 });
 
 /* ── Toast ── */
