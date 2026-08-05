@@ -60,6 +60,7 @@ function _renderImg(el, l) {
     img.src = l.photos[0];
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
+    img.onerror = () => { img.remove(); if (l.art) el.appendChild(drawSVG(l.art)); };
     el.appendChild(img);
   } else if (l.art) {
     el.appendChild(drawSVG(l.art));
@@ -302,7 +303,6 @@ function renderBB(data) {
   const grid = document.getElementById('bb-grid');
   const userAds  = data.filter(l => l.isUserAd);
   const featured = data.filter(l => l.badge && !l.isUserAd);
-  /* Always show user-posted ads first, fill remainder with featured/latest */
   const items = [...userAds.slice(0, 3), ...featured].slice(0, 6);
   const finalItems = items.length ? items : data.slice(0, 6);
   if (!finalItems.length) {
@@ -336,11 +336,12 @@ function renderBB(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">Contact Seller</button>
-          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>x.id===${l.id}))">Make Offer</button>` : ''}
-          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa}</button>
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">Contact Seller</button>
+          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>x.id==${l.id}))">Make Offer</button>` : ''}
+          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">${ICO.wa}</button>
         </div>
       </div>`;
+    card.onclick = () => openBuyNow(l);
     grid.appendChild(card);
     _renderImg(card.querySelector(`#bb-img-${l.id}`), l);
   });
@@ -380,7 +381,7 @@ function renderGT(data) {
         </div>
         <div class="gt-foot">
           <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span></div>
-          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa} WhatsApp</button>
+          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id==${l.id}))">${ICO.wa} WhatsApp</button>
         </div>
       </div>`;
     list.appendChild(card);
@@ -454,6 +455,22 @@ function _openModal() {
   modal.classList.add('open');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+/* ── Swipe gestures on modal ── */
+(function() {
+  let t0x = 0, t0y = 0;
+  modalBox.addEventListener('touchstart', e => {
+    t0x = e.touches[0].clientX;
+    t0y = e.touches[0].clientY;
+  }, { passive: true });
+  modalBox.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - t0x;
+    const dy = e.changedTouches[0].clientY - t0y;
+    const isDown = dy > 80 && dy > Math.abs(dx) * 1.5;
+    const isLeft = dx < -80 && Math.abs(dx) > Math.abs(dy) * 1.5;
+    if ((isDown && modalBox.scrollTop === 0) || isLeft) closeModal();
+  }, { passive: true });
+})();
 
 /* ── Post Ad modal ── */
 window._paPhotos = [];
@@ -814,13 +831,73 @@ function showCallScreen(seller, phone) {
 }
 
 function showMessageScreen(listingId) {
-  const l = LISTINGS.find(x => x.id === listingId);
+  const l = LISTINGS.find(x => x.id == listingId);
   if (!l) return;
+  const sess = _getSession();
   modalBox.querySelector('.em-contact-btns').innerHTML = `
     <div style="padding:4px 0;">
+      ${!sess ? `<input id="msg-from-name" class="em-offer-input" placeholder="Your name" style="margin-bottom:8px;width:100%;box-sizing:border-box;">
+      <input id="msg-from-email" class="em-offer-input" placeholder="Your email (optional)" type="email" style="margin-bottom:8px;width:100%;box-sizing:border-box;">` : ''}
       <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
-      <button class="em-offer-submit" onclick="showSentConfirm('message')">Send Message</button>
+      <button class="em-offer-submit" onclick="_sendMessage('${String(listingId).replace(/'/g,'')}')">Send Message</button>
     </div>`;
+}
+
+window._sendMessage = function(listingId) {
+  const l = LISTINGS.find(x => x.id == listingId);
+  const body = (document.getElementById('msg-body').value || '').trim();
+  if (!body) return;
+  const sess = _getSession();
+  const fromName  = sess ? sess.name  : (document.getElementById('msg-from-name')?.value || 'Anonymous');
+  const fromEmail = sess ? sess.email : (document.getElementById('msg-from-email')?.value || null);
+  if (l && l.userId) {
+    try {
+      const key = 'em_inbox_' + l.userId;
+      const inbox = JSON.parse(localStorage.getItem(key) || '[]');
+      inbox.push({ from: fromName, fromEmail, listingTitle: l.title, listingId: l.id, body, time: Date.now() });
+      localStorage.setItem(key, JSON.stringify(inbox));
+      _updateInboxBadge();
+    } catch(e) {}
+  }
+  showSentConfirm('message');
+};
+
+function _updateInboxBadge() {
+  const sess = _getSession();
+  const badge = document.getElementById('inbox-badge');
+  if (!badge || !sess) return;
+  try {
+    const msgs = JSON.parse(localStorage.getItem('em_inbox_' + sess.userId) || '[]');
+    badge.textContent = msgs.length || '';
+    badge.style.display = msgs.length ? '' : 'none';
+  } catch(e) {}
+}
+
+function openInbox() {
+  const sess = _getSession();
+  if (!sess) { openSignInModal(); return; }
+  document.getElementById('hdr-user-drop')?.classList.remove('open');
+  let msgs = [];
+  try { msgs = JSON.parse(localStorage.getItem('em_inbox_' + sess.userId) || '[]'); } catch(e) {}
+  const sorted = msgs.slice().reverse();
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Inbox</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-myads-body">
+      ${!sorted.length
+        ? `<div class="em-myads-empty"><p>No messages yet.<br>When buyers contact you about your ads, their messages will appear here.</p></div>`
+        : sorted.map(m => `
+          <div class="em-msg-row">
+            <div class="em-msg-from">${m.from || 'Anonymous'}${m.fromEmail ? ` <span class="em-msg-email">&lt;${m.fromEmail}&gt;</span>` : ''}</div>
+            <div class="em-msg-listing">Re: ${m.listingTitle || 'Your listing'}</div>
+            <div class="em-msg-body">${m.body}</div>
+            <div class="em-msg-time">${fmtTime(m.time)}</div>
+          </div>`).join('')
+      }
+    </div>`;
+  modal.classList.add('open');
 }
 
 /* ── Make Offer modal ── */
@@ -947,9 +1024,11 @@ async function _initAuth() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _updateAuthUI();
+  _updateInboxBadge();
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     _updateAuthUI();
+    _updateInboxBadge();
   });
 }
 _initAuth();
@@ -1166,7 +1245,7 @@ function openSavedAds() {
       ${!saved.length
         ? `<div class="em-myads-empty"><p>You haven't saved any ads yet.<br>Tap the heart on any listing to save it.</p></div>`
         : saved.map(l => `
-          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id===${l.id})),200)" style="cursor:pointer;">
+          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id==${l.id})),200)" style="cursor:pointer;">
             <div class="em-myad-img" id="svad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
