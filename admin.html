@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EM Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --forest: #0A3D22; --leaf: #1A7A42; --mid: #145C35;
+      --ochre: #C8820A; --ochre-brt: #E09A12;
+      --ink: #0C1510; --muted: #5E7566;
+      --surf: #F6F5F1; --surf2: #EFEDE8;
+      --border: #CDD8D0; --white: #fff;
+      --red: #C0392B; --hdr: #071A0F;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--surf); color: var(--ink); font-size: 13.5px; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; cursor: pointer; border: none; }
+
+    /* ── Login ── */
+    #login-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--hdr);
+    }
+    .login-box {
+      background: #fff; border-radius: 14px; padding: 36px 32px; width: 100%; max-width: 360px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.4);
+    }
+    .login-logo { font-size: 1.3rem; font-weight: 900; color: var(--forest); letter-spacing: -.04em; margin-bottom: 4px; }
+    .login-logo span { color: var(--ochre-brt); }
+    .login-sub { font-size: 11.5px; color: var(--muted); margin-bottom: 24px; }
+    .login-label { font-size: 11px; font-weight: 700; color: var(--ink); margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: .07em; }
+    .login-input {
+      width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 14px; outline: none; font-family: inherit; margin-bottom: 16px;
+    }
+    .login-input:focus { border-color: var(--forest); }
+    .login-btn {
+      width: 100%; padding: 12px; background: var(--forest); color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .13s;
+    }
+    .login-btn:hover { background: var(--mid); }
+    .login-err { font-size: 12px; color: var(--red); margin-top: 10px; display: none; }
+
+    /* ── Dashboard ── */
+    #dashboard { display: none; min-height: 100vh; }
+    .adm-hdr {
+      background: var(--hdr); padding: 0 24px; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .adm-logo { font-size: 1rem; font-weight: 900; color: #fff; letter-spacing: -.03em; }
+    .adm-logo span { color: var(--ochre-brt); }
+    .adm-logo small { font-size: 9px; font-weight: 600; color: rgba(255,255,255,.4); margin-left: 6px; text-transform: uppercase; letter-spacing: .1em; }
+    .adm-signout { font-size: 12px; color: rgba(255,255,255,.5); background: none; border: none; cursor: pointer; }
+    .adm-signout:hover { color: #fff; }
+
+    .adm-body { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+    .adm-section { margin-bottom: 36px; }
+    .adm-section-hd {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); margin-bottom: 14px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* stat cards */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .stat-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 14px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+    .stat-val { font-size: 28px; font-weight: 900; color: var(--forest); letter-spacing: -.03em; line-height: 1; }
+    .stat-sub { font-size: 10px; color: var(--muted); }
+
+    /* tables */
+    .adm-table-wrap { overflow-x: auto; }
+    .adm-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .adm-table th { background: var(--surf2); font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 9px 13px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .adm-table td { padding: 10px 13px; font-size: 12.5px; color: var(--ink); border-bottom: 1px solid #f0ede8; vertical-align: middle; }
+    .adm-table tr:last-child td { border-bottom: none; }
+    .adm-table tr:hover td { background: var(--surf); }
+    .cat-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 6px; border-radius: 3px; background: #E8F5EE; color: var(--mid); white-space: nowrap; }
+    .flag-btn { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 5px; cursor: pointer; border: none; transition: .12s; font-family: inherit; }
+    .flag-btn.unflagged { background: #FEF9EC; color: var(--ochre); border: 1.5px solid #F5D58A; }
+    .flag-btn.unflagged:hover { background: #FFF3CC; }
+    .flag-btn.flagged { background: #FEF0EE; color: var(--red); border: 1.5px solid #FBBBB3; }
+    .flag-btn.flagged:hover { background: #FFE0DC; }
+    .flagged-row td { background: #FEF8F8 !important; }
+    .report-reason { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adm-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+    .adm-refresh { font-size: 11px; color: var(--leaf); background: none; border: none; cursor: pointer; font-family: inherit; font-weight: 600; float: right; margin-top: -2px; }
+    .adm-refresh:hover { text-decoration: underline; }
+    .loading { text-align: center; padding: 24px; color: var(--muted); font-size: 12px; }
+
+    /* tabs */
+    .adm-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+    .adm-tab { padding: 9px 16px; font-size: 12.5px; font-weight: 700; color: var(--muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: .13s; font-family: inherit; }
+    .adm-tab.active { color: var(--forest); border-bottom-color: var(--forest); }
+    .adm-tab-panel { display: none; }
+    .adm-tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Everything<span>Market</span></div>
+    <div class="login-sub">Admin Dashboard · everythingmarket48@gmail.com</div>
+    <label class="login-label" for="adm-pass">Admin Password</label>
+    <input class="login-input" id="adm-pass" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard">
+  <div class="adm-hdr">
+    <div class="adm-logo">Everything<span>Market</span> <small>Admin</small></div>
+    <button class="adm-signout" onclick="adminSignOut()">Sign out</button>
+  </div>
+
+  <div class="adm-body">
+
+    <!-- Stats -->
+    <div class="adm-section">
+      <div class="adm-section-hd">Overview — last 30 days</div>
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-label">Page Views</div><div class="stat-val" id="st-pv">…</div></div>
+        <div class="stat-card"><div class="stat-label">Ads Posted</div><div class="stat-val" id="st-ap">…</div></div>
+        <div class="stat-card"><div class="stat-label">Registrations</div><div class="stat-val" id="st-reg">…</div></div>
+        <div class="stat-card"><div class="stat-label">Ad Views</div><div class="stat-val" id="st-av">…</div></div>
+        <div class="stat-card"><div class="stat-label">Searches</div><div class="stat-val" id="st-srch">…</div></div>
+        <div class="stat-card"><div class="stat-label">Reports</div><div class="stat-val" id="st-rpt" style="color:var(--red)">…</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="adm-tabs">
+      <button class="adm-tab active" onclick="switchTab('ads')">Posted Ads</button>
+      <button class="adm-tab" onclick="switchTab('reports')">Reports</button>
+      <button class="adm-tab" onclick="switchTab('activity')">Activity</button>
+    </div>
+
+    <!-- Ads tab -->
+    <div class="adm-tab-panel active" id="tab-ads">
+      <div class="adm-section-hd">
+        All Posted Ads
+        <button class="adm-refresh" onclick="loadAds()">↻ Refresh</button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr>
+            <th>Title</th><th>Category</th><th>Price</th><th>Location</th><th>Seller</th><th>Posted</th><th>Action</th>
+          </tr></thead>
+          <tbody id="ads-tbody"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Reports tab -->
+    <div class="adm-tab-panel" id="tab-reports">
+      <div class="adm-section-hd">
+        User Reports
+        <button class="adm-refresh" onclick="loadReports()">↻ Refresh</button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr>
+            <th>Ad Title</th><th>Reason</th><th>Received</th>
+          </tr></thead>
+          <tbody id="rpt-tbody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Activity tab -->
+    <div class="adm-tab-panel" id="tab-activity">
+      <div class="adm-section-hd">
+        Recent Activity (last 100 events)
+        <button class="adm-refresh" onclick="loadActivity()">↻ Refresh</button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>Event</th><th>Detail</th><th>Time</th></tr></thead>
+          <tbody id="act-tbody"><tr><td colspan="3" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://jucphfbaueowzlbjhxmm.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
+
+/* ── Change this password ── */
+const ADMIN_PASSWORD = 'EMAdmin2026!';
+
+function sbGet(table, params) {
+  const url = new URL(SB_URL + '/rest/v1/' + table);
+  if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  return fetch(url.toString(), {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+  }).then(r => r.json());
+}
+
+async function sbPatch(table, id, data) {
+  await fetch(SB_URL + '/rest/v1/' + table + '?id=eq.' + id, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+/* ── Auth ── */
+function adminLogin() {
+  const pass = document.getElementById('adm-pass').value;
+  const errEl = document.getElementById('login-err');
+  if (pass === ADMIN_PASSWORD) {
+    sessionStorage.setItem('em_admin', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadAll();
+  } else {
+    errEl.style.display = 'block';
+    document.getElementById('adm-pass').value = '';
+    document.getElementById('adm-pass').focus();
+  }
+}
+function adminSignOut() {
+  sessionStorage.removeItem('em_admin');
+  location.reload();
+}
+if (sessionStorage.getItem('em_admin') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadAll();
+}
+document.getElementById('adm-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') adminLogin();
+});
+
+/* ── Tabs ── */
+function switchTab(name) {
+  document.querySelectorAll('.adm-tab').forEach((t, i) => t.classList.toggle('active', ['ads','reports','activity'][i] === name));
+  document.querySelectorAll('.adm-tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+/* ── Load all ── */
+function loadAll() { loadStats(); loadAds(); loadReports(); loadActivity(); }
+
+/* ── Stats ── */
+async function loadStats() {
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  try {
+    const [evts, rpts] = await Promise.all([
+      sbGet('events', { 'created_at': 'gte.' + since, 'select': 'event_type' }),
+      sbGet('reports', { 'created_at': 'gte.' + since, 'select': 'id' })
+    ]);
+    const count = type => evts.filter(e => e.event_type === type).length;
+    document.getElementById('st-pv').textContent   = count('page_view').toLocaleString();
+    document.getElementById('st-ap').textContent   = count('ad_post').toLocaleString();
+    document.getElementById('st-reg').textContent  = count('register').toLocaleString();
+    document.getElementById('st-av').textContent   = count('ad_view').toLocaleString();
+    document.getElementById('st-srch').textContent = count('search').toLocaleString();
+    document.getElementById('st-rpt').textContent  = (rpts.length || 0).toLocaleString();
+  } catch(e) {
+    ['st-pv','st-ap','st-reg','st-av','st-srch','st-rpt'].forEach(id => { document.getElementById(id).textContent = '—'; });
+  }
+}
+
+/* ── Ads ── */
+async function loadAds() {
+  const tbody = document.getElementById('ads-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="loading">Loading…</td></tr>';
+  try {
+    const ads = await sbGet('ads', { 'order': 'created_at.desc', 'limit': '200' });
+    if (!ads.length) { tbody.innerHTML = '<tr><td colspan="7" class="adm-empty">No ads posted yet.</td></tr>'; return; }
+    tbody.innerHTML = ads.map(a => `
+      <tr id="row-${a.id}" class="${a.flagged ? 'flagged-row' : ''}">
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">${esc(a.title)}</td>
+        <td><span class="cat-badge">${esc(a.cat||'—')}</span></td>
+        <td style="white-space:nowrap;">${a.price ? 'R ' + Number(a.price).toLocaleString('en-ZA') : 'Free'}</td>
+        <td style="color:var(--muted);font-size:12px;">${esc(a.loc||'—')}</td>
+        <td style="color:var(--muted);font-size:12px;">${esc(a.seller||'—')}</td>
+        <td style="color:var(--muted);font-size:11px;white-space:nowrap;">${fmtDate(a.created_at)}</td>
+        <td>
+          <button class="flag-btn ${a.flagged ? 'flagged' : 'unflagged'}" id="flag-${a.id}" onclick="toggleFlag('${a.id}',${a.flagged})">
+            ${a.flagged ? '⚑ Flagged' : '⚐ Flag'}
+          </button>
+        </td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="adm-empty">Could not load ads. Check Supabase table + RLS.</td></tr>';
+  }
+}
+
+async function toggleFlag(id, currentlyFlagged) {
+  const newVal = !currentlyFlagged;
+  await sbPatch('ads', id, { flagged: newVal });
+  const row = document.getElementById('row-' + id);
+  const btn = document.getElementById('flag-' + id);
+  if (row) row.className = newVal ? 'flagged-row' : '';
+  if (btn) { btn.className = 'flag-btn ' + (newVal ? 'flagged' : 'unflagged'); btn.textContent = newVal ? '⚑ Flagged' : '⚐ Flag'; btn.onclick = () => toggleFlag(id, newVal); }
+}
+
+/* ── Reports ── */
+async function loadReports() {
+  const tbody = document.getElementById('rpt-tbody');
+  tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading…</td></tr>';
+  try {
+    const rpts = await sbGet('reports', { 'order': 'created_at.desc', 'limit': '100' });
+    if (!rpts.length) { tbody.innerHTML = '<tr><td colspan="3" class="adm-empty">No reports yet.</td></tr>'; return; }
+    tbody.innerHTML = rpts.map(r => `
+      <tr>
+        <td style="font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.ad_title||'Unknown')}</td>
+        <td class="report-reason" style="color:var(--red);">${esc(r.reason||'—')}</td>
+        <td style="color:var(--muted);font-size:11px;white-space:nowrap;">${fmtDate(r.created_at)}</td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="3" class="adm-empty">Could not load reports.</td></tr>';
+  }
+}
+
+/* ── Activity ── */
+async function loadActivity() {
+  const tbody = document.getElementById('act-tbody');
+  tbody.innerHTML = '<tr><td colspan="3" class="loading">Loading…</td></tr>';
+  try {
+    const evts = await sbGet('events', { 'order': 'created_at.desc', 'limit': '100' });
+    if (!evts.length) { tbody.innerHTML = '<tr><td colspan="3" class="adm-empty">No activity yet.</td></tr>'; return; }
+    const labels = { page_view:'Page View', category_view:'Category View', ad_view:'Ad View', ad_post:'Ad Posted', register:'New Registration', search:'Search' };
+    tbody.innerHTML = evts.map(e => `
+      <tr>
+        <td style="white-space:nowrap;"><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:3px;background:var(--surf2);color:var(--mid);">${labels[e.event_type]||e.event_type}</span></td>
+        <td style="color:var(--muted);font-size:12px;">${e.payload ? JSON.stringify(e.payload).replace(/[{}"]/g,'') : '—'}</td>
+        <td style="color:var(--muted);font-size:11px;white-space:nowrap;">${fmtDate(e.created_at)}</td>
+      </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="3" class="adm-empty">Could not load activity.</td></tr>';
+  }
+}
+
+/* ── Helpers ── */
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+}
+</script>
+</body>
+</html>

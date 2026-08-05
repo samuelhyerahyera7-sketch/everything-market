@@ -550,6 +550,7 @@ function submitPostAd(e) {
   renderAll('all');
   window._paPhotos = [];
   if (window.emTrack) emTrack('ad_post', { cat: listing.cat });
+  if (window.emStoreAd) emStoreAd(listing);
 
   showAdPostedConfirm(listing.title);
 }
@@ -614,6 +615,11 @@ function openBuyNow(listing) {
         <div class="em-contact-btn-icon" style="background:var(--surf2);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
         <div><span>Send a Message</span><span class="em-contact-btn-sub">Get a reply via Everything Market</span></div>
       </button>
+      <div style="text-align:center;padding-top:4px;">
+        <button onclick="openReportModal(${listing.id},'${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
+          ⚑ Report this ad
+        </button>
+      </div>
     </div>`;
 
   modal.classList.add('open');
@@ -621,6 +627,50 @@ function openBuyNow(listing) {
     const imgEl = document.getElementById('modal-img');
     if (imgEl) _renderImg(imgEl, listing);
   }, 10);
+}
+
+function openReportModal(adId, adTitle) {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Report Ad</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-offer-body" style="padding-top:16px;">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Help us keep EverythingMarket safe. Reports are reviewed by our team and sent to <strong style="color:var(--ink);">everythingmarket48@gmail.com</strong>.</p>
+      <label class="em-offer-label">Ad</label>
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;padding:10px 12px;background:var(--surf);border-radius:8px;">${adTitle}</div>
+      <label class="em-offer-label">Reason for report</label>
+      <select id="rpt-reason" class="em-post-select" style="margin-bottom:14px;">
+        <option value="">Select a reason…</option>
+        <option>Suspected scam or fraud</option>
+        <option>Prohibited / illegal item</option>
+        <option>Misleading or false information</option>
+        <option>Offensive content</option>
+        <option>Duplicate listing</option>
+        <option>Other</option>
+      </select>
+      <label class="em-offer-label">Additional details <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <textarea id="rpt-detail" class="em-offer-textarea" placeholder="Describe the issue…"></textarea>
+      <div id="rpt-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
+      <button class="em-offer-submit" onclick="submitReport('${String(adId).replace(/'/g,"\\'")}','${adTitle.replace(/'/g,"\\'")}')">Submit Report</button>
+    </div>`;
+  modal.classList.add('open');
+}
+
+function submitReport(adId, adTitle) {
+  const reason = document.getElementById('rpt-reason').value;
+  const detail = (document.getElementById('rpt-detail').value || '').trim();
+  const errEl  = document.getElementById('rpt-err');
+  if (!reason) { errEl.textContent = 'Please select a reason.'; errEl.style.display = ''; return; }
+  const full = detail ? reason + ' — ' + detail : reason;
+  if (window.emReport) emReport(adId, adTitle, full);
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">Report Submitted</div>
+      <div class="em-confirm-sub">Thank you for helping keep EverythingMarket safe. Our team will review this listing.</div>
+      <button class="em-confirm-close" onclick="closeModal()">Done</button>
+    </div>`;
 }
 
 function showCallScreen(seller, phone) {
