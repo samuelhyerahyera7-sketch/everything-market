@@ -612,7 +612,8 @@ svg { display: block; }
   align-items: start;
 }
 @media (max-width: 900px) {
-  .cat-page-body { grid-template-columns: 1fr; }
+  .cat-page-body { display: flex; flex-direction: column; }
+  .cat-results  { order: -1; }
 }
 
 .cat-filters {

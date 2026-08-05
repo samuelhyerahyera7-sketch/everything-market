@@ -63,7 +63,20 @@ function fmtTime(ts) {
   return Math.floor(h / 24) + 'd ago';
 }
 
-const LISTINGS = [];
+const LISTINGS = [
+  { id:'d1',  title:'iPhone 15 Pro 256GB – Space Black', cat:'elec', price:17999, loc:'Sandton, Gauteng',        cond:'Used – Like New', desc:'Purchased 4 months ago. Excellent condition. Original box, charger and case included. No scratches.', postedAt:Date.now()-3600000*2,   art:'phone',    badge:'featured', neg:false },
+  { id:'d2',  title:'2019 Toyota Hilux 2.8 GD-6 Double Cab', cat:'cars', price:429900, loc:'Pretoria, Gauteng', cond:'Pre-owned',      desc:'92 000km. Full Toyota service history. Canopy, tow bar, bull bar. No accidents. One owner.', postedAt:Date.now()-3600000*6,   art:'truck',    badge:'featured', neg:true  },
+  { id:'d3',  title:'3 Bedroom House – Claremont', cat:'prop', price:3250000, loc:'Claremont, Western Cape',    cond:'N/A',            desc:'Spacious family home, 2 bathrooms, double garage, solar geyser. Walking distance to schools.', postedAt:Date.now()-86400000*1,  art:'house',    badge:'featured', neg:true  },
+  { id:'d4',  title:'Samsung 65" QLED 4K Smart TV', cat:'elec', price:8500, loc:'Durban, KwaZulu-Natal',        cond:'Used – Good',    desc:'2 years old, works perfectly. Selling due to upgrade. Remote and stand included.', postedAt:Date.now()-86400000*2,  art:'tv',       badge:null,       neg:false },
+  { id:'d5',  title:'Golden Retriever Puppies – Ready Now', cat:'pets', price:3500, loc:'Centurion, Gauteng',   cond:'N/A',            desc:'8 weeks old. Vaccinated and dewormed. Parents on site. Loving family home.', postedAt:Date.now()-3600000*12,  art:'dog',      badge:null,       neg:false },
+  { id:'d6',  title:'Electrician – Residential & Commercial', cat:'jobs', price:0,     loc:'Cape Town, Western Cape', cond:'N/A',      desc:'Qualified electrician. Fault finding, DB board upgrades, solar installations. Call for a free quote.', postedAt:Date.now()-86400000*3, art:'tools', badge:null,       neg:false },
+  { id:'d7',  title:'2021 Honda CB500F Motorcycle', cat:'cars', price:74900, loc:'Port Elizabeth, Eastern Cape', cond:'Pre-owned',     desc:'18 000km. Pristine condition. Serviced, new tyres. Comes with helmet and jacket.', postedAt:Date.now()-86400000*1,  art:'moto',     badge:null,       neg:true  },
+  { id:'d8',  title:'Solid Wood Dining Table – 6 Seater', cat:'home', price:4200, loc:'Bloemfontein, Free State', cond:'Used – Good', desc:'Solid yellowwood table with 6 matching chairs. Minor surface marks. Must collect.', postedAt:Date.now()-86400000*4,  art:'table',    badge:null,       neg:true  },
+  { id:'d9',  title:'Nike Air Max 270 – Size 10 (New)', cat:'fash', price:1850, loc:'Johannesburg, Gauteng',    cond:'New with tags',  desc:'Bought wrong size. Never worn, original box and receipt. Black/White colourway.', postedAt:Date.now()-3600000*8,   art:'sneakers', badge:'new',      neg:false },
+  { id:'d10', title:'PlayStation 5 Console + 2 Controllers', cat:'elec', price:9500, loc:'Polokwane, Limpopo',  cond:'Used – Like New', desc:'Bought 8 months ago. Comes with 3 games. Original packaging. No issues whatsoever.', postedAt:Date.now()-86400000*2, art:'ps5',      badge:null,       neg:true  },
+  { id:'d11', title:'2 Bedroom Apartment To Let – Sea Point', cat:'prop', price:14500, loc:'Sea Point, Western Cape', cond:'N/A',      desc:'Modern apartment, fully furnished, sea views. Fibre internet, parking, pool. Available 1st.', postedAt:Date.now()-3600000*10,  art:'apt',      badge:'featured', neg:false },
+  { id:'d12', title:'Graphic Designer – Freelance', cat:'jobs', price:0,    loc:'Durban, KwaZulu-Natal',         cond:'N/A',            desc:'Logos, branding, social media, print. 5 years experience. Portfolio available on request.', postedAt:Date.now()-86400000*5, art:'design',   badge:null,       neg:false },
+];
 
 const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Northern Cape','Free State'];
 

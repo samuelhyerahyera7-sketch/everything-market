@@ -122,9 +122,10 @@ function _getCatListings() {
 
 function _openResultsPage(title) {
   document.getElementById('cat-page-title').textContent = title;
-  /* Position the overlay right below the actual header (topbar + header combined) */
-  const hdrBottom = Math.round(document.querySelector('.hdr').getBoundingClientRect().bottom);
   const catPage = document.getElementById('cat-page');
+  /* Position overlay below combined topbar+header height */
+  const hdr = document.querySelector('.hdr');
+  const hdrBottom = hdr ? Math.max(40, Math.round(hdr.getBoundingClientRect().bottom)) : 54;
   catPage.style.top = hdrBottom + 'px';
   catPage.style.height = `calc(100vh - ${hdrBottom}px)`;
   catPage.style.display = 'block';
@@ -225,8 +226,13 @@ function clearCatFilters() {
 
 function renderCatResults(data) {
   const container = document.getElementById('cat-results');
+  if (!container) return;
   if (!data.length) {
-    container.innerHTML = '<div class="cat-empty">No ads found in this category yet. Be the first to post one!</div>';
+    container.innerHTML = `<div class="cat-empty">
+      <div style="font-size:32px;margin-bottom:8px;">📭</div>
+      <strong>No ads found here yet</strong><br>
+      <span style="font-size:12px;margin-top:6px;display:block;">Try clearing the filters or <a href="#" onclick="closeModal();return false;" style="color:var(--forest)">post the first ad</a>.</span>
+    </div>`;
     return;
   }
   container.innerHTML = '';
@@ -750,7 +756,8 @@ function openBuyNow(listing) {
   const isOwner  = sess && String(listing.userId) === String(sess.userId);
   const sd       = BB_SELLER_DATA[listing.id] || { delivery: false };
   const price    = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
-  const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const sellerName = listing.seller || 'Everything Market';
+  const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
   const phone    = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
   const waMsg    = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
@@ -782,8 +789,8 @@ function openBuyNow(listing) {
       <div class="ad-detail-seller">
         <div class="em-modal-avatar" style="flex-shrink:0">${initials}</div>
         <div style="flex:1;min-width:0">
-          <div class="em-modal-seller-name">${listing.seller}
-            ${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}
+          <div class="em-modal-seller-name">${sellerName}
+            ${listing.verified ? '<span class="em-modal-verified">Verified</span>' : ''}
           </div>
           <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
         </div>
@@ -807,7 +814,7 @@ function openBuyNow(listing) {
             <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
             <div><span>WhatsApp Seller</span><span class="em-contact-btn-sub">Fastest response</span></div>
           </button>
-          <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
+          <button class="em-contact-btn call" onclick="showCallScreen('${sellerName.replace(/'/g,"\\'")}','${phone}')">
             <div class="em-contact-btn-icon" style="background:#E3F0FF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
             <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal number</span></div>
           </button>` : ''}
