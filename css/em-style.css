@@ -1,3 +1,6 @@
+/* ── Force light mode always ── */
+:root { color-scheme: light; }
+
 /* ── Tokens ── */
 :root {
   --ink:        #0C1510;
