@@ -429,8 +429,11 @@ function openPostAdModal() {
 
       <div class="em-post-row">
         <div class="em-post-field">
-          <label class="em-post-label" for="pa-cat">Category</label>
-          <select class="em-post-select" id="pa-cat">${catOpts}</select>
+          <label class="em-post-label" for="pa-cat">Category <span>(required)</span></label>
+          <select class="em-post-select" id="pa-cat">
+            <option value="">— Select a category —</option>
+            ${catOpts}
+          </select>
         </div>
         <div class="em-post-field">
           <label class="em-post-label" for="pa-cond">Condition</label>
@@ -460,13 +463,24 @@ function openPostAdModal() {
         </div>
       </div>
 
-      <div class="em-post-field">
-        <label class="em-post-label" for="pa-name">Your Name <span>(shown on the listing)</span></label>
-        <input class="em-post-input" id="pa-name" type="text" placeholder="e.g. Sipho M." maxlength="50" value="${(_getSession()||{}).name||''}">
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-name">Your Name <span>(required)</span></label>
+          <input class="em-post-input" id="pa-name" type="text" placeholder="e.g. Sipho M." maxlength="50" value="${(_getSession()||{}).name||''}">
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-phone">WhatsApp / Phone <span>(required)</span></label>
+          <input class="em-post-input" id="pa-phone" type="tel" placeholder="e.g. 082 123 4567" maxlength="20">
+        </div>
       </div>
 
       <div class="em-post-field">
-        <label class="em-post-label" for="pa-loc">Location</label>
+        <label class="em-post-label" for="pa-email">Contact Email <span>(required)</span></label>
+        <input class="em-post-input" id="pa-email" type="email" placeholder="your@email.com" maxlength="120" value="${(_getSession()||{}).email||''}">
+      </div>
+
+      <div class="em-post-field">
+        <label class="em-post-label" for="pa-loc">Location <span>(required)</span></label>
         <input class="em-post-input" id="pa-loc" type="text" placeholder="e.g. Sandton, Gauteng" maxlength="80">
       </div>
 
@@ -543,6 +557,8 @@ function submitPostAd(e) {
   const title = (document.getElementById('pa-title').value || '').trim();
   const desc  = (document.getElementById('pa-desc').value  || '').trim();
   const name  = (document.getElementById('pa-name').value  || '').trim();
+  const phone = (document.getElementById('pa-phone').value || '').trim();
+  const email = (document.getElementById('pa-email').value || '').trim();
   const loc   = (document.getElementById('pa-loc').value   || '').trim();
   const cat   = document.getElementById('pa-cat').value;
   const cond  = document.getElementById('pa-cond').value;
@@ -553,10 +569,13 @@ function submitPostAd(e) {
 
   const errEl = document.getElementById('pa-error');
   const errors = [];
-  if (!title) errors.push('Ad title is required.');
-  if (!name)  errors.push('Your name is required.');
-  if (!loc)   errors.push('Location is required.');
-  if (!desc)  errors.push('Description is required.');
+  if (!title)              errors.push('Ad title is required.');
+  if (!cat)                errors.push('Please select a category.');
+  if (!name)               errors.push('Your name is required.');
+  if (!phone)              errors.push('WhatsApp / phone number is required.');
+  if (!email || !email.includes('@')) errors.push('A valid contact email is required.');
+  if (!loc)                errors.push('Location is required.');
+  if (!desc)               errors.push('Description is required.');
 
   if (errors.length) {
     errEl.textContent = errors[0];
@@ -584,6 +603,8 @@ function submitPostAd(e) {
     photos: [...(window._paPhotos || [])],
     isUserAd: true,
     userId: sess ? sess.userId : null,
+    phone,
+    contactEmail: email,
   };
 
   LISTINGS.unshift(listing);
@@ -844,6 +865,19 @@ function _updateAuthUI() {
 }
 
 async function _initAuth() {
+  /* Handle email verification link — Supabase puts token_hash in the URL */
+  const params = new URLSearchParams(window.location.search);
+  const tokenHash = params.get('token_hash');
+  const type = params.get('type');
+  if (tokenHash && type) {
+    const { error } = await _sb.auth.verifyOtp({ token_hash: tokenHash, type });
+    /* clean the URL without reloading */
+    history.replaceState(null, '', window.location.pathname);
+    if (!error) {
+      toast('Email verified! You are now signed in.');
+    }
+  }
+
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _updateAuthUI();
