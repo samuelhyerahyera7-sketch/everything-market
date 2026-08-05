@@ -127,7 +127,8 @@ function _openResultsPage(title) {
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
-  _lockScroll();
+  if (!_catLocked && !_modalLocked) _applyLock();
+  _catLocked = true;
 }
 
 function openCategoryPage(catId, catName) {
@@ -175,7 +176,8 @@ function runSearch() {
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
   _searchQuery = '';
-  _unlockScroll();
+  _catLocked = false;
+  if (!_modalLocked) _removeLock();
 }
 
 function applyCatFilters() {
@@ -298,14 +300,17 @@ function renderCatResults(data) {
 /* ── BidorBuy grid render ── */
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
-  const featured = data.filter(l => l.badge);
-  const items = featured.length ? featured.slice(0, 6) : data.slice(0, 6);
-  if (!items.length) {
+  const userAds  = data.filter(l => l.isUserAd);
+  const featured = data.filter(l => l.badge && !l.isUserAd);
+  /* Always show user-posted ads first, fill remainder with featured/latest */
+  const items = [...userAds.slice(0, 3), ...featured].slice(0, 6);
+  const finalItems = items.length ? items : data.slice(0, 6);
+  if (!finalItems.length) {
     grid.innerHTML = '<p class="em-empty-state">No ads yet. Be the first to post one!</p>';
     return;
   }
   grid.innerHTML = '';
-  items.forEach(l => {
+  finalItems.forEach(l => {
     const card = document.createElement('div');
     card.className = 'bb-card';
     const ribClass = l.badge === 'Hot' ? 'r-hot' : l.badge === 'Featured' ? 'r-feat' : 'r-new';
@@ -398,24 +403,20 @@ PROVINCES.forEach(p => {
   pg.innerHTML += `<button class="prov-btn" onclick="openProvincePage('${p}')">${p} <span class="prov-arr">›</span></button>`;
 });
 
-/* ── Scroll lock (prevents background scroll behind overlays) ── */
+/* ── Scroll lock — one boolean per overlay, never double-counts ── */
 let _scrollLockY = 0;
-let _scrollLockDepth = 0;
-function _lockScroll() {
-  if (_scrollLockDepth === 0) {
-    _scrollLockY = window.scrollY;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-  }
-  _scrollLockDepth++;
+let _catLocked   = false;
+let _modalLocked = false;
+
+function _applyLock() {
+  _scrollLockY = window.scrollY;
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
 }
-function _unlockScroll() {
-  _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
-  if (_scrollLockDepth === 0) {
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-    window.scrollTo(0, _scrollLockY);
-  }
+function _removeLock() {
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  window.scrollTo(0, _scrollLockY);
 }
 
 /* ── Toast ── */
@@ -444,11 +445,13 @@ const modalBox = modal.querySelector('.em-modal-box');
 function closeModal() {
   modal.classList.remove('open');
   setTimeout(() => { modalBox.innerHTML = ''; }, 250);
-  _unlockScroll();
+  _modalLocked = false;
+  if (!_catLocked) _removeLock();
 }
 function _openModal() {
-  _lockScroll();
-  _openModal();
+  if (!_modalLocked && !_catLocked) _applyLock();
+  _modalLocked = true;
+  modal.classList.add('open');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
@@ -679,67 +682,79 @@ function showAdPostedConfirm(title) {
     </div>`;
 }
 
-/* ── Contact / Buy Now modal ── */
+/* ── Ad detail / Contact modal ── */
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
-  const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
-  const price = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
+  const sd       = BB_SELLER_DATA[listing.id] || { delivery: false };
+  const price    = listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA');
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  /* Use real seller phone if available, otherwise use a placeholder */
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
-  const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
-  const waMsg = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
+  const phone    = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
+  const waMsg    = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
+  const timeStr  = fmtTime(listing.postedAt);
+  const hasPhotos = listing.photos && listing.photos.length > 0;
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Contact Seller</h3>
+      <h3>Ad Details</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div class="em-modal-listing">
-      <div class="em-modal-listing-img" id="modal-img"></div>
-      <div class="em-modal-listing-info">
-        <div class="em-modal-listing-title">${listing.title}</div>
-        <div class="em-modal-listing-price">${price}</div>
-        ${listing.cond !== 'N/A' ? `<div class="em-modal-listing-cond">${listing.cond}</div>` : ''}
+
+    ${hasPhotos ? `<div class="ad-detail-photo" id="ad-detail-photo"></div>` : ''}
+
+    <div class="ad-detail-body">
+      <div class="ad-detail-price">${price}${listing.neg ? ' <span class="ad-detail-neg">neg.</span>' : ''}</div>
+      <div class="ad-detail-title">${listing.title}</div>
+      <div class="ad-detail-meta">
+        ${listing.cond && listing.cond !== 'N/A' ? `<span class="ad-detail-chip">${listing.cond}</span>` : ''}
+        <span class="ad-detail-chip">${listing.cat}</span>
+        ${listing.loc ? `<span class="ad-detail-chip">${ICO.pin} ${listing.loc}</span>` : ''}
+        ${timeStr ? `<span class="ad-detail-chip">${ICO.time} ${timeStr}</span>` : ''}
       </div>
-    </div>
-    <div class="em-modal-seller">
-      <div class="em-modal-avatar">${initials}</div>
-      <div>
-        <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
-        <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
+
+      ${listing.desc ? `<div class="ad-detail-desc">${listing.desc.replace(/\n/g,'<br>')}</div>` : ''}
+
+      <div class="ad-detail-seller">
+        <div class="em-modal-avatar" style="flex-shrink:0">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="em-modal-seller-name">${listing.seller}
+            ${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}
+          </div>
+          <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}${sd.delivery ? ' · Delivery available' : ''}</div>
+        </div>
       </div>
-    </div>
-    <div class="em-modal-divider"></div>
-    <div class="em-modal-section-label">Choose how to connect</div>
-    <div class="em-contact-btns">
-      ${phone
-        ? `<button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
-        <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-        <div><span>Chat on WhatsApp</span><span class="em-contact-btn-sub">Fastest response — usually within minutes</span></div>
-      </button>
-      <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
-        <div class="em-contact-btn-icon" style="background:#E3F0FF;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
-        <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal phone number</span></div>
-      </button>`
-        : ''}
-      <button class="em-contact-btn" onclick="showMessageScreen(${listing.id})">
-        <div class="em-contact-btn-icon" style="background:var(--surf2);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-        <div><span>Send a Message</span><span class="em-contact-btn-sub">Get a reply via Everything Market</span></div>
-      </button>
-      <div style="text-align:center;padding-top:4px;">
-        <button onclick="openReportModal(${listing.id},'${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
-          ⚑ Report this ad
+
+      <div class="ad-detail-divider"></div>
+      <div class="em-modal-section-label" style="padding:0 0 10px">Contact the seller</div>
+
+      <div class="em-contact-btns">
+        ${phone ? `
+        <button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
+          <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+          <div><span>WhatsApp Seller</span><span class="em-contact-btn-sub">Fastest response</span></div>
         </button>
+        <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
+          <div class="em-contact-btn-icon" style="background:#E3F0FF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
+          <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal number</span></div>
+        </button>` : ''}
+        <button class="em-contact-btn" onclick="showMessageScreen('${String(listing.id).replace(/'/g,'')}')">
+          <div class="em-contact-btn-icon" style="background:var(--surf2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div><span>Send a Message</span><span class="em-contact-btn-sub">Reply via Everything Market</span></div>
+        </button>
+        <div style="text-align:center;padding-top:4px;">
+          <button onclick="openReportModal('${String(listing.id).replace(/'/g,'')}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">⚑ Report this ad</button>
+        </div>
       </div>
     </div>`;
 
   _openModal();
-  setTimeout(() => {
-    const imgEl = document.getElementById('modal-img');
-    if (imgEl) _renderImg(imgEl, listing);
-  }, 10);
+  if (hasPhotos) {
+    setTimeout(() => {
+      const photoEl = document.getElementById('ad-detail-photo');
+      if (photoEl) _renderImg(photoEl, listing);
+    }, 10);
+  }
 }
 
 function openReportModal(adId, adTitle) {

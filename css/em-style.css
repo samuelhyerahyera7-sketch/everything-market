@@ -318,6 +318,19 @@ svg { display: block; }
 .em-modal-bar h3 { font-size: 15px; font-weight: 800; color: var(--ink); }
 .em-modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--surf); border: none; cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: .13s; }
 .em-modal-close:hover { background: var(--surf2); color: var(--ink); }
+/* ── Ad detail modal ── */
+.ad-detail-photo { width: 100%; height: 240px; overflow: hidden; background: var(--surf2); }
+.ad-detail-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ad-detail-body { padding: 16px 20px 28px; }
+.ad-detail-price { font-size: 22px; font-weight: 900; color: var(--forest); letter-spacing: -.02em; }
+.ad-detail-neg { font-size: 13px; font-weight: 600; color: var(--muted); }
+.ad-detail-title { font-size: 16px; font-weight: 800; color: var(--ink); margin: 4px 0 10px; line-height: 1.3; }
+.ad-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.ad-detail-chip { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surf); border: 1px solid var(--border-lt); border-radius: 5px; padding: 3px 8px; }
+.ad-detail-desc { font-size: 13px; color: var(--ink); line-height: 1.7; padding: 12px 0 14px; border-top: 1px solid var(--border-lt); margin-bottom: 14px; }
+.ad-detail-seller { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border-lt); }
+.ad-detail-divider { height: 1px; background: var(--border-lt); margin: 14px 0 16px; }
+
 .em-modal-listing { display: flex; gap: 12px; padding: 16px 20px; background: var(--surf); margin: 16px 20px; border-radius: 10px; align-items: center; }
 .em-modal-listing-img { width: 64px; height: 64px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
 .em-modal-listing-img canvas { width: 64px !important; height: 64px !important; }
