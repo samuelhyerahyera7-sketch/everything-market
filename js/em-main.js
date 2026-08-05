@@ -137,6 +137,34 @@ function _openResultsPage(title) {
   _catLocked = true;
 }
 
+function _updateCondFilter(catId) {
+  const section = document.getElementById('cf-cond-section');
+  const row     = document.getElementById('cf-cond-row');
+  if (!section || !row) return;
+
+  const noCondCats  = ['jobs', 'pets', 'prop'];
+  const carCats     = ['cars'];
+  const fashCats    = ['fash'];
+
+  if (noCondCats.includes(catId)) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  let opts;
+  if (carCats.includes(catId)) {
+    opts = [['New','New'],['Demo','Demo / Ex-demo'],['Pre-owned','Pre-owned']];
+  } else if (fashCats.includes(catId)) {
+    opts = [['New with tags','New with tags'],['New without tags','New without tags'],['Used – Good','Used – Good'],['Used – Fair','Used – Fair']];
+  } else {
+    opts = [['New','New'],['Used – Like New','Like New'],['Used – Good','Used – Good'],['Used – Fair','Used – Fair']];
+  }
+  row.innerHTML = opts.map(([v,l]) =>
+    `<label><input type="checkbox" class="cf-cond" value="${v}" onchange="applyCatFilters()"> ${l}</label>`
+  ).join('');
+}
+
 function openCategoryPage(catId, catName) {
   _catId = catId;
   _catName = catName;
@@ -144,6 +172,7 @@ function openCategoryPage(catId, catName) {
   _openResultsPage(catName);
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = '';
+  _updateCondFilter(catId);
   applyCatFilters();
   if (window.emTrack) emTrack('category_view', { cat: catId });
 }
@@ -153,6 +182,7 @@ function openProvincePage(province) {
   _catName = province;
   _searchQuery = '';
   _openResultsPage('Ads in ' + province);
+  _updateCondFilter('all');
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = '';
   const allListings = _getCatListings();
@@ -176,6 +206,7 @@ function runSearch() {
 
   const title = q && prov ? `"${q}" in ${prov}` : q ? `Results for "${q}"` : `Ads in ${prov}`;
   _openResultsPage(title);
+  _updateCondFilter('all');
 
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = prov;
@@ -200,6 +231,8 @@ function closeCategoryPage() {
   if (aside) aside.classList.remove('open');
   const btn = document.getElementById('cat-filter-toggle');
   if (btn) btn.classList.remove('active');
+  const condSection = document.getElementById('cf-cond-section');
+  if (condSection) condSection.style.display = '';
   _searchQuery = '';
   _catLocked = false;
   if (!_modalLocked) _removeLock();
