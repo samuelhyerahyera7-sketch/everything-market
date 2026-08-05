@@ -398,17 +398,13 @@ PROVINCES.forEach(p => {
   pg.innerHTML += `<button class="prov-btn" onclick="openProvincePage('${p}')">${p} <span class="prov-arr">›</span></button>`;
 });
 
-/* ── Scroll lock (prevents background scroll behind overlays on iOS/Android) ── */
+/* ── Scroll lock (prevents background scroll behind overlays) ── */
 let _scrollLockY = 0;
 let _scrollLockDepth = 0;
 function _lockScroll() {
   if (_scrollLockDepth === 0) {
     _scrollLockY = window.scrollY;
     document.documentElement.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = '-' + _scrollLockY + 'px';
-    document.body.style.left = '0';
-    document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
   }
   _scrollLockDepth++;
@@ -417,10 +413,6 @@ function _unlockScroll() {
   _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
   if (_scrollLockDepth === 0) {
     document.documentElement.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
     document.body.style.overflow = '';
     window.scrollTo(0, _scrollLockY);
   }

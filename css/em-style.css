@@ -543,11 +543,6 @@ svg { display: block; }
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
-/* Ensure the underlying page is fully frozen when any overlay is open */
-html[style*="overflow: hidden"] body,
-body[style*="position: fixed"] {
-  touch-action: none;
-}
 @media (max-width: 600px) { #cat-page { top: 50px; } }
 
 .cat-page-hdr {
