@@ -38,23 +38,90 @@
     if (document.visibilityState === 'hidden') flush();
   });
 
-  /* ── Ad moderation: store lightweight ad record when posted ── */
+  /* ── Upload a single photo (base64 data URL) to ad-photos storage ── */
+  async function _uploadPhoto(adId, index, dataUrl) {
+    try {
+      const res  = await fetch(dataUrl);
+      const blob = await res.blob();
+      const ext  = (blob.type || 'image/jpeg').split('/')[1] || 'jpg';
+      const path = adId + '/' + index + '.' + ext;
+
+      const r = await fetch(SB_URL + '/storage/v1/object/ad-photos/' + path, {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': blob.type },
+        body: blob
+      });
+      if (!r.ok) return null;
+      return SB_URL + '/storage/v1/object/public/ad-photos/' + path;
+    } catch (_) { return null; }
+  }
+
+  /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
     try {
+      const adId = String(listing.id);
+      const photoUrls = [];
+      if (Array.isArray(listing.photos) && listing.photos.length) {
+        for (let i = 0; i < listing.photos.length; i++) {
+          const url = await _uploadPhoto(adId, i, listing.photos[i]);
+          if (url) photoUrls.push(url);
+        }
+      }
+
       await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
         headers: sbHeaders(),
         body: JSON.stringify({
-          id: String(listing.id),
+          id: adId,
           title: listing.title,
           cat: listing.cat,
           price: listing.price,
           loc: listing.loc,
           seller: listing.seller,
+          seller_type: listing.sellerType || 'private',
+          description: listing.desc || '',
+          cond: listing.cond || 'N/A',
+          neg: listing.neg || false,
+          photos: photoUrls,
+          phone: listing.phone || '',
+          contact_email: listing.contactEmail || '',
+          verified: false,
           created_at: new Date(listing.postedAt || Date.now()).toISOString()
         })
       });
     } catch (_) {}
+  }
+
+  /* ── Load all public ads from Supabase ── */
+  async function loadAds() {
+    try {
+      const r = await fetch(
+        SB_URL + '/rest/v1/ads?select=*&flagged=neq.true&order=created_at.desc&limit=200',
+        { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+      );
+      if (!r.ok) return [];
+      const rows = await r.json();
+      return rows.map(row => ({
+        id: row.id,
+        title: row.title || '',
+        cat: row.cat || 'misc',
+        price: Number(row.price) || 0,
+        loc: row.loc || '',
+        seller: row.seller || 'Unknown',
+        sellerType: row.seller_type || 'private',
+        desc: row.description || '',
+        cond: row.cond || 'N/A',
+        neg: !!row.neg,
+        photos: Array.isArray(row.photos) ? row.photos : [],
+        phone: row.phone || '',
+        contactEmail: row.contact_email || '',
+        verified: !!row.verified,
+        postedAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        isUserAd: true,
+        badge: null,
+        art: null,
+      }));
+    } catch (_) { return []; }
   }
 
   /* ── Report an ad ── */
@@ -69,9 +136,10 @@
   }
 
   /* ── Expose globals ── */
-  window.emTrack  = track;
+  window.emTrack   = track;
   window.emStoreAd = storeAd;
   window.emReport  = reportAd;
+  window.emLoadAds = loadAds;
 
   track('page_view');
 })();
