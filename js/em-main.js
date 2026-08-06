@@ -1170,141 +1170,46 @@ async function signOut() {
   toast('You have been signed out.');
 }
 
+/* ── OTP Auth — no passwords, just email + 6-digit code ── */
+let _otpEmail = '';
+
 function openSignInModal(hint) {
+  _otpEmail = '';
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Sign In</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <form class="em-post-form" onsubmit="submitSignIn(event)" novalidate>
+    <form class="em-post-form" onsubmit="submitSendOtp(event,false)" novalidate>
       ${hint ? `<p class="em-signin-hint">${hint}</p>` : ''}
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">Enter your email and we'll send you a sign-in code — no password needed.</p>
       <div class="em-post-field">
         <label class="em-post-label" for="si-email">Email address</label>
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
-      <div class="em-post-field">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
-          <label class="em-post-label" for="si-pass" style="margin:0;">Password</label>
-          <button type="button" onclick="forgotPassword()" style="font-size:11.5px;color:var(--leaf);font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;">Forgot password?</button>
-        </div>
-        <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password">
-      </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
-      <button type="submit" class="em-post-submit">Sign In</button>
-      <p class="em-auth-switch">Don't have an account? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
+      <button type="submit" class="em-post-submit">Send Code</button>
+      <p class="em-auth-switch">No account yet? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
   _openModal();
   setTimeout(() => document.getElementById('si-email')?.focus(), 80);
 }
 
-async function submitSignIn(e) {
-  e.preventDefault();
-  const email = (document.getElementById('si-email').value || '').trim().toLowerCase();
-  const pass  = document.getElementById('si-pass').value || '';
-  const errEl = document.getElementById('auth-error');
-  const btn   = e.target.querySelector('[type=submit]');
-  if (!email || !pass) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = ''; return; }
-  btn.textContent = 'Signing in…'; btn.disabled = true;
-  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-  btn.textContent = 'Sign In'; btn.disabled = false;
-  if (error) {
-    const msg = (error.message || '').toLowerCase();
-    const isUnverified = msg.includes('confirm') || msg.includes('not confirmed') || msg.includes('verif');
-    if (isUnverified) {
-      errEl.innerHTML = 'Your email isn\'t verified yet. <a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();resendVerification(\'' + email.replace(/'/g, '') + '\')">Resend verification email</a>';
-    } else {
-      errEl.innerHTML = 'Incorrect email or password. <a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();forgotPassword()">Reset password?</a>';
-    }
-    errEl.style.display = '';
-    return;
-  }
-  _sbUser = data.user;
-  _updateAuthUI();
-  closeModal();
-  const name = data.user.user_metadata?.name || email.split('@')[0];
-  toast('Welcome back, ' + name.split(' ')[0] + '!');
-}
-
-async function resendVerification(email) {
-  const errEl = document.getElementById('auth-error');
-  if (!email) return;
-  const { error } = await _sb.auth.resend({ type: 'signup', email });
-  if (error) {
-    errEl.textContent = 'Could not resend email. Try again in a minute.';
-  } else {
-    errEl.style.color = 'var(--leaf)';
-    errEl.textContent = 'Verification email sent! Check your inbox.';
-  }
-  errEl.style.display = '';
-}
-
-function forgotPassword() {
-  const emailInput = document.getElementById('si-email');
-  const email = (emailInput?.value || '').trim().toLowerCase();
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <h3>Reset Password</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <form class="em-post-form" onsubmit="submitForgotPassword(event)" novalidate>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Enter your email and we'll send you a link to reset your password.</p>
-      <div class="em-post-field">
-        <label class="em-post-label" for="fp-email">Email address</label>
-        <input class="em-post-input" id="fp-email" type="email" placeholder="you@example.com" autocomplete="email" value="${email}">
-      </div>
-      <div id="fp-error" class="em-post-error" style="display:none;"></div>
-      <button type="submit" class="em-post-submit">Send Reset Link</button>
-      <p class="em-auth-switch"><button type="button" onclick="openSignInModal()">Back to Sign In</button></p>
-    </form>`;
-  _openModal();
-  setTimeout(() => document.getElementById('fp-email')?.focus(), 80);
-}
-
-async function submitForgotPassword(e) {
-  e.preventDefault();
-  const email = (document.getElementById('fp-email').value || '').trim().toLowerCase();
-  const errEl = document.getElementById('fp-error');
-  const btn   = e.target.querySelector('[type=submit]');
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = ''; return; }
-  btn.textContent = 'Sending…'; btn.disabled = true;
-  const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-  btn.textContent = 'Send Reset Link'; btn.disabled = false;
-  if (error) {
-    errEl.textContent = 'Could not send reset email. Please try again.';
-    errEl.style.display = '';
-    return;
-  }
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <h3>Check Your Email</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <div class="em-confirm" style="padding-bottom:28px;">
-      <div class="em-confirm-icon"><svg viewBox="0 0 48 48" width="52" height="52" fill="none"><circle cx="24" cy="24" r="24" fill="#D6F0E0"/><path d="M14 24l7 7 13-14" stroke="#1A7A42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="em-confirm-title">Reset link sent!</div>
-      <div class="em-confirm-sub">We sent a password reset link to <strong>${email}</strong>. Check your inbox (and spam folder).</div>
-      <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
-    </div>`;
-}
-
 function openRegisterModal() {
+  _otpEmail = '';
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Create Account</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <form class="em-post-form" onsubmit="submitRegister(event)" novalidate>
+    <form class="em-post-form" onsubmit="submitSendOtp(event,true)" novalidate>
       <div class="em-post-field">
         <label class="em-post-label" for="reg-name">Your name <span>(shown on your listings)</span></label>
         <input class="em-post-input" id="reg-name" type="text" placeholder="e.g. Sipho Dlamini" maxlength="60" autocomplete="name">
       </div>
       <div class="em-post-field">
-        <label class="em-post-label" for="reg-email">Email address</label>
-        <input class="em-post-input" id="reg-email" type="email" placeholder="you@example.com" autocomplete="email">
-      </div>
-      <div class="em-post-field">
-        <label class="em-post-label" for="reg-pass">Password <span>(at least 6 characters)</span></label>
-        <input class="em-post-input" id="reg-pass" type="password" placeholder="Choose a password" autocomplete="new-password">
+        <label class="em-post-label" for="si-email">Email address</label>
+        <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Create Account</button>
@@ -1314,59 +1219,82 @@ function openRegisterModal() {
   setTimeout(() => document.getElementById('reg-name')?.focus(), 80);
 }
 
-async function submitRegister(e) {
+async function submitSendOtp(e, isRegister) {
   e.preventDefault();
-  const name  = (document.getElementById('reg-name').value  || '').trim();
-  const email = (document.getElementById('reg-email').value || '').trim().toLowerCase();
-  const pass  = document.getElementById('reg-pass').value   || '';
+  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
+  const name  = isRegister ? (document.getElementById('reg-name')?.value || '').trim() : '';
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
 
-  if (!name)               { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
-  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
-  if (pass.length < 6)     { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
+  if (isRegister && !name) { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
+  if (!email.includes('@'))  { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
 
-  btn.textContent = 'Creating account…'; btn.disabled = true;
-  const { data, error } = await _sb.auth.signUp({
-    email, password: pass,
-    options: { data: { name }, emailRedirectTo: window.location.origin }
-  });
-  btn.textContent = 'Create Account'; btn.disabled = false;
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const opts = { shouldCreateUser: true };
+  if (isRegister && name) opts.data = { name };
+  const { error } = await _sb.auth.signInWithOtp({ email, options: opts });
+  btn.disabled = false; btn.textContent = isRegister ? 'Create Account' : 'Send Code';
 
   if (error) {
-    const msg = (error.message || '').toLowerCase();
-    if (msg.includes('already registered') || msg.includes('already in use') || msg.includes('user already')) {
-      errEl.textContent = 'An account with this email already exists. ';
-      errEl.innerHTML += '<a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();closeModal();openSignInModal()">Sign in instead</a>';
-    } else {
-      errEl.textContent = error.message;
-    }
+    errEl.textContent = 'Could not send code. Please try again in a moment.';
     errEl.style.display = '';
     return;
   }
-  if (window.emTrack) emTrack('register');
 
-  /* Email confirmation disabled — signed in immediately */
-  if (data.session) {
-    _sbUser = data.user;
-    _updateAuthUI();
-    closeModal();
-    toast('Welcome to EverythingMarket, ' + name.split(' ')[0] + '! 🎉');
+  _otpEmail = email;
+  _showOtpCodeScreen(email, isRegister ? name : '');
+}
+
+function _showOtpCodeScreen(email, name) {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Enter Your Code</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitVerifyOtp(event)" novalidate>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">
+        We sent a 6-digit code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
+      </p>
+      <div class="em-post-field">
+        <label class="em-post-label" for="otp-code">6-digit code</label>
+        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" maxlength="6" autocomplete="one-time-code">
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Verify Code</button>
+      <p class="em-auth-switch">
+        Wrong email? <button type="button" onclick="openSignInModal()">Go back</button> &nbsp;·&nbsp;
+        <button type="button" onclick="resendOtp()">Resend code</button>
+      </p>
+    </form>`;
+  setTimeout(() => document.getElementById('otp-code')?.focus(), 80);
+}
+
+async function submitVerifyOtp(e) {
+  e.preventDefault();
+  const token = (document.getElementById('otp-code')?.value || '').replace(/\D/g, '');
+  const errEl = document.getElementById('auth-error');
+  const btn   = e.target.querySelector('[type=submit]');
+  if (token.length < 6) { errEl.textContent = 'Please enter the full 6-digit code.'; errEl.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  const { data, error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
+  btn.disabled = false; btn.textContent = 'Verify Code';
+  if (error) {
+    errEl.textContent = 'Incorrect or expired code. Check your inbox or resend.';
+    errEl.style.display = '';
     return;
   }
+  _sbUser = data.user;
+  _updateAuthUI();
+  closeModal();
+  const name = data.user.user_metadata?.name || _otpEmail.split('@')[0];
+  if (window.emTrack) emTrack('login');
+  toast('Welcome, ' + name.split(' ')[0] + '!');
+}
 
-  /* Email confirmation enabled — ask them to check inbox */
-  modalBox.innerHTML = `
-    <div class="em-confirm">
-      <div class="em-confirm-icon">
-        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--leaf)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/>
-        </svg>
-      </div>
-      <div class="em-confirm-title">Check Your Email!</div>
-      <div class="em-confirm-sub">We sent a verification link to <strong>${email}</strong>. Click the link to activate your account, then come back to sign in.</div>
-      <button class="em-confirm-close" onclick="closeModal();openSignInModal()">Sign In</button>
-    </div>`;
+async function resendOtp() {
+  if (!_otpEmail) return;
+  await _sb.auth.signInWithOtp({ email: _otpEmail, options: { shouldCreateUser: true } });
+  toast('Code resent — check your inbox.');
 }
 
 /* ── My Ads ── */
