@@ -1253,11 +1253,11 @@ function _showOtpCodeScreen(email, name) {
     </div>
     <form class="em-post-form" onsubmit="submitVerifyOtp(event)" novalidate>
       <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">
-        We sent a 6-digit code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
+        We sent a sign-in code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
       </p>
       <div class="em-post-field">
         <label class="em-post-label" for="otp-code">6-digit code</label>
-        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" maxlength="6" autocomplete="one-time-code">
+        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="12345678" maxlength="8" autocomplete="one-time-code">
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Verify Code</button>
@@ -1274,7 +1274,7 @@ async function submitVerifyOtp(e) {
   const token = (document.getElementById('otp-code')?.value || '').replace(/\D/g, '');
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
-  if (token.length < 6) { errEl.textContent = 'Please enter the full 6-digit code.'; errEl.style.display = ''; return; }
+  if (token.length < 6) { errEl.textContent = 'Please enter the full code from your email.'; errEl.style.display = ''; return; }
   btn.disabled = true; btn.textContent = 'Verifying…';
   const { data, error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
   btn.disabled = false; btn.textContent = 'Verify Code';
