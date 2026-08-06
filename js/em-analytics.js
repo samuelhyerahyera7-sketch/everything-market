@@ -177,8 +177,22 @@
   window.emStoreAd      = storeAd;
   window.emReport       = reportAd;
   window.emLoadAds      = loadAds;
+  /* ── Count views for a single ad ── */
+  async function countAdViews(adId) {
+    try {
+      const r = await fetch(
+        SB_URL + '/rest/v1/events?event_type=eq.ad_view&payload->>ad_id=eq.' + encodeURIComponent(String(adId)) + '&select=id',
+        { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
+      );
+      if (!r.ok) return 0;
+      const rows = await r.json();
+      return Array.isArray(rows) ? rows.length : 0;
+    } catch(_) { return 0; }
+  }
+
   window.emStoreMessage = storeMessage;
   window.emLoadMessages = loadMessages;
+  window.emCountViews   = countAdViews;
 
   track('page_view');
 })();

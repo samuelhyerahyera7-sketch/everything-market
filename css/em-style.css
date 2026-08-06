@@ -585,6 +585,51 @@ svg { display: block; }
 }
 .em-myad-del:hover { border-color: var(--red); color: var(--red); background: #FEF0EE; }
 
+/* ── Ad view count chip ── */
+.em-view-count:empty { display: none; }
+.em-view-count { color: var(--muted); }
+
+/* ── Seller profile button (inside ad detail) ── */
+.em-seller-profile-btn {
+  width: 100%; margin: 8px 0 0; padding: 10px 0;
+  background: var(--surf2); border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: 13px; font-weight: 700;
+  color: var(--forest); cursor: pointer; font-family: inherit;
+  transition: background .13s; -webkit-tap-highlight-color: transparent;
+}
+.em-seller-profile-btn:active { background: var(--border-lt); }
+
+/* ── Seller profile modal ── */
+.em-seller-profile-hdr {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 0 16px; border-bottom: 1px solid var(--border-lt); margin-bottom: 14px;
+}
+.em-seller-profile-avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--forest); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 22px; flex-shrink: 0;
+}
+.em-seller-profile-name { font-size: 18px; font-weight: 900; color: var(--ink); }
+.em-seller-verify-box {
+  background: #E8F5E9; border: 1.5px solid #A5D6A7;
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+}
+.em-seller-verify-warn { background: #FFF8E1; border-color: #F9A825; }
+.em-seller-verify-title { font-weight: 800; font-size: 13px; color: var(--forest); margin-bottom: 4px; }
+.em-seller-verify-text { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0; }
+.em-seller-stats-row {
+  display: flex; gap: 0; margin-bottom: 4px;
+  border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.em-seller-stat {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 12px 8px; gap: 2px; border-right: 1.5px solid var(--border);
+}
+.em-seller-stat:last-child { border-right: none; }
+.em-seller-stat strong { font-size: 16px; font-weight: 900; color: var(--ink); }
+.em-seller-stat span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+
 /* ── Mobile user menu items ── */
 .em-menu-item {
   display: flex; align-items: center; gap: 14px; width: 100%;

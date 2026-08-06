@@ -871,7 +871,7 @@ function openSponsoredAd(s) {
 
 function openBuyNow(listing) {
   if (!listing) return;
-  if (window.emTrack) emTrack('ad_view', { cat: listing.cat });
+  if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
   const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
   const price = listing._priceStr || (listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA'));
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -909,15 +909,19 @@ function openBuyNow(listing) {
         ${listing.cond !== 'N/A' ? `<span class="gt-chip">${listing.cond}</span>` : ''}
         <span class="gt-chip">${listing.loc}</span>
         <span class="gt-chip">${fmtTime(listing.postedAt)}</span>
+        <span class="gt-chip em-view-count" id="modal-view-count"></span>
       </div>
       ${listing.desc ? `<div class="em-ad-detail-desc">${listing.desc}</div>` : ''}
       <div class="em-modal-seller" style="margin:0 0 4px;">
         <div class="em-modal-avatar">${initials}</div>
-        <div>
+        <div style="flex:1;min-width:0;">
           <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
           <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
         </div>
       </div>
+      <button class="em-seller-profile-btn" onclick="openSellerProfile('${listing.seller.replace(/'/g,"\\'")}','${listing.userId||''}','${listing.sellerType}',${!!listing.verified},'${(listing.contactEmail||'').replace(/'/g,"\\'")}')">
+        View Seller Profile &amp; All Listings &rarr;
+      </button>
     </div>
     <div class="em-modal-divider"></div>
     <div style="padding:0 20px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact Seller</div>
@@ -946,12 +950,83 @@ function openBuyNow(listing) {
 
   modalBox.scrollTop = 0;
   _openModal();
-  setTimeout(() => {
+  setTimeout(async () => {
     const imgEl = document.getElementById('modal-img');
     if (imgEl) _renderImg(imgEl, listing);
     related.forEach(r => {
       const relEl = document.getElementById(`rel-img-${r.id}`);
       if (relEl) _renderImg(relEl, r);
+    });
+    if (window.emCountViews && !String(listing.id).startsWith('spons_')) {
+      const views = await window.emCountViews(listing.id);
+      const vcEl = document.getElementById('modal-view-count');
+      if (vcEl) vcEl.textContent = '👁 ' + (views + 1) + ' views';
+    }
+  }, 10);
+}
+
+function openSellerProfile(sellerName, userId, sellerType, verified, contactEmail) {
+  const sellerAds = LISTINGS.filter(l =>
+    (userId && l.userId === userId) || (!userId && l.seller === sellerName)
+  ).sort((a, b) => b.postedAt - a.postedAt);
+
+  const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const oldestTs  = sellerAds.length ? Math.min(...sellerAds.map(l => l.postedAt)) : Date.now();
+  const memberSince = new Date(oldestTs).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+  const activeCount = sellerAds.length;
+  const otherAds = sellerAds.slice(0, 8);
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Seller Profile</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:0 20px 24px;">
+      <div class="em-seller-profile-hdr">
+        <div class="em-seller-profile-avatar">${initials}</div>
+        <div>
+          <div class="em-seller-profile-name">${sellerName}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
+            <span class="stype-badge ${sellerType === 'dealer' ? 'stype-dealer' : 'stype-private'}">${sellerType === 'dealer' ? 'Dealership' : 'Private Seller'}</span>
+            <span class="vfy-badge ${verified ? 'vfy-yes' : 'vfy-no'}">${verified ? '✓ Verified' : 'Unverified'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="em-seller-verify-box ${verified ? '' : 'em-seller-verify-warn'}">
+        ${verified
+          ? `<div class="em-seller-verify-title">✓ Verified Seller</div>
+             <div class="em-seller-verify-text">This seller has submitted valid South African ID and has been confirmed by Everything Market. You can trade with confidence.</div>`
+          : `<div class="em-seller-verify-title" style="color:#F57F17;">⚠ Unverified Seller</div>
+             <div class="em-seller-verify-text">This seller has not yet completed identity verification. Always meet in a public place and inspect before paying.</div>`
+        }
+      </div>
+
+      <div class="em-seller-stats-row">
+        <div class="em-seller-stat"><strong>${activeCount}</strong><span>Active Ads</span></div>
+        <div class="em-seller-stat"><strong>${memberSince}</strong><span>Member Since</span></div>
+        <div class="em-seller-stat"><strong>${sellerType === 'dealer' ? 'Fast' : 'N/A'}</strong><span>Response</span></div>
+      </div>
+
+      ${otherAds.length ? `
+      <div class="em-related-hdr" style="margin:16px 0 10px;">Ads by ${sellerName} (${activeCount})</div>
+      <div class="em-related-list">
+        ${otherAds.map(r => `
+          <div class="em-related-card" onclick="openBuyNow(LISTINGS.find(x=>String(x.id)==='${String(r.id)}'))">
+            <div class="em-related-img" id="sp-img-${r.id}"></div>
+            <div class="em-related-body">
+              <div class="em-related-title">${r.title}</div>
+              <div class="em-related-price">${r.price === 0 ? 'Free / Contact' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
+              <div class="em-related-loc">${r.loc}</div>
+            </div>
+          </div>`).join('')}
+      </div>` : '<div style="padding:24px 0;text-align:center;color:var(--muted);font-size:13px;">No other active listings from this seller.</div>'}
+    </div>`;
+  _openModal();
+  setTimeout(() => {
+    otherAds.forEach(r => {
+      const el = document.getElementById('sp-img-' + r.id);
+      if (el) _renderImg(el, r);
     });
   }, 10);
 }
