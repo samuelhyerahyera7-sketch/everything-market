@@ -1230,7 +1230,7 @@ async function submitSendOtp(e, isRegister) {
   if (!email.includes('@'))  { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
 
   btn.disabled = true; btn.textContent = 'Sending…';
-  const opts = { shouldCreateUser: true };
+  const opts = { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' };
   if (isRegister && name) opts.data = { name };
   const { error } = await _sb.auth.signInWithOtp({ email, options: opts });
   btn.disabled = false; btn.textContent = isRegister ? 'Create Account' : 'Send Code';
