@@ -514,6 +514,7 @@ svg { display: block; }
 .hdr-user-drop button:last-child { border-bottom: none; }
 .hdr-user-drop button:hover { background: var(--surf); }
 .hdr-user-drop button.sign-out { color: var(--red); }
+@media (max-width: 700px) { #hdr-user-name { display: none; } .hdr-user-btn { padding: 4px; border-radius: 50%; border: none; background: none; } }
 
 /* ── Topbar user link ── */
 .tb-user-link { color: var(--ochre-brt) !important; font-weight: 700 !important; }

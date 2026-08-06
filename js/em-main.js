@@ -609,7 +609,7 @@ function closeModal() {
   _unlockScroll();
 }
 function _openModal() {
-  _lockScroll();
+  if (!modal.classList.contains('open')) _lockScroll();
   modal.classList.add('open');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
