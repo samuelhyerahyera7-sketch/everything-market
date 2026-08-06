@@ -41,18 +41,15 @@ function _saveUserAds() {
 
 /* ── Load ads from Supabase and merge into LISTINGS ── */
 async function _loadSupabaseAds() {
-  if (!window.emLoadAds) return;
+  if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
     const remoteAds = await window.emLoadAds();
-    let added = 0;
     remoteAds.forEach(ad => {
-      if (!LISTINGS.find(l => String(l.id) === String(ad.id))) {
-        LISTINGS.push(ad);
-        added++;
-      }
+      if (!LISTINGS.find(l => String(l.id) === String(ad.id))) LISTINGS.push(ad);
     });
-    if (added > 0) renderAll('all');
   } catch(_) {}
+  window._adsLoaded = true;
+  renderAll('all');
 }
 
 _loadUserAds();
@@ -455,7 +452,9 @@ function renderBB(data) {
   const featured = data.filter(l => l.badge);
   const items = featured.length ? featured.slice(0, 4) : data.slice(0, 4);
   if (!items.length) {
-    grid.innerHTML = '<p class="em-empty-state">No ads yet. Be the first to post one!</p>';
+    grid.innerHTML = window._adsLoaded
+      ? '<p class="em-empty-state">No ads yet — be the first to post one!</p>'
+      : '<div class="em-loading-state"><div class="em-spinner"></div><p>Loading ads…</p></div>';
     return;
   }
   grid.innerHTML = '';
@@ -500,7 +499,7 @@ function renderBB(data) {
 function renderGT(data) {
   const list = document.getElementById('gt-list');
   const items = data.slice(0, 4);
-  list.innerHTML = '';
+  if (!items.length) { list.innerHTML = ''; return; }
   items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'gt-card';
@@ -540,8 +539,8 @@ function renderGT(data) {
 
 function renderAll(cat = 'all') {
   const data = cat === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === cat || l.cat.startsWith(cat.slice(0,3)));
-  renderBB(data.length ? data : LISTINGS);
-  renderGT(data.length ? data : LISTINGS);
+  renderBB(data);
+  renderGT(data);
 }
 
 renderAll('all');
@@ -1184,7 +1183,10 @@ function openSignInModal(hint) {
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="em-post-field">
-        <label class="em-post-label" for="si-pass">Password</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <label class="em-post-label" for="si-pass" style="margin:0;">Password</label>
+          <button type="button" onclick="forgotPassword()" style="font-size:11.5px;color:var(--leaf);font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;">Forgot password?</button>
+        </div>
         <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password">
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
@@ -1207,11 +1209,11 @@ async function submitSignIn(e) {
   btn.textContent = 'Sign In'; btn.disabled = false;
   if (error) {
     const msg = (error.message || '').toLowerCase();
-    const isUnverified = msg.includes('email') && (msg.includes('confirm') || msg.includes('verif'));
+    const isUnverified = msg.includes('confirm') || msg.includes('not confirmed') || msg.includes('verif');
     if (isUnverified) {
       errEl.innerHTML = 'Your email isn\'t verified yet. <a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();resendVerification(\'' + email.replace(/'/g, '') + '\')">Resend verification email</a>';
     } else {
-      errEl.textContent = 'Incorrect email or password. Please try again.';
+      errEl.innerHTML = 'Incorrect email or password. <a href="#" style="color:var(--leaf);font-weight:700;" onclick="event.preventDefault();forgotPassword()">Reset password?</a>';
     }
     errEl.style.display = '';
     return;
@@ -1234,6 +1236,55 @@ async function resendVerification(email) {
     errEl.textContent = 'Verification email sent! Check your inbox.';
   }
   errEl.style.display = '';
+}
+
+function forgotPassword() {
+  const emailInput = document.getElementById('si-email');
+  const email = (emailInput?.value || '').trim().toLowerCase();
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Reset Password</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitForgotPassword(event)" novalidate>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6;">Enter your email and we'll send you a link to reset your password.</p>
+      <div class="em-post-field">
+        <label class="em-post-label" for="fp-email">Email address</label>
+        <input class="em-post-input" id="fp-email" type="email" placeholder="you@example.com" autocomplete="email" value="${email}">
+      </div>
+      <div id="fp-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Send Reset Link</button>
+      <p class="em-auth-switch"><button type="button" onclick="openSignInModal()">Back to Sign In</button></p>
+    </form>`;
+  _openModal();
+  setTimeout(() => document.getElementById('fp-email')?.focus(), 80);
+}
+
+async function submitForgotPassword(e) {
+  e.preventDefault();
+  const email = (document.getElementById('fp-email').value || '').trim().toLowerCase();
+  const errEl = document.getElementById('fp-error');
+  const btn   = e.target.querySelector('[type=submit]');
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email.'; errEl.style.display = ''; return; }
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  btn.textContent = 'Send Reset Link'; btn.disabled = false;
+  if (error) {
+    errEl.textContent = 'Could not send reset email. Please try again.';
+    errEl.style.display = '';
+    return;
+  }
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Check Your Email</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-confirm" style="padding-bottom:28px;">
+      <div class="em-confirm-icon"><svg viewBox="0 0 48 48" width="52" height="52" fill="none"><circle cx="24" cy="24" r="24" fill="#D6F0E0"/><path d="M14 24l7 7 13-14" stroke="#1A7A42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="em-confirm-title">Reset link sent!</div>
+      <div class="em-confirm-sub">We sent a password reset link to <strong>${email}</strong>. Check your inbox (and spam folder).</div>
+      <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
+    </div>`;
 }
 
 function openRegisterModal() {
