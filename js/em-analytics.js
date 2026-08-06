@@ -87,6 +87,7 @@
           phone: listing.phone || '',
           contact_email: listing.contactEmail || '',
           verified: false,
+          user_id: listing.userId || null,
           created_at: new Date(listing.postedAt || Date.now()).toISOString()
         })
       });
@@ -129,6 +130,7 @@
         isUserAd: true,
         badge: null,
         art: null,
+        userId: row.user_id || null,
       }));
     } catch (_) { return []; }
   }
@@ -144,11 +146,39 @@
     } catch (_) {}
   }
 
+  /* ── Store a message in the events table ── */
+  async function storeMessage(msg) {
+    try {
+      await fetch(SB_URL + '/rest/v1/events', {
+        method: 'POST',
+        headers: sbHeaders(),
+        body: JSON.stringify({ event_type: 'em_message', payload: msg, created_at: new Date().toISOString() })
+      });
+    } catch(_) {}
+  }
+
+  /* ── Load messages for a user (sent + received) ── */
+  async function loadMessages(userEmail) {
+    try {
+      const enc = encodeURIComponent(userEmail);
+      const hdrs = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+      const [r1, r2] = await Promise.all([
+        fetch(SB_URL + '/rest/v1/events?event_type=eq.em_message&payload->>recipient_email=eq.' + enc + '&order=created_at.desc&limit=100', { headers: hdrs }),
+        fetch(SB_URL + '/rest/v1/events?event_type=eq.em_message&payload->>sender_email=eq.' + enc + '&order=created_at.desc&limit=100', { headers: hdrs })
+      ]);
+      const received = r1.ok ? await r1.json() : [];
+      const sent     = r2.ok ? await r2.json() : [];
+      return { received, sent };
+    } catch(_) { return { received: [], sent: [] }; }
+  }
+
   /* ── Expose globals ── */
-  window.emTrack   = track;
-  window.emStoreAd = storeAd;
-  window.emReport  = reportAd;
-  window.emLoadAds = loadAds;
+  window.emTrack        = track;
+  window.emStoreAd      = storeAd;
+  window.emReport       = reportAd;
+  window.emLoadAds      = loadAds;
+  window.emStoreMessage = storeMessage;
+  window.emLoadMessages = loadMessages;
 
   track('page_view');
 })();

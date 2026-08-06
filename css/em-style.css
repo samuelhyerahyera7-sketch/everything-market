@@ -585,6 +585,19 @@ svg { display: block; }
 }
 .em-myad-del:hover { border-color: var(--red); color: var(--red); background: #FEF0EE; }
 
+/* ── Mobile user menu items ── */
+.em-menu-item {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 0; background: none; border: none;
+  border-bottom: 1px solid var(--border-lt);
+  font-size: 15px; font-weight: 600; color: var(--ink);
+  cursor: pointer; text-align: left; font-family: inherit;
+  transition: color .15s; -webkit-tap-highlight-color: transparent;
+}
+.em-menu-item:last-child { border-bottom: none; }
+.em-menu-item:active { opacity: .7; }
+.em-menu-item svg { flex-shrink: 0; opacity: .7; }
+
 /* ── Category Page ── */
 #cat-page {
   position: fixed;

@@ -292,7 +292,7 @@ function renderCatResults(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">Contact Seller</button>
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
         </div>
       </div>`;
     container.appendChild(card);
@@ -468,7 +468,7 @@ function renderBB(data) {
     card.innerHTML = `
       <div class="bb-img" id="bb-img-${l.id}"></div>
       ${l.badge ? `<div class="bb-ribbon ${ribClass}">${l.badge}</div>` : ''}
-      <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL(${l.id},this)" aria-label="Save ad">${ICO.heart}</button>
+      <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save ad">${ICO.heart}</button>
       <div class="bb-body">
         <div class="bb-eyebrow">${l.cat}</div>
         <div class="bb-price-tag">${fmtPrice(l, true)}</div>
@@ -485,9 +485,9 @@ function renderBB(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">Contact Seller</button>
-          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>x.id===${l.id}))">Make Offer</button>` : ''}
-          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa}</button>
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
+          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${ICO.wa}</button>
         </div>
       </div>`;
     grid.appendChild(card);
@@ -515,7 +515,7 @@ function renderGT(data) {
       <div class="gt-body">
         <div class="gt-price-wrap">
           <div class="gt-price-tag">${fmtPrice(l, false)}</div>
-          <button class="gt-save-btn${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL(${l.id},this)" aria-label="Save ad">${ICO.heart}</button>
+          <button class="gt-save-btn${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save ad">${ICO.heart}</button>
         </div>
         <div class="gt-title">${l.title}</div>
         <div class="gt-desc">${l.desc}</div>
@@ -529,7 +529,7 @@ function renderGT(data) {
         </div>
         <div class="gt-foot">
           <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span></div>
-          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>x.id===${l.id}))">${ICO.wa} WhatsApp</button>
+          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${ICO.wa} WhatsApp</button>
         </div>
       </div>`;
     list.appendChild(card);
@@ -932,12 +932,12 @@ function openBuyNow(listing) {
         <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal phone number</span></div>
       </button>`
         : ''}
-      <button class="em-contact-btn" onclick="showMessageScreen(${listing.id})">
+      <button class="em-contact-btn" onclick="showMessageScreen('${listing.id}')">
         <div class="em-contact-btn-icon" style="background:var(--surf2);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
         <div><span>Send a Message</span><span class="em-contact-btn-sub">Get a reply via Everything Market</span></div>
       </button>
       <div style="text-align:center;padding-top:4px;">
-        <button onclick="openReportModal(${listing.id},'${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
+        <button onclick="openReportModal('${String(listing.id)}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
           ⚑ Report this ad
         </button>
       </div>
@@ -1013,13 +1013,119 @@ function showCallScreen(seller, phone) {
 }
 
 function showMessageScreen(listingId) {
-  const l = LISTINGS.find(x => x.id === listingId);
+  const l = LISTINGS.find(x => String(x.id) === String(listingId));
   if (!l) return;
+  const sess = _getSession();
+  if (!sess) { closeModal(); openSignInModal('Sign in to send a message.'); return; }
+  const safeTitle  = l.title.replace(/'/g, "\\'");
+  const safeEmail  = (l.contactEmail || '').replace(/'/g, "\\'");
+  const safeSeller = l.seller.replace(/'/g, "\\'");
+  const safeId     = String(l.id).replace(/'/g, "\\'");
   modalBox.querySelector('.em-contact-btns').innerHTML = `
     <div style="padding:4px 0;">
       <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
-      <button class="em-offer-submit" onclick="showSentConfirm('message')">Send Message</button>
+      <div id="msg-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" onclick="submitMessage('${safeId}','${safeTitle}','${safeEmail}','${safeSeller}')">Send Message</button>
     </div>`;
+}
+
+async function submitMessage(adId, adTitle, recipientEmail, sellerName) {
+  const sess = _getSession();
+  if (!sess) return;
+  const msgText = (document.getElementById('msg-body')?.value || '').trim();
+  const errEl = document.getElementById('msg-err');
+  if (!msgText) { if (errEl) { errEl.textContent = 'Please write a message.'; errEl.style.display = ''; } return; }
+  if (window.emStoreMessage) {
+    await window.emStoreMessage({
+      sender_email: sess.email,
+      sender_name: sess.name,
+      recipient_email: recipientEmail,
+      ad_id: adId,
+      ad_title: adTitle,
+      seller: sellerName,
+      message: msgText.slice(0, 1000)
+    });
+  }
+  showSentConfirm('message');
+}
+
+async function openInbox() {
+  document.getElementById('hdr-user-drop')?.classList.remove('open');
+  const sess = _getSession();
+  if (!sess) { openSignInModal(); return; }
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Messages</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-myads-body" id="inbox-body">
+      <div class="em-loading-state"><div class="em-spinner"></div><p>Loading messages…</p></div>
+    </div>`;
+  _openModal();
+
+  const data = window.emLoadMessages ? await window.emLoadMessages(sess.email) : { received: [], sent: [] };
+  const inboxEl = document.getElementById('inbox-body');
+  if (!inboxEl) return;
+
+  const all = [
+    ...(data.received || []).map(e => ({ ...(e.payload || {}), dir: 'in',  time: e.created_at })),
+    ...(data.sent     || []).map(e => ({ ...(e.payload || {}), dir: 'out', time: e.created_at }))
+  ].sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  if (!all.length) {
+    inboxEl.innerHTML = '<div class="em-myads-empty"><p>No messages yet.<br>When you send or receive messages, they will appear here.</p></div>';
+    return;
+  }
+  inboxEl.innerHTML = all.map(m => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border-lt);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+        <div style="font-weight:700;font-size:13px;color:var(--ink);">${m.dir === 'in' ? '📨 ' + (m.sender_name || m.sender_email || 'Buyer') : '📤 To: ' + (m.seller || m.recipient_email || 'Seller')}</div>
+        <div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px;">${fmtTime(new Date(m.time).getTime())}</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px;">Re: <em>${m.ad_title || 'Ad'}</em></div>
+      <div style="font-size:13px;color:var(--ink);line-height:1.5;">${(m.message || '').slice(0, 200)}</div>
+    </div>`).join('');
+}
+
+function openMobileUserMenu() {
+  const sess = _getSession();
+  if (!sess) { openSignInModal(); return; }
+  const initials = sess.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>My Account</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:0 20px 12px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--forest);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;flex-shrink:0;">${initials}</div>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--ink);">${sess.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${sess.email}</div>
+        </div>
+      </div>
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openMyAds,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 13h4"/></svg>
+        My Ads
+      </button>
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openSavedAds,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Saved Ads
+      </button>
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openInbox,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Messages
+      </button>
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openPostAdModal,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Post an Ad
+      </button>
+      <button class="em-menu-item" style="color:#c62828;" onclick="closeModal();setTimeout(signOut,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+    </div>`;
+  _openModal();
 }
 
 /* ── Make Offer modal ── */
@@ -1118,7 +1224,7 @@ function _updateAuthUI() {
     if (sbAuth)      sbAuth.style.display = 'none';
     if (sbAuthIn)    sbAuthIn.style.display = '';
     if (sbWelcome)   sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
-    if (mobAuthBtn)  { mobAuthBtn.title = first; mobAuthBtn.onclick = () => toggleUserMenu(); }
+    if (mobAuthBtn)  { mobAuthBtn.title = first; mobAuthBtn.onclick = openMobileUserMenu; }
   } else {
     if (hdrSignIn)   hdrSignIn.style.display = '';
     if (hdrRegister) hdrRegister.style.display = '';
@@ -1323,7 +1429,7 @@ function openMyAds() {
               <div class="em-myad-title">${l.title}</div>
               <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
             </div>
-            <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd(${l.id})" title="Delete ad">&#x2715;</button>
+            <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd('${l.id}')" title="Delete ad">&#x2715;</button>
           </div>`).join('')
       }
     </div>`;
@@ -1346,7 +1452,7 @@ function openSavedAds() {
       ${!saved.length
         ? `<div class="em-myads-empty"><p>You haven't saved any ads yet.<br>Tap the heart on any listing to save it.</p></div>`
         : saved.map(l => `
-          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>x.id===${l.id})),200)" style="cursor:pointer;">
+          <div class="em-myad-row" onclick="closeModal();setTimeout(()=>openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}')),200)" style="cursor:pointer;">
             <div class="em-myad-img" id="svad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
@@ -1363,7 +1469,7 @@ function openSavedAds() {
 }
 
 window._deleteMyAd = function(id) {
-  const idx = LISTINGS.findIndex(l => l.id === id);
+  const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
   if (idx !== -1) LISTINGS.splice(idx, 1);
   _saveUserAds();
   renderAll('all');
