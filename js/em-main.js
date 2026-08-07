@@ -118,9 +118,8 @@ function renderSponsoredStrip() {
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
   grid.innerHTML = '';
-  /* Duplicate once for seamless loop — each ad appears exactly twice */
-  const repeatTimes = 2;
-  const items = [...sponsored, ...sponsored];
+  const repeatTimes = 1;
+  const items = [...sponsored];
   items.forEach((l, idx) => {
     const card = document.createElement('div');
     card.className = 'spons-card';
@@ -144,12 +143,12 @@ function renderSponsoredStrip() {
   let offsetX = 0, raf = null, dragging = false, startX = 0, startOffset = 0, didDrag = false;
   const SPEED = 0.5;
 
-  function loopWidth() { return grid.scrollWidth / repeatTimes; }
+  function maxScroll() { return Math.max(0, grid.scrollWidth - grid.parentElement.clientWidth); }
 
   function tick() {
     if (!dragging) {
       offsetX += SPEED;
-      if (offsetX >= loopWidth()) offsetX -= loopWidth();
+      if (offsetX >= maxScroll()) offsetX = 0;
     }
     grid.style.transform = 'translateX(' + (-offsetX) + 'px)';
     raf = requestAnimationFrame(tick);
@@ -160,10 +159,7 @@ function renderSponsoredStrip() {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const delta = startX - x;
     if (Math.abs(delta) > 4) didDrag = true;
-    offsetX = startOffset + delta;
-    const loop = loopWidth();
-    if (offsetX < 0) offsetX += loop;
-    if (offsetX >= loop) offsetX -= loop;
+    offsetX = Math.max(0, Math.min(startOffset + delta, maxScroll()));
   }
   function onUp() {
     dragging = false;
