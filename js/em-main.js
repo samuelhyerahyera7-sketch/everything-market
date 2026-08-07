@@ -1361,19 +1361,69 @@ function openSignInModal(hint) {
       <h3>Sign In</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <form class="em-post-form" onsubmit="submitSendOtp(event,false)" novalidate>
+    <form class="em-post-form" onsubmit="submitSignIn(event)" novalidate>
       ${hint ? `<p class="em-signin-hint">${hint}</p>` : ''}
-      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">Enter your email and we'll send you a sign-in code — no password needed.</p>
       <div class="em-post-field">
         <label class="em-post-label" for="si-email">Email address</label>
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="si-pass">Password <span style="font-weight:400;color:var(--muted)">(leave blank to get a code by email)</span></label>
+        <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password">
+      </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
-      <button type="submit" class="em-post-submit">Send Code</button>
+      <button type="submit" class="em-post-submit">Sign In</button>
       <p class="em-auth-switch">No account yet? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
   _openModal();
   setTimeout(() => document.getElementById('si-email')?.focus(), 80);
+}
+
+async function submitSignIn(e) {
+  e.preventDefault();
+  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
+  const pass  = (document.getElementById('si-pass')?.value || '');
+  const errEl = document.getElementById('auth-error');
+  const btn   = e.target.querySelector('[type=submit]');
+
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  if (pass) {
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+    btn.disabled = false; btn.textContent = 'Sign In';
+    if (error) {
+      errEl.innerHTML = `Incorrect password or unconfirmed account. <button type="button" onclick="_switchToOtpSignIn()" style="text-decoration:underline;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;color:var(--forest);padding:0;">Sign in with code instead?</button>`;
+      errEl.style.display = '';
+      return;
+    }
+    _sbUser = data.user;
+    _updateAuthUI();
+    closeModal();
+    const name = data.user.user_metadata?.name || email.split('@')[0];
+    if (window.emTrack) emTrack('login');
+    toast('Welcome back, ' + name.split(' ')[0] + '!');
+  } else {
+    const opts = { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' };
+    const { error } = await _sb.auth.signInWithOtp({ email, options: opts });
+    btn.disabled = false; btn.textContent = 'Sign In';
+    if (error) {
+      errEl.textContent = 'Could not send code. Please check your email and try again.';
+      errEl.style.display = '';
+      return;
+    }
+    _otpEmail = email;
+    _showOtpCodeScreen(email, '');
+  }
+}
+
+async function _switchToOtpSignIn() {
+  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
+  if (!email.includes('@')) return;
+  const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' } });
+  if (!error) { _otpEmail = email; _showOtpCodeScreen(email, ''); }
+  else { const e = document.getElementById('auth-error'); if (e) { e.textContent = 'Could not send code. Please try again.'; e.style.display = ''; } }
 }
 
 function openRegisterModal() {
@@ -1437,7 +1487,7 @@ function _showOtpCodeScreen(email, name) {
         We sent a sign-in code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
       </p>
       <div class="em-post-field">
-        <label class="em-post-label" for="otp-code">6-digit code</label>
+        <label class="em-post-label" for="otp-code">8-digit code</label>
         <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="12345678" maxlength="8" autocomplete="one-time-code">
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>

@@ -28,6 +28,7 @@ const CATS = [
   { id:'agri',  name:'Agriculture',         img:'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=200&h=200&fit=crop&auto=format' },
   { id:'camp',  name:'Caravans & Camping',  img:'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=200&h=200&fit=crop&auto=format' },
   { id:'books', name:'Books & Stationery',  img:'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=200&fit=crop&auto=format' },
+  { id:'other', name:'Other',              img:'https://images.unsplash.com/photo-1530543787849-128d94430c6b?w=200&h=200&fit=crop&auto=format' },
 ];
 
 /* ── Canvas artwork ── */
