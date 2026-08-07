@@ -24,12 +24,7 @@ function fmtPrice(l, large) {
 
 /* ── User ads: load from localStorage and prepend ── */
 function _loadUserAds() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
-    saved.slice().reverse().forEach(ad => {
-      if (!LISTINGS.find(l => String(l.id) === String(ad.id))) LISTINGS.unshift(ad);
-    });
-  } catch(e) {}
+  /* Supabase is the single source of truth — localStorage is no longer used for display */
 }
 
 function _saveUserAds() {
@@ -40,12 +35,15 @@ function _saveUserAds() {
 }
 
 /* ── Load ads from Supabase, auto-delete duplicates, rebuild LISTINGS ── */
+const _SB_URL = 'https://jucphfbaueowzlbjhxmm.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
+
 async function _loadSupabaseAds() {
   if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
     const raw = await window.emLoadAds();
 
-    /* Group by title+seller+price+loc — duplicates are same ad posted multiple times */
+    /* Group by title+seller+price+loc — duplicates are same ad submitted multiple times */
     const groups = new Map();
     raw.forEach(ad => {
       const key = [
@@ -58,36 +56,27 @@ async function _loadSupabaseAds() {
       groups.get(key).push(ad);
     });
 
-    /* For each group keep the newest, collect IDs of the rest to delete */
+    /* Keep newest per group; collect the rest for deletion */
     const remoteAds = [];
     const toDelete  = [];
     groups.forEach(group => {
       group.sort((a, b) => b.postedAt - a.postedAt);
       remoteAds.push(group[0]);
-      for (let i = 1; i < group.length; i++) toDelete.push(group[i].id);
+      for (let i = 1; i < group.length; i++) toDelete.push(String(group[i].id));
     });
 
-    /* Auto-delete duplicate rows from Supabase in the background */
-    if (toDelete.length && window._sb) {
-      window._sb.from('ads').delete().in('id', toDelete).then(() => {
-        console.log('[EM] Auto-removed', toDelete.length, 'duplicate ad(s) from Supabase');
-      });
+    /* Delete duplicate rows from Supabase via direct fetch (reliable, no auth dependency) */
+    if (toDelete.length) {
+      fetch(_SB_URL + '/rest/v1/ads?id=in.(' + toDelete.join(',') + ')', {
+        method: 'DELETE',
+        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Prefer': 'return=minimal' }
+      }).then(() => console.log('[EM] Removed', toDelete.length, 'duplicate(s) from Supabase'));
     }
 
-    /* Rebuild LISTINGS: Supabase is source of truth */
-    const remoteIdSet  = new Set(remoteAds.map(a => String(a.id)));
-    const remoteKeySet = new Set(remoteAds.map(a =>
-      [(a.title||'').trim().toLowerCase(), (a.seller||'').trim().toLowerCase(), String(a.price), (a.loc||'').trim().toLowerCase()].join('||')
-    ));
-    const localOnly = LISTINGS.filter(l =>
-      !remoteIdSet.has(String(l.id)) &&
-      !remoteKeySet.has([(l.title||'').trim().toLowerCase(), (l.seller||'').trim().toLowerCase(), String(l.price), (l.loc||'').trim().toLowerCase()].join('||'))
-    );
-
+    /* Supabase is the single source of truth — wipe localStorage copies and rebuild */
+    localStorage.removeItem('em_user_ads');
     LISTINGS.length = 0;
     remoteAds.forEach(a => LISTINGS.push(a));
-    localOnly.forEach(a => LISTINGS.push(a));
-    _saveUserAds();
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');
