@@ -34,17 +34,14 @@ function _saveUserAds() {
   } catch(e) {}
 }
 
-/* ── Load ads from Supabase, auto-delete duplicates, rebuild LISTINGS ── */
-const _SB_URL = 'https://jucphfbaueowzlbjhxmm.supabase.co';
-const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
-
+/* ── Load ads from Supabase and rebuild LISTINGS ── */
 async function _loadSupabaseAds() {
   if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
     const raw = await window.emLoadAds();
 
-    /* Group by title+seller+price+loc — duplicates are same ad submitted multiple times */
-    const groups = new Map();
+    /* Deduplicate in the display layer only — never touch the database */
+    const seen = new Map();
     raw.forEach(ad => {
       const key = [
         (ad.title  || '').trim().toLowerCase(),
@@ -52,31 +49,12 @@ async function _loadSupabaseAds() {
         String(ad.price),
         (ad.loc    || '').trim().toLowerCase()
       ].join('||');
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(ad);
+      const prev = seen.get(key);
+      if (!prev || ad.postedAt > prev.postedAt) seen.set(key, ad);
     });
 
-    /* Keep newest per group; collect the rest for deletion */
-    const remoteAds = [];
-    const toDelete  = [];
-    groups.forEach(group => {
-      group.sort((a, b) => b.postedAt - a.postedAt);
-      remoteAds.push(group[0]);
-      for (let i = 1; i < group.length; i++) toDelete.push(String(group[i].id));
-    });
-
-    /* Delete duplicate rows from Supabase via direct fetch (reliable, no auth dependency) */
-    if (toDelete.length) {
-      fetch(_SB_URL + '/rest/v1/ads?id=in.(' + toDelete.join(',') + ')', {
-        method: 'DELETE',
-        headers: { 'apikey': _SB_KEY, 'Authorization': 'Bearer ' + _SB_KEY, 'Prefer': 'return=minimal' }
-      }).then(() => console.log('[EM] Removed', toDelete.length, 'duplicate(s) from Supabase'));
-    }
-
-    /* Supabase is the single source of truth — wipe localStorage copies and rebuild */
-    localStorage.removeItem('em_user_ads');
     LISTINGS.length = 0;
-    remoteAds.forEach(a => LISTINGS.push(a));
+    seen.forEach(a => LISTINGS.push(a));
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');
