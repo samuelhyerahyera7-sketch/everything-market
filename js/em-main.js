@@ -1279,6 +1279,10 @@ async function openInbox() {
   document.getElementById('hdr-user-drop')?.classList.remove('open');
   const sess = _getSession();
   if (!sess) { openSignInModal(); return; }
+  /* Mark all messages as read */
+  localStorage.setItem('em_inbox_read_' + sess.email, Date.now().toString());
+  _setMsgBadge(false);
+  clearTimeout(_msgPollTimer);
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Messages</h3>
@@ -1340,7 +1344,7 @@ function openMobileUserMenu() {
       </button>
       <button class="em-menu-item" onclick="closeModal();setTimeout(openInbox,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Messages
+        Messages <span id="menu-msg-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:9px;font-size:11px;padding:1px 6px;margin-left:4px;vertical-align:middle">New</span>
       </button>
       <button class="em-menu-item" onclick="closeModal();setTimeout(openPostAdModal,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -1452,6 +1456,7 @@ function _updateAuthUI() {
     if (sbAuthIn)    sbAuthIn.style.display = '';
     if (sbWelcome)   sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
     if (mobAuthBtn)  { mobAuthBtn.title = first; mobAuthBtn.onclick = openMobileUserMenu; }
+    _checkUnreadMessages(sess.email);
   } else {
     if (hdrSignIn)   hdrSignIn.style.display = '';
     if (hdrRegister) hdrRegister.style.display = '';
@@ -1459,7 +1464,34 @@ function _updateAuthUI() {
     if (sbAuth)      sbAuth.style.display = '';
     if (sbAuthIn)    sbAuthIn.style.display = 'none';
     if (mobAuthBtn)  { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = openSignInModal; }
+    _setMsgBadge(false);
   }
+}
+
+function _setMsgBadge(show) {
+  const mob  = document.getElementById('mob-msg-badge');
+  const desk = document.getElementById('desk-msg-badge');
+  const menu = document.getElementById('menu-msg-badge');
+  if (mob)  mob.style.display  = show ? '' : 'none';
+  if (desk) desk.style.display = show ? '' : 'none';
+  if (menu) menu.style.display = show ? '' : 'none';
+}
+
+let _msgPollTimer = null;
+async function _checkUnreadMessages(email) {
+  if (!email || !window.emLoadMessages) return;
+  try {
+    const lastRead = Number(localStorage.getItem('em_inbox_read_' + email) || 0);
+    const { received } = await window.emLoadMessages(email);
+    const hasNew = received.some(m => {
+      const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
+      return ts > lastRead;
+    });
+    _setMsgBadge(hasNew);
+  } catch(_) {}
+  /* Poll every 60s while the tab is open */
+  clearTimeout(_msgPollTimer);
+  _msgPollTimer = setTimeout(() => _checkUnreadMessages(email), 60000);
 }
 
 async function _initAuth() {
