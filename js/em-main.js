@@ -118,13 +118,17 @@ function renderSponsoredStrip() {
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
   grid.innerHTML = '';
-  const items = [...sponsored, ...sponsored]; // duplicate for seamless loop
-  items.forEach(l => {
+  /* Repeat enough times to fill the strip (min 8 cards for smooth scroll) */
+  const minCards = 8;
+  const repeatTimes = Math.ceil(minCards / sponsored.length) + 1;
+  const items = [];
+  for (let r = 0; r < repeatTimes; r++) sponsored.forEach(l => items.push(l));
+  items.forEach((l, idx) => {
     const card = document.createElement('div');
     card.className = 'spons-card';
     card.innerHTML = `
       <div style="position:relative;">
-        <div class="spons-img" id="spons-img-${l.id}-s"></div>
+        <div class="spons-img" id="spons-img-${l.id}-s${idx}"></div>
         <span class="spons-ad-badge">Sponsored</span>
       </div>
       <div class="spons-body">
@@ -134,7 +138,7 @@ function renderSponsoredStrip() {
         <div class="spons-loc">${l.loc}</div>
       </div>`;
     grid.appendChild(card);
-    _renderImg(card.querySelector(`#spons-img-${l.id}-s`), l);
+    _renderImg(card.querySelector(`#spons-img-${l.id}-s${idx}`), l);
   });
 
   /* JS-driven scroll so mouse/touch drag and auto-scroll share the same offset */
@@ -142,12 +146,12 @@ function renderSponsoredStrip() {
   let offsetX = 0, raf = null, dragging = false, startX = 0, startOffset = 0, didDrag = false;
   const SPEED = 0.5;
 
-  function halfWidth() { return grid.scrollWidth / 2; }
+  function loopWidth() { return grid.scrollWidth / repeatTimes; }
 
   function tick() {
     if (!dragging) {
       offsetX += SPEED;
-      if (offsetX >= halfWidth()) offsetX -= halfWidth();
+      if (offsetX >= loopWidth()) offsetX -= loopWidth();
     }
     grid.style.transform = 'translateX(' + (-offsetX) + 'px)';
     raf = requestAnimationFrame(tick);
@@ -159,9 +163,9 @@ function renderSponsoredStrip() {
     const delta = startX - x;
     if (Math.abs(delta) > 4) didDrag = true;
     offsetX = startOffset + delta;
-    const half = halfWidth();
-    if (offsetX < 0) offsetX += half;
-    if (offsetX >= half) offsetX -= half;
+    const loop = loopWidth();
+    if (offsetX < 0) offsetX += loop;
+    if (offsetX >= loop) offsetX -= loop;
   }
   function onUp() {
     dragging = false;
