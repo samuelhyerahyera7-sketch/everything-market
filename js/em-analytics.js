@@ -38,8 +38,19 @@
     if (document.visibilityState === 'hidden') flush();
   });
 
+  /* ── Get auth token: use logged-in user JWT if available, else anon key ── */
+  async function _getAuthToken() {
+    try {
+      if (window._sb) {
+        const { data: { session } } = await window._sb.auth.getSession();
+        if (session && session.access_token) return session.access_token;
+      }
+    } catch (_) {}
+    return SB_KEY;
+  }
+
   /* ── Upload a single photo (base64 data URL) to ad-photos storage ── */
-  async function _uploadPhoto(adId, index, dataUrl) {
+  async function _uploadPhoto(adId, index, dataUrl, authToken) {
     try {
       const res  = await fetch(dataUrl);
       const blob = await res.blob();
@@ -48,7 +59,7 @@
 
       const r = await fetch(SB_URL + '/storage/v1/object/ad-photos/' + path, {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': blob.type },
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + (authToken || SB_KEY), 'Content-Type': blob.type },
         body: blob
       });
       if (!r.ok) return null;
@@ -59,12 +70,13 @@
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
     try {
+      const authToken = await _getAuthToken();
       /* Use a UUID-compatible key for the storage folder (safe for both text and uuid columns) */
       const folderKey = 'ad-' + String(listing.id);
       const photoUrls = [];
       if (Array.isArray(listing.photos) && listing.photos.length) {
         for (let i = 0; i < listing.photos.length; i++) {
-          const url = await _uploadPhoto(folderKey, i, listing.photos[i]);
+          const url = await _uploadPhoto(folderKey, i, listing.photos[i], authToken);
           if (url) photoUrls.push(url);
         }
       }
@@ -72,7 +84,7 @@
       /* Omit 'id' so Supabase generates its own — avoids uuid vs text type conflicts */
       const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
-        headers: Object.assign({}, sbHeaders(), { 'Prefer': 'return=representation' }),
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
         body: JSON.stringify({
           title: listing.title,
           cat: listing.cat,
