@@ -69,49 +69,69 @@
 
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
-    try {
-      const authToken = await _getAuthToken();
-      /* Use a UUID-compatible key for the storage folder (safe for both text and uuid columns) */
-      const folderKey = 'ad-' + String(listing.id);
-      const photoUrls = [];
-      if (Array.isArray(listing.photos) && listing.photos.length) {
-        for (let i = 0; i < listing.photos.length; i++) {
-          const url = await _uploadPhoto(folderKey, i, listing.photos[i], authToken);
-          if (url) photoUrls.push(url);
-        }
+    const authToken = await _getAuthToken();
+    const folderKey = 'ad-' + String(listing.id);
+    const photoUrls = [];
+    if (Array.isArray(listing.photos) && listing.photos.length) {
+      for (let i = 0; i < listing.photos.length; i++) {
+        const url = await _uploadPhoto(folderKey, i, listing.photos[i], authToken);
+        if (url) photoUrls.push(url);
       }
+    }
 
-      /* Omit 'id' so Supabase generates its own — avoids uuid vs text type conflicts */
+    const payload = {
+      title: listing.title,
+      cat: listing.cat,
+      price: listing.price,
+      loc: listing.loc,
+      seller: listing.seller,
+      seller_type: listing.sellerType || 'private',
+      description: listing.desc || '',
+      cond: listing.cond || 'N/A',
+      neg: listing.neg || false,
+      photos: photoUrls,
+      phone: listing.phone || '',
+      contact_email: listing.contactEmail || '',
+      verified: false,
+      user_id: listing.userId || null
+    };
+
+    /* Prefer the Supabase JS client — it handles token refresh and gives real error objects */
+    if (window._sb) {
+      const { data, error } = await window._sb.from('ads').insert(payload).select();
+      if (error) {
+        console.error('[EM] storeAd failed:', error.code, error.message, error.details);
+        return { ok: false, error };
+      }
+      if (data && data[0] && data[0].id && window.LISTINGS) {
+        const local = window.LISTINGS.find(l => l.id === listing.id);
+        if (local) { local._sbId = data[0].id; local.id = data[0].id; }
+      }
+      return { ok: true };
+    }
+
+    /* Fallback: raw fetch */
+    try {
       const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
         headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({
-          title: listing.title,
-          cat: listing.cat,
-          price: listing.price,
-          loc: listing.loc,
-          seller: listing.seller,
-          seller_type: listing.sellerType || 'private',
-          description: listing.desc || '',
-          cond: listing.cond || 'N/A',
-          neg: listing.neg || false,
-          photos: photoUrls,
-          phone: listing.phone || '',
-          contact_email: listing.contactEmail || '',
-          verified: false,
-          user_id: listing.userId || null,
-          created_at: new Date(listing.postedAt || Date.now()).toISOString()
-        })
+        body: JSON.stringify(payload)
       });
-      /* Store the Supabase-assigned id on the local listing so duplicates are avoided */
-      if (r.ok) {
-        const rows = await r.json();
-        if (rows && rows[0] && rows[0].id && window.LISTINGS) {
-          const local = window.LISTINGS.find(l => l.id === listing.id);
-          if (local) local._sbId = rows[0].id;
-        }
+      if (!r.ok) {
+        const errText = await r.text();
+        console.error('[EM] storeAd HTTP error:', r.status, errText);
+        return { ok: false, error: errText };
       }
-    } catch (_) {}
+      const rows = await r.json();
+      if (rows && rows[0] && rows[0].id && window.LISTINGS) {
+        const local = window.LISTINGS.find(l => l.id === listing.id);
+        if (local) { local._sbId = rows[0].id; local.id = rows[0].id; }
+      }
+      return { ok: true };
+    } catch (e) {
+      console.error('[EM] storeAd exception:', e);
+      return { ok: false, error: e };
+    }
   }
 
   /* ── Load all public ads from Supabase ── */

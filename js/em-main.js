@@ -598,6 +598,21 @@ function toggleMobileSearch() {
   if (bar.classList.contains('open') && input) input.focus();
 }
 
+/* ── Toast notification ── */
+function _showToast(msg, duration) {
+  let t = document.getElementById('em-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'em-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:9999;max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration || 4000);
+}
+
 /* ── Modal system ── */
 const modal = document.getElementById('em-modal');
 const modalBox = modal.querySelector('.em-modal-box');
@@ -826,7 +841,13 @@ function submitPostAd(e) {
   const photoCopy = [...(window._paPhotos || [])];
   window._paPhotos = [];
   showAdPostedConfirm(listing.title);
-  if (window.emStoreAd) emStoreAd({ ...listing, photos: photoCopy });
+  if (window.emStoreAd) {
+    emStoreAd({ ...listing, photos: photoCopy }).then(result => {
+      if (result && !result.ok) {
+        _showToast('⚠️ Your ad was saved locally but could not be uploaded. Please try posting again.', 8000);
+      }
+    });
+  }
 }
 
 function showAdPostedConfirm(title) {
