@@ -102,7 +102,10 @@ function _renderArtIcon(el, artKey) {
 function renderSponsoredStrip() {
   const grid = document.getElementById('spons-grid');
   if (!grid) return;
-  const sponsored = LISTINGS.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > Date.now()));
+  const now = Date.now();
+  const paid = LISTINGS.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
+  /* Fall back to newest 10 ads so the strip is never empty */
+  const sponsored = paid.length ? paid : LISTINGS.slice(0, 10);
   const section = grid.closest('section') || grid.parentElement;
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
@@ -446,9 +449,10 @@ function renderCatResults(data) {
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
   const now = Date.now();
-  const sponsored = data.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
-  const regular   = data.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
-  const items = [...sponsored.slice(0, 10), ...regular].slice(0, 10);
+  const paid    = data.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
+  const regular = data.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
+  /* If no paid sponsors yet, show the newest 10 ads in the top grid for free */
+  const items = paid.length ? [...paid.slice(0, 10), ...regular].slice(0, 10) : data.slice(0, 10);
   if (!items.length) {
     grid.innerHTML = window._adsLoaded
       ? '<p class="em-empty-state">No ads yet — be the first to post one!</p>'
@@ -1501,10 +1505,19 @@ async function _initAuth() {
   const type = params.get('type');
   if (tokenHash && type) {
     const { error } = await _sb.auth.verifyOtp({ token_hash: tokenHash, type });
-    /* clean the URL without reloading */
     history.replaceState(null, '', window.location.pathname);
     if (!error) {
       toast('Email verified! You are now signed in.');
+    }
+  }
+
+  const boostResult = params.get('boost');
+  if (boostResult) {
+    history.replaceState(null, '', window.location.pathname);
+    if (boostResult === 'success') {
+      _showToast('&#x26A1; Payment received! Your ad will be boosted shortly.', 6000);
+    } else if (boostResult === 'cancel') {
+      _showToast('Payment cancelled — your ad was not boosted.', 4000);
     }
   }
 
@@ -1781,54 +1794,91 @@ function openSavedAds() {
 function openSponsorModal(listingId) {
   const l = LISTINGS.find(x => String(x.id) === String(listingId));
   if (!l) return;
+
+  const plans = [
+    { amount: '35', days: 7,  label: '7 Days',  note: 'Best for quick sales' },
+    { amount: '65', days: 14, label: '14 Days', note: 'Most popular', pop: true },
+    { amount: '95', days: 30, label: '30 Days', note: 'Best value' },
+  ];
+
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>⚡ Boost Your Ad</h3>
+      <h3>&#x26A1; Boost Your Ad</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
       <div style="font-size:14px;color:var(--muted);margin-bottom:16px;">
-        Sponsored ads appear in the <strong>top 10 spots</strong> on the homepage and are shown first in search results — getting up to 5× more views than regular listings.
+        Sponsored ads appear in the <strong>top 10 spots</strong> on the homepage — getting up to 5&times; more views.
       </div>
-      <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:10px;">Your ad: ${l.title}</div>
+      <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:14px;">Your ad: ${l.title}</div>
 
-      <div class="em-sponsor-plans">
-        <div class="em-sponsor-plan">
-          <div class="em-sponsor-plan-dur">7 Days</div>
-          <div class="em-sponsor-plan-price">R 35</div>
-          <div class="em-sponsor-plan-note">Best for quick sales</div>
-        </div>
-        <div class="em-sponsor-plan em-sponsor-plan-pop">
-          <div class="em-sponsor-popular-badge">Most Popular</div>
-          <div class="em-sponsor-plan-dur">14 Days</div>
-          <div class="em-sponsor-plan-price">R 65</div>
-          <div class="em-sponsor-plan-note">Save R5 vs 2× weekly</div>
-        </div>
-        <div class="em-sponsor-plan">
-          <div class="em-sponsor-plan-dur">30 Days</div>
-          <div class="em-sponsor-plan-price">R 95</div>
-          <div class="em-sponsor-plan-note">Best value</div>
-        </div>
+      <div class="em-sponsor-plans" id="sponsor-plans">
+        ${plans.map(p => `
+          <div class="em-sponsor-plan${p.pop ? ' em-sponsor-plan-pop' : ''}" id="splan-${p.amount}"
+               onclick="_selectSponsorPlan('${p.amount}')"
+               style="cursor:pointer;">
+            ${p.pop ? '<div class="em-sponsor-popular-badge">Most Popular</div>' : ''}
+            <div class="em-sponsor-plan-dur">${p.label}</div>
+            <div class="em-sponsor-plan-price">R ${p.amount}</div>
+            <div class="em-sponsor-plan-note">${p.note}</div>
+          </div>`).join('')}
       </div>
 
-      <div style="background:var(--surf2);border-radius:12px;padding:16px;margin-top:16px;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">How to pay:</div>
-        <div style="font-size:13px;color:var(--ink);line-height:1.6;">
-          EFT / Bank Transfer:<br>
-          <strong>Bank:</strong> FNB<br>
-          <strong>Account:</strong> Everything Market<br>
-          <strong>Acc No:</strong> Contact us for details<br>
-          <strong>Reference:</strong> BOOST-${String(l.id).slice(-6).toUpperCase()}
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--muted);">Once payment is confirmed, your ad will be boosted within 24 hours. Send your proof of payment to <strong>everythingmarket48@gmail.com</strong> with the reference above.</div>
-      </div>
-
-      <button class="em-offer-submit" style="margin-top:16px;" onclick="window.open('mailto:everythingmarket48@gmail.com?subject=Boost Ad - BOOST-${String(l.id).slice(-6).toUpperCase()}&body=Hi, I would like to boost my ad: ${encodeURIComponent(l.title)}. I will send proof of payment shortly.','_blank')">
-        Email Us to Boost
+      <button class="em-offer-submit" id="sponsor-pay-btn" style="margin-top:20px;opacity:.5;pointer-events:none;"
+              onclick="_startSponsorPayment('${String(l.id)}', '${l.title.replace(/'/g,"\\'")}')">
+        Pay with PayFast &rarr;
       </button>
+      <div id="sponsor-pay-msg" style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px;"></div>
+
+      <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center;">
+        Secured by <strong>PayFast</strong> &middot; Card, EFT, Instant EFT &amp; more accepted
+      </div>
     </div>`;
   _openModal();
 }
+
+let _selectedSponsorAmount = null;
+function _selectSponsorPlan(amount) {
+  _selectedSponsorAmount = amount;
+  document.querySelectorAll('.em-sponsor-plan').forEach(el => {
+    el.style.outline = el.id === 'splan-' + amount ? '2px solid var(--accent)' : '';
+  });
+  const btn = document.getElementById('sponsor-pay-btn');
+  if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = ''; btn.textContent = 'Pay R ' + amount + ' with PayFast →'; }
+}
+
+async function _startSponsorPayment(adId, adTitle) {
+  const amount = _selectedSponsorAmount;
+  if (!amount) return;
+  const btn = document.getElementById('sponsor-pay-btn');
+  const msg = document.getElementById('sponsor-pay-msg');
+  if (btn) { btn.style.opacity = '.6'; btn.style.pointerEvents = 'none'; btn.textContent = 'Preparing…'; }
+  if (msg) msg.textContent = '';
+
+  try {
+    const origin = window.location.origin;
+    const r = await fetch(`/api/payfast-init?adId=${encodeURIComponent(adId)}&amount=${amount}&adTitle=${encodeURIComponent(adTitle)}&origin=${encodeURIComponent(origin)}`);
+    if (!r.ok) throw new Error('init failed');
+    const { pfUrl, fields } = await r.json();
+
+    /* Build a hidden form and POST to PayFast */
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = pfUrl;
+    Object.entries(fields).forEach(([k, v]) => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = k; inp.value = v;
+      form.appendChild(inp);
+    });
+    document.body.appendChild(form);
+    form.submit();
+  } catch(e) {
+    if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = ''; btn.textContent = 'Pay R ' + amount + ' with PayFast →'; }
+    if (msg) msg.textContent = 'Something went wrong. Please try again.';
+  }
+}
+window._selectSponsorPlan  = _selectSponsorPlan;
+window._startSponsorPayment = _startSponsorPayment;
 window.openSponsorModal = openSponsorModal;
 
 window._deleteMyAd = function(id) {
