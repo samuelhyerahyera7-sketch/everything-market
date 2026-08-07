@@ -45,28 +45,30 @@ async function _loadSupabaseAds() {
   try {
     const raw = await window.emLoadAds();
 
-    /* Deduplicate within Supabase results — same title+seller, keep the newest row */
-    const seen = new Map();
+    /* Deduplicate within Supabase results — same title+seller, keep the newest */
+    const seenRemote = new Map();
     raw.forEach(ad => {
       const key = (ad.title || '').trim().toLowerCase() + '||' + (ad.seller || '').trim().toLowerCase();
-      const existing = seen.get(key);
-      if (!existing || ad.postedAt > existing.postedAt) seen.set(key, ad);
+      const prev = seenRemote.get(key);
+      if (!prev || ad.postedAt > prev.postedAt) seenRemote.set(key, ad);
     });
-    const remoteAds = [...seen.values()];
+    const remoteAds = [...seenRemote.values()];
 
-    remoteAds.forEach(ad => {
-      const byId    = LISTINGS.findIndex(l => String(l.id) === String(ad.id));
-      const byTitle = LISTINGS.findIndex(l =>
-        (l.title || '').trim().toLowerCase() === (ad.title || '').trim().toLowerCase() &&
-        (l.seller || '').trim().toLowerCase() === (ad.seller || '').trim().toLowerCase()
-      );
-      const idx = byId !== -1 ? byId : byTitle;
-      if (idx !== -1) {
-        LISTINGS[idx] = ad;
-      } else {
-        LISTINGS.push(ad);
-      }
-    });
+    /* Rebuild LISTINGS: Supabase is the source of truth.
+       Keep only localStorage-only ads that have no match in Supabase at all. */
+    const remoteIdSet    = new Set(remoteAds.map(a => String(a.id)));
+    const remoteTitleSet = new Set(remoteAds.map(a =>
+      (a.title || '').trim().toLowerCase() + '||' + (a.seller || '').trim().toLowerCase()
+    ));
+    const localOnly = LISTINGS.filter(l =>
+      !remoteIdSet.has(String(l.id)) &&
+      !remoteTitleSet.has((l.title || '').trim().toLowerCase() + '||' + (l.seller || '').trim().toLowerCase())
+    );
+
+    LISTINGS.length = 0;
+    remoteAds.forEach(a => LISTINGS.push(a));
+    localOnly.forEach(a => LISTINGS.push(a));
+
     _saveUserAds();
   } catch(_) {}
   window._adsLoaded = true;
