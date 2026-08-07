@@ -45,24 +45,24 @@ async function _loadSupabaseAds() {
   try {
     const raw = await window.emLoadAds();
 
-    /* Deduplicate within Supabase results — same title+seller, keep the newest */
+    /* Deduplicate within Supabase results — same title+price+loc, keep the newest */
     const seenRemote = new Map();
     raw.forEach(ad => {
-      const key = (ad.title || '').trim().toLowerCase() + '||' + (ad.seller || '').trim().toLowerCase();
+      const key = [(ad.title||'').trim().toLowerCase(), String(ad.price), (ad.loc||'').trim().toLowerCase()].join('||');
       const prev = seenRemote.get(key);
       if (!prev || ad.postedAt > prev.postedAt) seenRemote.set(key, ad);
     });
     const remoteAds = [...seenRemote.values()];
 
-    /* Rebuild LISTINGS: Supabase is the source of truth.
-       Keep only localStorage-only ads that have no match in Supabase at all. */
-    const remoteIdSet    = new Set(remoteAds.map(a => String(a.id)));
-    const remoteTitleSet = new Set(remoteAds.map(a =>
-      (a.title || '').trim().toLowerCase() + '||' + (a.seller || '').trim().toLowerCase()
+    /* Rebuild LISTINGS: Supabase is source of truth.
+       Keep only localStorage ads with no match in Supabase. */
+    const remoteIdSet  = new Set(remoteAds.map(a => String(a.id)));
+    const remoteKeySet = new Set(remoteAds.map(a =>
+      [(a.title||'').trim().toLowerCase(), String(a.price), (a.loc||'').trim().toLowerCase()].join('||')
     ));
     const localOnly = LISTINGS.filter(l =>
       !remoteIdSet.has(String(l.id)) &&
-      !remoteTitleSet.has((l.title || '').trim().toLowerCase() + '||' + (l.seller || '').trim().toLowerCase())
+      !remoteKeySet.has([(l.title||'').trim().toLowerCase(), String(l.price), (l.loc||'').trim().toLowerCase()].join('||'))
     );
 
     LISTINGS.length = 0;
