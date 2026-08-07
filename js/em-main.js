@@ -45,8 +45,22 @@ async function _loadSupabaseAds() {
   try {
     const remoteAds = await window.emLoadAds();
     remoteAds.forEach(ad => {
-      if (!LISTINGS.find(l => String(l.id) === String(ad.id))) LISTINGS.push(ad);
+      /* Match by Supabase ID first, then fall back to title+seller
+         to catch localStorage ads that still have the old timestamp ID */
+      const byId    = LISTINGS.findIndex(l => String(l.id) === String(ad.id));
+      const byTitle = LISTINGS.findIndex(l =>
+        l.isUserAd &&
+        (l.title || '').trim().toLowerCase() === (ad.title || '').trim().toLowerCase() &&
+        (l.seller || '').trim().toLowerCase() === (ad.seller || '').trim().toLowerCase()
+      );
+      const idx = byId !== -1 ? byId : byTitle;
+      if (idx !== -1) {
+        LISTINGS[idx] = ad; /* replace local placeholder with authoritative Supabase version */
+      } else {
+        LISTINGS.push(ad);
+      }
     });
+    _saveUserAds(); /* persist corrected Supabase IDs so next load deduplicates by ID */
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');
