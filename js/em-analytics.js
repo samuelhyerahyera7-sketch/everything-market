@@ -105,10 +105,8 @@
   /* ── Load all public ads from Supabase ── */
   async function loadAds() {
     try {
-      const r = await fetch(
-        SB_URL + '/rest/v1/ads?select=*&flagged=not.is.true&order=created_at.desc&limit=200',
-        { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } }
-      );
+      const hdrs = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+      let r = await fetch(SB_URL + '/rest/v1/ads?select=*&order=created_at.desc&limit=500', { headers: hdrs });
       if (!r.ok) return [];
       const rows = await r.json();
       return rows.map(row => ({

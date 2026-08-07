@@ -487,7 +487,6 @@ function renderBB(data) {
         <div class="bb-actions">
           <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
           ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
-          <button class="btn-wa" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${ICO.wa}</button>
         </div>
       </div>`;
     grid.appendChild(card);
@@ -529,7 +528,7 @@ function renderGT(data) {
         </div>
         <div class="gt-foot">
           <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span></div>
-          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${ICO.wa} WhatsApp</button>
+          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">💬 Chat</button>
         </div>
       </div>`;
     list.appendChild(card);
@@ -877,7 +876,6 @@ function openBuyNow(listing) {
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
   const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
-  const waMsg = encodeURIComponent(`Hi, I'm interested in your listing: "${listing.title}" (${price}). Is it still available?`);
 
   const related = LISTINGS.filter(l => l.cat === listing.cat && String(l.id) !== String(listing.id)).slice(0, 4);
   const relatedHTML = related.length ? `
@@ -926,20 +924,16 @@ function openBuyNow(listing) {
     <div class="em-modal-divider"></div>
     <div style="padding:0 20px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact Seller</div>
     <div class="em-contact-btns">
-      ${phone
-        ? `<button class="em-contact-btn wa" onclick="window.open('https://wa.me/${phone}?text=${waMsg}','_blank')">
-        <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-        <div><span>Chat on WhatsApp</span><span class="em-contact-btn-sub">Fastest response — usually within minutes</span></div>
+      <button class="em-contact-btn wa" onclick="showMessageScreen('${listing.id}')">
+        <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div><span>Chat with Seller</span><span class="em-contact-btn-sub">Message through Everything Market</span></div>
       </button>
-      <button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
+      ${phone
+        ? `<button class="em-contact-btn call" onclick="showCallScreen('${listing.seller.replace(/'/g,"\\'")}','${phone}')">
         <div class="em-contact-btn-icon" style="background:#E3F0FF;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92v2z"/></svg></div>
         <div><span>Call Seller</span><span class="em-contact-btn-sub">Tap to reveal phone number</span></div>
       </button>`
         : ''}
-      <button class="em-contact-btn" onclick="showMessageScreen('${listing.id}')">
-        <div class="em-contact-btn-icon" style="background:var(--surf2);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--forest)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-        <div><span>Send a Message</span><span class="em-contact-btn-sub">Get a reply via Everything Market</span></div>
-      </button>
       <div style="text-align:center;padding-top:4px;">
         <button onclick="openReportModal('${String(listing.id)}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
           ⚑ Report this ad
@@ -1663,7 +1657,7 @@ function openInfoModal(key) {
       <div class="info-section"><h4>📸 Take great photos</h4><p>Listings with clear, well-lit photos get up to 5× more views. Use natural light, a plain background, and shoot from multiple angles. The first photo is your cover image.</p></div>
       <div class="info-section"><h4>✍️ Write an honest description</h4><p>Include brand, model, size, age, and any defects. Buyers trust honest sellers — you'll get fewer time-wasters and better offers.</p></div>
       <div class="info-section"><h4>💰 Price it right</h4><p>Search Everything Market for similar items in your area. A fair price sells faster than holding out for top rand.</p></div>
-      <div class="info-section"><h4>⚡ Respond fast</h4><p>Buyers move on quickly. Aim to reply within an hour. Enable WhatsApp notifications so you never miss an enquiry.</p></div>
+      <div class="info-section"><h4>⚡ Respond fast</h4><p>Buyers move on quickly. Aim to reply within an hour. Check your Everything Market inbox regularly so you never miss an enquiry.</p></div>
       <div class="info-section"><h4>🔄 Refresh your ad</h4><p>Delete and repost your ad if it's been up for more than 2 weeks without a sale — fresh listings appear higher in results.</p></div>
       <div class="info-section"><h4>🛡️ Stay safe</h4><p>Meet buyers in public places. Bring a friend for high-value items. Only share your phone number with serious buyers.</p></div>
       <div style="padding:16px 0 4px;"><button class="em-post-submit" onclick="closeModal();openPostAdModal()">Post a Free Ad Now</button></div>`),
