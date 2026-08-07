@@ -43,24 +43,31 @@ function _saveUserAds() {
 async function _loadSupabaseAds() {
   if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
-    const remoteAds = await window.emLoadAds();
+    const raw = await window.emLoadAds();
+
+    /* Deduplicate within Supabase results — same title+seller, keep the newest row */
+    const seen = new Map();
+    raw.forEach(ad => {
+      const key = (ad.title || '').trim().toLowerCase() + '||' + (ad.seller || '').trim().toLowerCase();
+      const existing = seen.get(key);
+      if (!existing || ad.postedAt > existing.postedAt) seen.set(key, ad);
+    });
+    const remoteAds = [...seen.values()];
+
     remoteAds.forEach(ad => {
-      /* Match by Supabase ID first, then fall back to title+seller
-         to catch localStorage ads that still have the old timestamp ID */
       const byId    = LISTINGS.findIndex(l => String(l.id) === String(ad.id));
       const byTitle = LISTINGS.findIndex(l =>
-        l.isUserAd &&
         (l.title || '').trim().toLowerCase() === (ad.title || '').trim().toLowerCase() &&
         (l.seller || '').trim().toLowerCase() === (ad.seller || '').trim().toLowerCase()
       );
       const idx = byId !== -1 ? byId : byTitle;
       if (idx !== -1) {
-        LISTINGS[idx] = ad; /* replace local placeholder with authoritative Supabase version */
+        LISTINGS[idx] = ad;
       } else {
         LISTINGS.push(ad);
       }
     });
-    _saveUserAds(); /* persist corrected Supabase IDs so next load deduplicates by ID */
+    _saveUserAds();
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');
@@ -969,8 +976,12 @@ function _paRenderPreviews() {
   if (zone) zone.style.display = window._paPhotos.length >= 5 ? 'none' : '';
 }
 
+let _postAdBusy = false;
 function submitPostAd(e) {
   e.preventDefault();
+  if (_postAdBusy) return;
+  _postAdBusy = true;
+  setTimeout(() => { _postAdBusy = false; }, 8000); /* reset after 8s in case something goes wrong */
 
   const title = (document.getElementById('pa-title').value || '').trim();
   const desc  = (document.getElementById('pa-desc').value  || '').trim();
