@@ -118,11 +118,9 @@ function renderSponsoredStrip() {
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
   grid.innerHTML = '';
-  /* Repeat enough times to fill the strip (min 8 cards for smooth scroll) */
-  const minCards = 8;
-  const repeatTimes = Math.ceil(minCards / sponsored.length) + 1;
-  const items = [];
-  for (let r = 0; r < repeatTimes; r++) sponsored.forEach(l => items.push(l));
+  /* Duplicate once for seamless loop — each ad appears exactly twice */
+  const repeatTimes = 2;
+  const items = [...sponsored, ...sponsored];
   items.forEach((l, idx) => {
     const card = document.createElement('div');
     card.className = 'spons-card';
