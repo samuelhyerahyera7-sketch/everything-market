@@ -64,7 +64,7 @@
         <div class="hdr-user-drop" id="hdr-user-drop">
           <button onclick="openMyAds()">My Ads</button>
           <button onclick="openSavedAds()">Saved Ads</button>
-          <button onclick="openInbox()">Messages</button>
+          <button onclick="openInbox()" style="position:relative;">Messages <span id="desk-msg-badge" style="display:none;background:#E53935;color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:20px;margin-left:4px;">New</span></button>
           <button class="sign-out" onclick="signOut()">Sign Out</button>
         </div>
       </div>
@@ -72,8 +72,9 @@
       <button class="btn-mob-search" onclick="toggleMobileSearch()" aria-label="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
       </button>
-      <button class="btn-mob-auth" id="mob-auth-btn" onclick="openSignInModal()" title="Sign In">
+      <button class="btn-mob-auth" id="mob-auth-btn" onclick="openSignInModal()" title="Sign In" style="position:relative;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span id="mob-msg-badge" style="display:none;position:absolute;top:4px;right:4px;width:9px;height:9px;background:#E53935;border-radius:50%;border:2px solid #fff;"></span>
       </button>
       <button class="btn-post" onclick="openPostAdModal()">+ Post Ad</button>
     </div>
