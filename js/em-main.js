@@ -110,14 +110,13 @@ function renderSponsoredStrip() {
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
   grid.innerHTML = '';
-  const items = [...sponsored, ...sponsored]; // duplicate for seamless scroll loop
+  const items = [...sponsored, ...sponsored]; // duplicate for seamless loop
   items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'spons-card';
-    card.onclick = () => openBuyNow(l);
     card.innerHTML = `
       <div style="position:relative;">
-        <div class="spons-img" id="spons-img-${l.id}"></div>
+        <div class="spons-img" id="spons-img-${l.id}-s"></div>
         <span class="spons-ad-badge">Sponsored</span>
       </div>
       <div class="spons-body">
@@ -127,7 +126,65 @@ function renderSponsoredStrip() {
         <div class="spons-loc">${l.loc}</div>
       </div>`;
     grid.appendChild(card);
-    _renderImg(card.querySelector(`#spons-img-${l.id}`), l);
+    _renderImg(card.querySelector(`#spons-img-${l.id}-s`), l);
+  });
+
+  /* JS-driven scroll so mouse/touch drag and auto-scroll share the same offset */
+  const wrap = grid.parentElement;
+  let offsetX = 0, raf = null, dragging = false, startX = 0, startOffset = 0, didDrag = false;
+  const SPEED = 0.5; // px per frame
+
+  function halfWidth() { return grid.scrollWidth / 2; }
+
+  function tick() {
+    if (!dragging) {
+      offsetX += SPEED;
+      if (offsetX >= halfWidth()) offsetX -= halfWidth();
+    }
+    grid.style.transform = 'translateX(' + (-offsetX) + 'px)';
+    raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+
+  function onPointerDown(e) {
+    dragging = true; didDrag = false;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startOffset = offsetX;
+    wrap.classList.add('dragging');
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const delta = startX - x;
+    if (Math.abs(delta) > 4) didDrag = true;
+    offsetX = startOffset + delta;
+    /* wrap around */
+    const half = halfWidth();
+    if (offsetX < 0) offsetX += half;
+    if (offsetX >= half) offsetX -= half;
+  }
+  function onPointerUp(e) {
+    dragging = false;
+    wrap.classList.remove('dragging');
+    /* prevent click on cards if user was dragging */
+    if (didDrag) {
+      e.preventDefault && e.preventDefault();
+      e.stopPropagation && e.stopPropagation();
+    }
+  }
+
+  wrap.addEventListener('mousedown',  onPointerDown);
+  wrap.addEventListener('touchstart', onPointerDown, { passive: true });
+  window.addEventListener('mousemove',  onPointerMove);
+  window.addEventListener('touchmove',  onPointerMove, { passive: true });
+  window.addEventListener('mouseup',    onPointerUp);
+  window.addEventListener('touchend',   onPointerUp);
+
+  /* Open card only if it wasn't a drag */
+  grid.querySelectorAll('.spons-card').forEach((card, i) => {
+    card.addEventListener('click', () => {
+      if (!didDrag) openBuyNow(sponsored[i % sponsored.length]);
+    });
   });
 }
 
