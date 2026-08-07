@@ -156,6 +156,8 @@
       badge: null,
       art: null,
       userId: row.user_id || null,
+      sponsored: !!row.sponsored,
+      sponsoredUntil: row.sponsored_until ? new Date(row.sponsored_until).getTime() : null,
     };
   }
 

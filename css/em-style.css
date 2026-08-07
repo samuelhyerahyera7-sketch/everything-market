@@ -585,6 +585,30 @@ svg { display: block; }
 }
 .em-myad-del:hover { border-color: var(--red); color: var(--red); background: #FEF0EE; }
 
+/* ── Boost button in My Ads ── */
+.em-boost-btn {
+  margin-top: 4px; padding: 3px 10px; font-size: 11px; font-weight: 700;
+  color: #F59E0B; background: #FFFBEB; border: 1.5px solid #FCD34D;
+  border-radius: 20px; cursor: pointer; font-family: inherit; transition: .13s;
+}
+.em-boost-btn:hover { background: #FEF3C7; }
+
+/* ── Sponsor plans ── */
+.em-sponsor-plans { display: flex; gap: 10px; margin-top: 4px; }
+.em-sponsor-plan {
+  flex: 1; border: 2px solid var(--border); border-radius: 12px;
+  padding: 14px 10px; text-align: center; position: relative;
+}
+.em-sponsor-plan-pop { border-color: var(--forest); background: #F0FFF4; }
+.em-sponsor-popular-badge {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: var(--forest); color: #fff; font-size: 10px; font-weight: 800;
+  padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.em-sponsor-plan-dur { font-size: 13px; font-weight: 700; color: var(--ink); }
+.em-sponsor-plan-price { font-size: 22px; font-weight: 900; color: var(--forest); margin: 4px 0; }
+.em-sponsor-plan-note { font-size: 10px; color: var(--muted); }
+
 /* ── Ad view count chip ── */
 .em-view-count:empty { display: none; }
 .em-view-count { color: var(--muted); }

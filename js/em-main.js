@@ -50,6 +50,7 @@ async function _loadSupabaseAds() {
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');
+  renderSponsoredStrip();
 }
 
 _loadUserAds();
@@ -97,40 +98,35 @@ function _renderArtIcon(el, artKey) {
   el.appendChild(span);
 }
 
-/* ── Sponsored Ads ── */
-const SPONSORED = [
-  { title:'Samsung Galaxy S24 Ultra',   price:'R 18 999',    tag:'Electronics',   loc:'Sandton, Gauteng',        img:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&h=260&fit=crop&auto=format' },
-  { title:'2022 Toyota Hilux 2.8 GD-6', price:'R 649 900',  tag:'Cars & Bakkies',loc:'Pretoria, Gauteng',       img:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=260&fit=crop&auto=format' },
-  { title:'3 Bedroom House – Sandton',  price:'R 2 450 000', tag:'Property',      loc:'Sandton, Gauteng',        img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop&auto=format' },
-  { title:'iPhone 15 Pro Max 256GB',    price:'R 22 499',    tag:'Electronics',   loc:'Cape Town, Western Cape', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=260&fit=crop&auto=format' },
-  { title:'2021 Volkswagen Polo Vivo',  price:'R 189 900',   tag:'Cars & Bakkies',loc:'Durban, KwaZulu-Natal',   img:'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=260&fit=crop&auto=format' },
-  { title:'2-Bed Apartment to Rent',    price:'R 8 500 /mo', tag:'Property',      loc:'Fourways, Gauteng',       img:'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=260&fit=crop&auto=format' },
-];
-(function() {
+/* ── Sponsored Ads strip — populated from real LISTINGS after load ── */
+function renderSponsoredStrip() {
   const grid = document.getElementById('spons-grid');
   if (!grid) return;
-
-  function makeCard(s) {
+  const sponsored = LISTINGS.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > Date.now()));
+  const section = grid.closest('section') || grid.parentElement;
+  if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
+  if (section) section.style.display = '';
+  grid.innerHTML = '';
+  const items = [...sponsored, ...sponsored]; // duplicate for seamless scroll loop
+  items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'spons-card';
-    card.onclick = () => openSponsoredAd(s);
+    card.onclick = () => openBuyNow(l);
     card.innerHTML = `
       <div style="position:relative;">
-        <img src="${s.img}" alt="${s.title}" class="spons-img" loading="lazy">
-        <span class="spons-ad-badge">Ad</span>
+        <div class="spons-img" id="spons-img-${l.id}"></div>
+        <span class="spons-ad-badge">Sponsored</span>
       </div>
       <div class="spons-body">
-        <div class="spons-tag">${s.tag}</div>
-        <div class="spons-title">${s.title}</div>
-        <div class="spons-price">${s.price}</div>
-        <div class="spons-loc">${s.loc}</div>
+        <div class="spons-tag">${l.cat.charAt(0).toUpperCase()+l.cat.slice(1)}</div>
+        <div class="spons-title">${l.title}</div>
+        <div class="spons-price">${fmtPrice(l, false)}</div>
+        <div class="spons-loc">${l.loc}</div>
       </div>`;
-    return card;
-  }
-
-  SPONSORED.forEach(s => grid.appendChild(makeCard(s)));
-  SPONSORED.forEach(s => grid.appendChild(makeCard(s))); // duplicate for seamless loop
-})();
+    grid.appendChild(card);
+    _renderImg(card.querySelector(`#spons-img-${l.id}`), l);
+  });
+}
 
 /* ── Shop by Category ── */
 function toggleShopcat() {
@@ -449,8 +445,10 @@ function renderCatResults(data) {
 /* ── BidorBuy grid render ── */
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
-  const featured = data.filter(l => l.badge);
-  const items = featured.length ? featured.slice(0, 4) : data.slice(0, 4);
+  const now = Date.now();
+  const sponsored = data.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
+  const regular   = data.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
+  const items = [...sponsored.slice(0, 10), ...regular].slice(0, 10);
   if (!items.length) {
     grid.innerHTML = window._adsLoaded
       ? '<p class="em-empty-state">No ads yet — be the first to post one!</p>'
@@ -462,12 +460,13 @@ function renderBB(data) {
     const card = document.createElement('div');
     card.className = 'bb-card';
     card.onclick = () => openBuyNow(l);
-    const ribClass = l.badge === 'Hot' ? 'r-hot' : l.badge === 'Featured' ? 'r-feat' : 'r-new';
+    const ribClass = l.sponsored ? 'r-feat' : l.badge === 'Hot' ? 'r-hot' : 'r-new';
+    const ribLabel = l.sponsored ? 'Sponsored' : l.badge;
     const sd = BB_SELLER_DATA[l.id] || { delivery: false };
     const timeStr = fmtTime(l.postedAt);
     card.innerHTML = `
       <div class="bb-img" id="bb-img-${l.id}"></div>
-      ${l.badge ? `<div class="bb-ribbon ${ribClass}">${l.badge}</div>` : ''}
+      ${(l.sponsored || l.badge) ? `<div class="bb-ribbon ${ribClass}">${ribLabel}</div>` : ''}
       <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save ad">${ICO.heart}</button>
       <div class="bb-body">
         <div class="bb-eyebrow">${l.cat}</div>
@@ -1569,6 +1568,7 @@ function openMyAds() {
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
               <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
+              ${l.sponsored ? `<span style="font-size:11px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:2px 7px;border-radius:20px;">&#x26A1; Sponsored</span>` : `<button class="em-boost-btn" onclick="event.stopPropagation();openSponsorModal('${l.id}')">&#x26A1; Boost this ad</button>`}
             </div>
             <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd('${l.id}')" title="Delete ad">&#x2715;</button>
           </div>`).join('')
@@ -1608,6 +1608,59 @@ function openSavedAds() {
     if (el) _renderImg(el, l);
   });
 }
+
+function openSponsorModal(listingId) {
+  const l = LISTINGS.find(x => String(x.id) === String(listingId));
+  if (!l) return;
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>⚡ Boost Your Ad</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px;">
+        Sponsored ads appear in the <strong>top 10 spots</strong> on the homepage and are shown first in search results — getting up to 5× more views than regular listings.
+      </div>
+      <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:10px;">Your ad: ${l.title}</div>
+
+      <div class="em-sponsor-plans">
+        <div class="em-sponsor-plan">
+          <div class="em-sponsor-plan-dur">7 Days</div>
+          <div class="em-sponsor-plan-price">R 35</div>
+          <div class="em-sponsor-plan-note">Best for quick sales</div>
+        </div>
+        <div class="em-sponsor-plan em-sponsor-plan-pop">
+          <div class="em-sponsor-popular-badge">Most Popular</div>
+          <div class="em-sponsor-plan-dur">14 Days</div>
+          <div class="em-sponsor-plan-price">R 65</div>
+          <div class="em-sponsor-plan-note">Save R5 vs 2× weekly</div>
+        </div>
+        <div class="em-sponsor-plan">
+          <div class="em-sponsor-plan-dur">30 Days</div>
+          <div class="em-sponsor-plan-price">R 95</div>
+          <div class="em-sponsor-plan-note">Best value</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surf2);border-radius:12px;padding:16px;margin-top:16px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">How to pay:</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.6;">
+          EFT / Bank Transfer:<br>
+          <strong>Bank:</strong> FNB<br>
+          <strong>Account:</strong> Everything Market<br>
+          <strong>Acc No:</strong> Contact us for details<br>
+          <strong>Reference:</strong> BOOST-${String(l.id).slice(-6).toUpperCase()}
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);">Once payment is confirmed, your ad will be boosted within 24 hours. Send your proof of payment to <strong>everythingmarket48@gmail.com</strong> with the reference above.</div>
+      </div>
+
+      <button class="em-offer-submit" style="margin-top:16px;" onclick="window.open('mailto:everythingmarket48@gmail.com?subject=Boost Ad - BOOST-${String(l.id).slice(-6).toUpperCase()}&body=Hi, I would like to boost my ad: ${encodeURIComponent(l.title)}. I will send proof of payment shortly.','_blank')">
+        Email Us to Boost
+      </button>
+    </div>`;
+  _openModal();
+}
+window.openSponsorModal = openSponsorModal;
 
 window._deleteMyAd = function(id) {
   const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
