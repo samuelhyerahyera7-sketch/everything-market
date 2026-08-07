@@ -69,21 +69,25 @@
 
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
-    /* Check for a duplicate submitted in the last 10 minutes before inserting */
-    if (window._sb) {
-      const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { data: existing } = await window._sb
-        .from('ads')
-        .select('id')
-        .eq('title', listing.title)
-        .eq('seller', listing.seller)
-        .eq('price', listing.price)
-        .gte('created_at', since)
-        .limit(1);
-      if (existing && existing.length > 0) {
-        console.log('[EM] Duplicate ad detected — skipping insert');
-        return { ok: true };
+    /* Check for a duplicate posted in the last 10 minutes — wrapped in try/catch
+       so a query failure never blocks the actual insert */
+    try {
+      if (window._sb) {
+        const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const { data: existing } = await window._sb
+          .from('ads').select('id')
+          .eq('title', listing.title)
+          .eq('seller', listing.seller)
+          .eq('price', listing.price)
+          .gte('created_at', since)
+          .limit(1);
+        if (existing && existing.length > 0) {
+          console.log('[EM] Duplicate ad detected — skipping insert');
+          return { ok: true };
+        }
       }
+    } catch(dupErr) {
+      console.warn('[EM] Duplicate check failed (continuing with insert):', dupErr);
     }
 
     const authToken = await _getAuthToken();
@@ -113,11 +117,17 @@
       user_id: listing.userId || null
     };
 
-    /* Prefer the Supabase JS client — it handles token refresh and gives real error objects */
+    /* Insert with one automatic retry on failure */
     if (window._sb) {
-      const { data, error } = await window._sb.from('ads').insert(payload).select();
+      let data, error;
+      ({ data, error } = await window._sb.from('ads').insert(payload).select());
       if (error) {
-        console.error('[EM] storeAd failed:', error.code, error.message, error.details);
+        console.warn('[EM] storeAd first attempt failed:', error.code, error.message, '— retrying in 3s');
+        await new Promise(r => setTimeout(r, 3000));
+        ({ data, error } = await window._sb.from('ads').insert(payload).select());
+      }
+      if (error) {
+        console.error('[EM] storeAd failed after retry:', error.code, error.message, error.details);
         return { ok: false, error };
       }
       if (data && data[0] && data[0].id && window.LISTINGS) {

@@ -1059,7 +1059,7 @@ function submitPostAd(e) {
       if (result && result.ok) {
         _saveUserAds(); /* re-save with Supabase UUID so duplicates don't appear on next load */
       } else if (result && !result.ok) {
-        _showToast('⚠️ Your ad was saved locally but could not be uploaded. Please try posting again.', 8000);
+        _showToast('⚠️ Could not upload your ad. Check your connection and post again.', 8000);
       }
     });
   }
