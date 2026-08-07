@@ -654,12 +654,12 @@ function openPostAdModal() {
       <div class="em-post-row">
         <div class="em-post-field">
           <label class="em-post-label" for="pa-cat">Category <span>(required)</span></label>
-          <select class="em-post-select" id="pa-cat">
+          <select class="em-post-select" id="pa-cat" onchange="window._paCatChange()">
             <option value="">— Select a category —</option>
             ${catOpts}
           </select>
         </div>
-        <div class="em-post-field">
+        <div class="em-post-field" id="pa-cond-wrap">
           <label class="em-post-label" for="pa-cond">Condition</label>
           <select class="em-post-select" id="pa-cond">
             <option value="New">New</option>
@@ -670,6 +670,8 @@ function openPostAdModal() {
           </select>
         </div>
       </div>
+
+      <div id="pa-cat-extra" style="display:none;"></div>
 
       <div class="em-post-field">
         <label class="em-post-label" for="pa-price">Price (R) <span>— enter 0 for Free / Contact</span></label>
@@ -733,6 +735,117 @@ function openPostAdModal() {
   _openModal();
 }
 
+window._paCatChange = function() {
+  const cat = document.getElementById('pa-cat').value;
+  const extra = document.getElementById('pa-cat-extra');
+  const condWrap = document.getElementById('pa-cond-wrap');
+  const cond = document.getElementById('pa-cond');
+
+  const SERVICE_TYPES = [
+    'Cleaning & Domestic','Plumbing','Electrical','Building & Construction',
+    'Painting & Waterproofing','Garden & Landscaping','Security & CCTV',
+    'Transport & Delivery','IT & Tech Support','Tutoring & Education',
+    'Beauty & Wellness','Photography & Videography','Event Planning & Catering',
+    'Automotive Repairs','Tailoring & Alterations','Legal & Financial',
+    'Pest Control','Air Conditioning & Appliances','Other'
+  ];
+  const JOB_TYPES = ['Full-time','Part-time','Contract','Freelance / Gig','Internship','Learnership'];
+  const PROP_TYPES = ['House','Apartment / Flat','Room','Townhouse','Commercial / Office','Land / Plot','Farm'];
+
+  extra.style.display = 'none';
+  extra.innerHTML = '';
+  condWrap.style.display = '';
+
+  if (cat === 'serv') {
+    condWrap.style.display = 'none';
+    cond.value = 'N/A';
+    extra.style.display = '';
+    extra.innerHTML = `
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-serv-type">Service Type <span>(required)</span></label>
+          <select class="em-post-select" id="pa-serv-type">
+            <option value="">— What service do you offer? —</option>
+            ${SERVICE_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-serv-avail">Availability</label>
+          <select class="em-post-select" id="pa-serv-avail">
+            <option value="Weekdays">Weekdays</option>
+            <option value="Weekends">Weekends</option>
+            <option value="Mon–Sat">Mon–Sat</option>
+            <option value="7 Days a Week" selected>7 Days a Week</option>
+            <option value="By Appointment">By Appointment</option>
+          </select>
+        </div>
+      </div>`;
+    document.getElementById('pa-title').placeholder = 'e.g. Professional Plumbing – Fast & Reliable';
+  } else if (cat === 'jobs') {
+    condWrap.style.display = 'none';
+    cond.value = 'N/A';
+    extra.style.display = '';
+    extra.innerHTML = `
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-job-type">Job Type <span>(required)</span></label>
+          <select class="em-post-select" id="pa-job-type">
+            <option value="">— Select type —</option>
+            ${JOB_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-job-exp">Experience Required</label>
+          <select class="em-post-select" id="pa-job-exp">
+            <option value="No experience">No experience needed</option>
+            <option value="1–2 years" selected>1–2 years</option>
+            <option value="3–5 years">3–5 years</option>
+            <option value="5+ years">5+ years</option>
+          </select>
+        </div>
+      </div>`;
+    document.getElementById('pa-title').placeholder = 'e.g. Seeking Experienced Electrician – Pretoria';
+  } else if (cat === 'prop') {
+    condWrap.style.display = 'none';
+    cond.value = 'N/A';
+    extra.style.display = '';
+    extra.innerHTML = `
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-prop-type">Property Type <span>(required)</span></label>
+          <select class="em-post-select" id="pa-prop-type">
+            <option value="">— Select type —</option>
+            ${PROP_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-prop-listing">Listing Type</label>
+          <select class="em-post-select" id="pa-prop-listing">
+            <option value="For Sale">For Sale</option>
+            <option value="To Rent">To Rent</option>
+          </select>
+        </div>
+      </div>`;
+    document.getElementById('pa-title').placeholder = 'e.g. 3-Bedroom House For Sale – Sandton';
+  } else if (cat === 'cars') {
+    extra.style.display = '';
+    extra.innerHTML = `
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-make">Make / Brand <span>(required)</span></label>
+          <input class="em-post-input" id="pa-car-make" type="text" placeholder="e.g. Toyota" maxlength="40">
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-year">Year</label>
+          <input class="em-post-input" id="pa-car-year" type="number" placeholder="e.g. 2019" min="1970" max="2026">
+        </div>
+      </div>`;
+    document.getElementById('pa-title').placeholder = 'e.g. Toyota Hilux 2.8 GD-6 4×4 – Manual';
+  } else {
+    document.getElementById('pa-title').placeholder = 'e.g. iPhone 14 Pro 256GB – Space Black';
+  }
+};
+
 window._paSetStype = function(btn) {
   document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -785,18 +898,42 @@ function submitPostAd(e) {
   const email = (document.getElementById('pa-email').value || '').trim();
   const loc   = (document.getElementById('pa-loc').value   || '').trim();
   const cat   = document.getElementById('pa-cat').value;
-  const cond  = document.getElementById('pa-cond').value;
   const price = Math.max(0, Number(document.getElementById('pa-price').value) || 0);
   const neg   = document.getElementById('pa-neg').checked;
   const stypeBtn = document.querySelector('#pa-stype .em-post-toggle-btn.active');
   const sellerType = stypeBtn ? stypeBtn.dataset.val : 'private';
 
+  /* Category-specific extra fields */
+  const servType  = document.getElementById('pa-serv-type')  ? document.getElementById('pa-serv-type').value  : '';
+  const servAvail = document.getElementById('pa-serv-avail') ? document.getElementById('pa-serv-avail').value : '';
+  const jobType   = document.getElementById('pa-job-type')   ? document.getElementById('pa-job-type').value   : '';
+  const jobExp    = document.getElementById('pa-job-exp')    ? document.getElementById('pa-job-exp').value    : '';
+  const propType  = document.getElementById('pa-prop-type')  ? document.getElementById('pa-prop-type').value  : '';
+  const propList  = document.getElementById('pa-prop-listing')? document.getElementById('pa-prop-listing').value: '';
+  const carMake   = document.getElementById('pa-car-make')   ? document.getElementById('pa-car-make').value.trim() : '';
+  const carYear   = document.getElementById('pa-car-year')   ? document.getElementById('pa-car-year').value   : '';
+
+  /* Build the cond chip from the extra field when applicable */
+  let cond = document.getElementById('pa-cond').value;
+  if (cat === 'serv' && servType)  cond = servType;
+  if (cat === 'jobs' && jobType)   cond = jobType;
+  if (cat === 'prop' && propType)  cond = propList ? propType + ' – ' + propList : propType;
+
+  /* Enrich description with extra structured info */
+  let enrichedDesc = desc;
+  if (cat === 'serv' && servAvail)  enrichedDesc = 'Availability: ' + servAvail + '\n\n' + desc;
+  if (cat === 'jobs' && jobExp)     enrichedDesc = 'Experience required: ' + jobExp + '\n\n' + desc;
+  if (cat === 'cars' && (carMake || carYear)) enrichedDesc = (carMake ? 'Make: ' + carMake + '\n' : '') + (carYear ? 'Year: ' + carYear + '\n' : '') + '\n' + desc;
+
   const errEl = document.getElementById('pa-error');
   const errors = [];
   if (!title)              errors.push('Ad title is required.');
   if (!cat)                errors.push('Please select a category.');
+  if (cat === 'serv' && !servType) errors.push('Please select a service type.');
+  if (cat === 'jobs' && !jobType)  errors.push('Please select a job type.');
+  if (cat === 'prop' && !propType) errors.push('Please select a property type.');
   if (!name)               errors.push('Your name is required.');
-  if (!phone)              errors.push('WhatsApp / phone number is required.');
+  if (!phone)              errors.push('Phone number is required.');
   if (!email || !email.includes('@')) errors.push('A valid contact email is required.');
   if (!loc)                errors.push('Location is required.');
   if (!desc)               errors.push('Description is required.');
@@ -820,7 +957,7 @@ function submitPostAd(e) {
     cond,
     cat,
     postedAt: Date.now(),
-    desc,
+    desc: enrichedDesc,
     seller: name,
     sellerType,
     verified: false,
