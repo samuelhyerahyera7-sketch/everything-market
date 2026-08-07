@@ -134,35 +134,66 @@
     }
   }
 
+  /* ── Map a raw Supabase ads row to the app's listing shape ── */
+  function _rowToListing(row) {
+    return {
+      id: row.id,
+      title: row.title || '',
+      cat: row.cat || 'misc',
+      price: Number(row.price) || 0,
+      loc: row.loc || '',
+      seller: row.seller || 'Unknown',
+      sellerType: row.seller_type || 'private',
+      desc: row.description || '',
+      cond: row.cond || 'N/A',
+      neg: !!row.neg,
+      photos: Array.isArray(row.photos) ? row.photos : [],
+      phone: row.phone || '',
+      contactEmail: row.contact_email || '',
+      verified: !!row.verified,
+      postedAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+      isUserAd: true,
+      badge: null,
+      art: null,
+      userId: row.user_id || null,
+    };
+  }
+
   /* ── Load all public ads from Supabase ── */
   async function loadAds() {
+    /* Prefer the Supabase JS client so the user's auth token is included automatically */
+    if (window._sb) {
+      const { data, error } = await window._sb
+        .from('ads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) {
+        console.error('[EM] loadAds error:', error.code, error.message);
+        /* If RLS is blocking, show a clear message so the dashboard fix is obvious */
+        if (error.code === '42501' || error.message.includes('policy')) {
+          console.warn('[EM] Fix: go to Supabase → Table Editor → ads → RLS policies and add a SELECT policy: allow anon role with USING (true)');
+        }
+        return [];
+      }
+      return (data || []).map(_rowToListing);
+    }
+
+    /* Fallback: raw fetch with anon key */
     try {
       const hdrs = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
-      let r = await fetch(SB_URL + '/rest/v1/ads?select=*&order=created_at.desc&limit=500', { headers: hdrs });
-      if (!r.ok) return [];
+      const r = await fetch(SB_URL + '/rest/v1/ads?select=*&order=created_at.desc&limit=500', { headers: hdrs });
+      if (!r.ok) {
+        const errText = await r.text();
+        console.error('[EM] loadAds HTTP error:', r.status, errText);
+        return [];
+      }
       const rows = await r.json();
-      return rows.map(row => ({
-        id: row.id,
-        title: row.title || '',
-        cat: row.cat || 'misc',
-        price: Number(row.price) || 0,
-        loc: row.loc || '',
-        seller: row.seller || 'Unknown',
-        sellerType: row.seller_type || 'private',
-        desc: row.description || '',
-        cond: row.cond || 'N/A',
-        neg: !!row.neg,
-        photos: Array.isArray(row.photos) ? row.photos : [],
-        phone: row.phone || '',
-        contactEmail: row.contact_email || '',
-        verified: !!row.verified,
-        postedAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-        isUserAd: true,
-        badge: null,
-        art: null,
-        userId: row.user_id || null,
-      }));
-    } catch (_) { return []; }
+      return rows.map(_rowToListing);
+    } catch (e) {
+      console.error('[EM] loadAds exception:', e);
+      return [];
+    }
   }
 
   /* ── Report an ad ── */
