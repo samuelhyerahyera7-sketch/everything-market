@@ -39,36 +39,54 @@ function _saveUserAds() {
   } catch(e) {}
 }
 
-/* ── Load ads from Supabase and merge into LISTINGS ── */
+/* ── Load ads from Supabase, auto-delete duplicates, rebuild LISTINGS ── */
 async function _loadSupabaseAds() {
   if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
     const raw = await window.emLoadAds();
 
-    /* Deduplicate within Supabase results — same title+price+loc, keep the newest */
-    const seenRemote = new Map();
+    /* Group by title+seller+price+loc — duplicates are same ad posted multiple times */
+    const groups = new Map();
     raw.forEach(ad => {
-      const key = [(ad.title||'').trim().toLowerCase(), String(ad.price), (ad.loc||'').trim().toLowerCase()].join('||');
-      const prev = seenRemote.get(key);
-      if (!prev || ad.postedAt > prev.postedAt) seenRemote.set(key, ad);
+      const key = [
+        (ad.title  || '').trim().toLowerCase(),
+        (ad.seller || '').trim().toLowerCase(),
+        String(ad.price),
+        (ad.loc    || '').trim().toLowerCase()
+      ].join('||');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(ad);
     });
-    const remoteAds = [...seenRemote.values()];
 
-    /* Rebuild LISTINGS: Supabase is source of truth.
-       Keep only localStorage ads with no match in Supabase. */
+    /* For each group keep the newest, collect IDs of the rest to delete */
+    const remoteAds = [];
+    const toDelete  = [];
+    groups.forEach(group => {
+      group.sort((a, b) => b.postedAt - a.postedAt);
+      remoteAds.push(group[0]);
+      for (let i = 1; i < group.length; i++) toDelete.push(group[i].id);
+    });
+
+    /* Auto-delete duplicate rows from Supabase in the background */
+    if (toDelete.length && window._sb) {
+      window._sb.from('ads').delete().in('id', toDelete).then(() => {
+        console.log('[EM] Auto-removed', toDelete.length, 'duplicate ad(s) from Supabase');
+      });
+    }
+
+    /* Rebuild LISTINGS: Supabase is source of truth */
     const remoteIdSet  = new Set(remoteAds.map(a => String(a.id)));
     const remoteKeySet = new Set(remoteAds.map(a =>
-      [(a.title||'').trim().toLowerCase(), String(a.price), (a.loc||'').trim().toLowerCase()].join('||')
+      [(a.title||'').trim().toLowerCase(), (a.seller||'').trim().toLowerCase(), String(a.price), (a.loc||'').trim().toLowerCase()].join('||')
     ));
     const localOnly = LISTINGS.filter(l =>
       !remoteIdSet.has(String(l.id)) &&
-      !remoteKeySet.has([(l.title||'').trim().toLowerCase(), String(l.price), (l.loc||'').trim().toLowerCase()].join('||'))
+      !remoteKeySet.has([(l.title||'').trim().toLowerCase(), (l.seller||'').trim().toLowerCase(), String(l.price), (l.loc||'').trim().toLowerCase()].join('||'))
     );
 
     LISTINGS.length = 0;
     remoteAds.forEach(a => LISTINGS.push(a));
     localOnly.forEach(a => LISTINGS.push(a));
-
     _saveUserAds();
   } catch(_) {}
   window._adsLoaded = true;
