@@ -69,6 +69,23 @@
 
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
+    /* Check for a duplicate submitted in the last 10 minutes before inserting */
+    if (window._sb) {
+      const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: existing } = await window._sb
+        .from('ads')
+        .select('id')
+        .eq('title', listing.title)
+        .eq('seller', listing.seller)
+        .eq('price', listing.price)
+        .gte('created_at', since)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        console.log('[EM] Duplicate ad detected — skipping insert');
+        return { ok: true };
+      }
+    }
+
     const authToken = await _getAuthToken();
     const folderKey = 'ad-' + String(listing.id);
     const photoUrls = [];

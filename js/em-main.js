@@ -963,12 +963,12 @@ function _paRenderPreviews() {
   if (zone) zone.style.display = window._paPhotos.length >= 5 ? 'none' : '';
 }
 
-let _postAdBusy = false;
 function submitPostAd(e) {
   e.preventDefault();
-  if (_postAdBusy) return;
-  _postAdBusy = true;
-  setTimeout(() => { _postAdBusy = false; }, 8000); /* reset after 8s in case something goes wrong */
+  /* Prevent double-submission even across page reloads */
+  const lastSubmit = Number(sessionStorage.getItem('em_last_submit') || 0);
+  if (Date.now() - lastSubmit < 15000) return;
+  sessionStorage.setItem('em_last_submit', Date.now());
 
   const title = (document.getElementById('pa-title').value || '').trim();
   const desc  = (document.getElementById('pa-desc').value  || '').trim();
