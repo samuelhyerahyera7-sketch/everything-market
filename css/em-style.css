@@ -1,6 +1,10 @@
 /* ── Force light mode always ── */
 :root { color-scheme: light; }
 
+/* ── Remove blue tap highlight and focus outlines ── */
+*:focus { outline: none; }
+*:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+
 /* ── Tokens ── */
 :root {
   --ink:        #0C1510;

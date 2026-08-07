@@ -79,4 +79,17 @@ const LISTINGS = [];
 
 const PROVINCES = ['Gauteng','Western Cape','KwaZulu-Natal','Eastern Cape','Limpopo','Mpumalanga','North West','Northern Cape','Free State'];
 
+/* Cities/areas that belong to each province — used to expand location filter */
+const PROVINCE_CITIES = {
+  'gauteng': ['johannesburg','joburg','jo\'burg','sandton','soweto','midrand','centurion','pretoria','tshwane','randburg','roodepoort','boksburg','kempton park','benoni','germiston','ekurhuleni','tembisa','alexandra','fourways','bedfordview','alberton','springs','edenvale','krugersdorp','westonaria','vanderbijlpark','vereeniging','meyersdal','glen austin','cosmo city','mamelodi','soshanguve','atteridgeville','diepsloot','ivory park','thembisa','brakpan','nigel'],
+  'western cape': ['cape town','bellville','stellenbosch','paarl','george','worcester','hermanus','knysna','mossel bay','franschhoek','somerset west','strand','table view','milnerton','kuils river','brackenfell','durbanville','mitchells plain','khayelitsha','gugulethu','langa','wynberg','claremont','rondebosch','mowbray','observatory','woodstock','green point','sea point','hout bay','fish hoek','simon\'s town','simonstown','caledon'],
+  'kwazulu-natal': ['durban','pietermaritzburg','richards bay','newcastle','umhlanga','pinetown','westville','ballito','margate','port shepstone','ladysmith','umlazi','chatsworth','phoenix','tongaat','stanger','kwadukuza','scottburgh','amanzimtoti','isipingo','umdloti','hibiscus coast','kokstad','vryheid','eshowe','mtubatuba'],
+  'eastern cape': ['port elizabeth','gqeberha','pe','east london','uitenhage','king william\'s town','bhisho','mthatha','umtata','queenstown','grahamstown','makhanda','jeffreys bay','j-bay','humansdorp','cradock','aliwal north','butterworth','cofimvaba'],
+  'limpopo': ['polokwane','tzaneen','phalaborwa','louis trichardt','thohoyandou','mokopane','bela-bela','warmbaths','musina','thabazimbi','makhado','burgersfort','groblersdal','lebowakgomo'],
+  'mpumalanga': ['nelspruit','mbombela','witbank','emalahleni','secunda','middelburg','white river','hazyview','sabie','graskop','barberton','standerton','ermelo','piet retief','lydenburg','ohrigstad'],
+  'north west': ['rustenburg','mahikeng','mafikeng','klerksdorp','potchefstroom','brits','vryburg','lichtenburg','wolmaransstad','delareyville','zeerust','orkney','stilfontein','hartbeespoort','sun city'],
+  'northern cape': ['kimberley','upington','springbok','de aar','kuruman','colesberg','britstown','calvinia','carnarvon','prieska','kathu','postmasburg'],
+  'free state': ['bloemfontein','mangaung','welkom','sasolburg','bethlehem','phuthaditjhaba','kroonstad','harrismith','virginia','parys','botshabelo','thaba nchu','odendaalsrus'],
+};
+
 const BB_SELLER_DATA = {};

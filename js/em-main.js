@@ -132,7 +132,7 @@ function renderSponsoredStrip() {
   /* JS-driven scroll so mouse/touch drag and auto-scroll share the same offset */
   const wrap = grid.parentElement;
   let offsetX = 0, raf = null, dragging = false, startX = 0, startOffset = 0, didDrag = false;
-  const SPEED = 0.5; // px per frame
+  const SPEED = 0.5;
 
   function halfWidth() { return grid.scrollWidth / 2; }
 
@@ -146,44 +146,45 @@ function renderSponsoredStrip() {
   }
   raf = requestAnimationFrame(tick);
 
-  function onPointerDown(e) {
-    dragging = true; didDrag = false;
-    startX = e.touches ? e.touches[0].clientX : e.clientX;
-    startOffset = offsetX;
-    wrap.classList.add('dragging');
-  }
-  function onPointerMove(e) {
-    if (!dragging) return;
+  function onMove(e) {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const delta = startX - x;
     if (Math.abs(delta) > 4) didDrag = true;
     offsetX = startOffset + delta;
-    /* wrap around */
     const half = halfWidth();
     if (offsetX < 0) offsetX += half;
     if (offsetX >= half) offsetX -= half;
   }
-  function onPointerUp(e) {
+  function onUp() {
     dragging = false;
     wrap.classList.remove('dragging');
-    /* prevent click on cards if user was dragging */
-    if (didDrag) {
-      e.preventDefault && e.preventDefault();
-      e.stopPropagation && e.stopPropagation();
-    }
+    /* remove listeners immediately so they never touch anything else on the page */
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup',   onUp);
+    window.removeEventListener('touchmove', onMove);
+    window.removeEventListener('touchend',  onUp);
   }
 
-  wrap.addEventListener('mousedown',  onPointerDown);
-  wrap.addEventListener('touchstart', onPointerDown, { passive: true });
-  window.addEventListener('mousemove',  onPointerMove);
-  window.addEventListener('touchmove',  onPointerMove, { passive: true });
-  window.addEventListener('mouseup',    onPointerUp);
-  window.addEventListener('touchend',   onPointerUp);
+  wrap.addEventListener('mousedown', e => {
+    dragging = true; didDrag = false;
+    startX = e.clientX; startOffset = offsetX;
+    wrap.classList.add('dragging');
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup',   onUp);
+  });
+  wrap.addEventListener('touchstart', e => {
+    dragging = true; didDrag = false;
+    startX = e.touches[0].clientX; startOffset = offsetX;
+    wrap.classList.add('dragging');
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend',  onUp);
+  }, { passive: true });
 
-  /* Open card only if it wasn't a drag */
+  /* Open card only when it was a tap, not a drag */
   grid.querySelectorAll('.spons-card').forEach((card, i) => {
     card.addEventListener('click', () => {
-      if (!didDrag) openBuyNow(sponsored[i % sponsored.length]);
+      if (didDrag) { didDrag = false; return; }
+      openBuyNow(sponsored[i % sponsored.length]);
     });
   });
 }
@@ -301,12 +302,17 @@ function applyCatFilters() {
   const conds = [...document.querySelectorAll('.cf-cond:checked')].map(el => el.value);
   const sort  = document.getElementById('cf-sort').value;
   const loc   = (document.getElementById('cf-loc').value || '').trim().toLowerCase();
+  /* Expand province name to also match all known cities in that province */
+  const locTerms = loc ? [loc, ...(PROVINCE_CITIES[loc] || [])] : [];
 
   let data = _getCatListings().filter(l => {
     if (l.price !== 0 && l.price < minV) return false;
     if (maxV !== Infinity && l.price > maxV) return false;
     if (conds.length && !conds.includes(l.cond)) return false;
-    if (loc && !(l.loc || '').toLowerCase().includes(loc)) return false;
+    if (locTerms.length) {
+      const adLoc = (l.loc || '').toLowerCase();
+      if (!locTerms.some(t => adLoc.includes(t))) return false;
+    }
     return true;
   });
 
@@ -1040,7 +1046,9 @@ function submitPostAd(e) {
   showAdPostedConfirm(listing.title);
   if (window.emStoreAd) {
     emStoreAd({ ...listing, photos: photoCopy }).then(result => {
-      if (result && !result.ok) {
+      if (result && result.ok) {
+        _saveUserAds(); /* re-save with Supabase UUID so duplicates don't appear on next load */
+      } else if (result && !result.ok) {
         _showToast('⚠️ Your ad was saved locally but could not be uploaded. Please try posting again.', 8000);
       }
     });
