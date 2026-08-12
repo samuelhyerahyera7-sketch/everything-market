@@ -552,7 +552,7 @@ function renderBB(data) {
   const paid    = deduped.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
   const regular = deduped.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
   /* Paid sponsors first, then all regular ads */
-  const items = paid.length ? [...paid, ...regular] : data;
+  const items = paid.length ? [...paid, ...regular] : deduped;
   if (!items.length) {
     grid.innerHTML = window._adsLoaded
       ? '<p class="em-empty-state">No ads yet — be the first to post one!</p>'
