@@ -1155,6 +1155,8 @@ function openSponsoredAd(s) {
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
+  const _sess = _getSession();
+  const isOwner = _sess && listing.userId && String(listing.userId) === String(_sess.userId);
   const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
   const price = listing._priceStr || (listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA'));
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -1224,6 +1226,12 @@ function openBuyNow(listing) {
         </button>
       </div>
     </div>
+    ${isOwner ? `
+    <div style="padding:16px 20px 0;">
+      ${listing.sponsored
+        ? `<div style="text-align:center;font-size:13px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:10px;border-radius:10px;">&#x26A1; This ad is currently Sponsored</div>`
+        : `<button onclick="closeModal();setTimeout(()=>openSponsorModal('${listing.id}'),250)" style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.02em;">&#x26A1; Boost This Ad</button>`}
+    </div>` : ''}
     ${relatedHTML}`;
 
   modalBox.scrollTop = 0;
@@ -1854,7 +1862,13 @@ function openMyAds() {
   if (!sess) { openSignInModal(); return; }
   document.getElementById('hdr-user-drop')?.classList.remove('open');
 
-  const myAds = LISTINGS.filter(l => l.userId === sess.userId);
+  /* Pull user's ads: match by userId from LISTINGS, plus any in localStorage backup */
+  const myAds = LISTINGS.filter(l => l.userId && String(l.userId) === String(sess.userId));
+  try {
+    const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
+    const seenIds = new Set(myAds.map(l => String(l.id)));
+    local.forEach(la => { if (!seenIds.has(String(la.id))) myAds.push(la); });
+  } catch(_) {}
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
