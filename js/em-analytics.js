@@ -73,10 +73,12 @@
     const folderKey = 'ad-' + String(listing.id);
     const photoUrls = [];
     if (Array.isArray(listing.photos) && listing.photos.length) {
+      console.log('[EM] storeAd: uploading', listing.photos.length, 'photo(s)...');
       for (let i = 0; i < listing.photos.length; i++) {
         const url = await _uploadPhoto(folderKey, i, listing.photos[i], authToken);
         if (url) photoUrls.push(url);
       }
+      console.log('[EM] storeAd: uploaded', photoUrls.length, '/', listing.photos.length, 'photos');
     }
 
     const payload = {
@@ -96,51 +98,71 @@
     };
     if (listing.userId) payload.user_id = listing.userId;
 
-    /* Try server-side endpoint first — uses service key, bypasses RLS */
+    /* Try server-side endpoint first — uses service key, bypasses RLS INSERT restrictions */
     async function _doInsertViaAPI(p) {
       try {
+        console.log('[EM] _doInsertViaAPI: posting to /api/store-ad...');
         const r = await fetch('/api/store-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(p)
         });
         const json = await r.json();
-        if (!r.ok) return { ok: false, error: { message: json.error || r.statusText, status: r.status }, data: null };
-        return { ok: true, data: [{ id: json.id }] };
+        if (!r.ok) {
+          console.error('[EM] _doInsertViaAPI: HTTP', r.status, json.error || r.statusText);
+          return { ok: false, error: { message: json.error || r.statusText, status: r.status }, data: null };
+        }
+        console.log('[EM] _doInsertViaAPI: success');
+        return { ok: true, data: [{}] };
       } catch (e) {
+        console.error('[EM] _doInsertViaAPI: exception', String(e));
         return { ok: false, error: { message: String(e) }, data: null };
       }
     }
 
-    /* Fallback: direct Supabase insert (works when RLS disabled) */
+    /* Fallback: direct Supabase insert using the user's authenticated session */
     async function _doInsertDirect(p) {
       if (window._sb) {
-        const { data, error } = await window._sb.from('ads').insert(p).select('id');
-        if (error) return { ok: false, error, data: null };
-        return { ok: true, data };
+        console.log('[EM] _doInsertDirect: inserting via Supabase JS client...');
+        /* Use insert() without .select() — minimal return avoids false-positives
+           caused by RLS SELECT policies blocking the read-back of the new row. */
+        const { error } = await window._sb.from('ads').insert(p);
+        if (error) {
+          console.error('[EM] _doInsertDirect: error', error.code, error.message, error.details);
+          return { ok: false, error, data: null };
+        }
+        console.log('[EM] _doInsertDirect: success');
+        return { ok: true, data: [{}] };
       }
+      console.log('[EM] _doInsertDirect: no _sb client, using raw fetch...');
       const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: {
+          'apikey': SB_KEY,
+          'Authorization': 'Bearer ' + authToken,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
         body: JSON.stringify(p)
       });
       if (!r.ok) {
         const txt = await r.text();
+        console.error('[EM] _doInsertDirect: fetch error', r.status, txt);
         return { ok: false, error: { message: txt, status: r.status }, data: null };
       }
-      const rows = await r.json();
-      return { ok: true, data: rows };
+      console.log('[EM] _doInsertDirect: raw fetch success');
+      return { ok: true, data: [{}] };
     }
 
     let result = await _doInsertViaAPI(payload);
     if (!result.ok) {
-      console.warn('[EM] server insert failed, trying direct:', result.error?.message);
+      console.warn('[EM] storeAd: server insert failed, trying direct Supabase insert...');
       result = await _doInsertDirect(payload);
     }
 
-    /* One retry after 2 s if both failed */
+    /* One retry after 2 s if both paths failed */
     if (!result.ok) {
-      console.warn('[EM] storeAd attempt 1 failed, retrying in 2s...');
+      console.warn('[EM] storeAd: attempt 1 failed — retrying in 2s...');
       await new Promise(r => setTimeout(r, 2000));
       result = await _doInsertViaAPI(payload);
       if (!result.ok) result = await _doInsertDirect(payload);
@@ -153,12 +175,7 @@
       return { ok: false, error: err };
     }
 
-    /* Update local listing with real Supabase UUID */
-    const rows = Array.isArray(result.data) ? result.data : [result.data];
-    if (rows[0]?.id && window.LISTINGS) {
-      const local = window.LISTINGS.find(l => l.id === listing.id);
-      if (local) { local._sbId = rows[0].id; local.id = rows[0].id; }
-    }
+    console.log('[EM] storeAd: ad stored successfully');
     return { ok: true };
   }
 
@@ -191,7 +208,24 @@
 
   /* ── Load all public ads from Supabase ── */
   async function loadAds() {
-    /* Prefer the Supabase JS client so the user's auth token is included automatically */
+    /* Try server-side endpoint first — uses service key, bypasses SELECT RLS,
+       so every visitor sees every ad regardless of Supabase policies. */
+    try {
+      const r = await fetch('/api/load-ads');
+      if (r.ok) {
+        const rows = await r.json();
+        if (Array.isArray(rows)) {
+          console.log('[EM] loadAds: server endpoint returned', rows.length, 'ads');
+          return rows.map(_rowToListing);
+        }
+      } else {
+        console.warn('[EM] loadAds: server endpoint returned', r.status, '— falling back to direct query');
+      }
+    } catch (e) {
+      console.warn('[EM] loadAds: server endpoint unavailable —', e.message, '— falling back');
+    }
+
+    /* Fallback: direct Supabase query (subject to RLS SELECT policies) */
     if (window._sb) {
       const { data, error } = await window._sb
         .from('ads')
@@ -199,16 +233,15 @@
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) {
-        console.error('[EM] loadAds error:', error.code, error.message);
+        console.error('[EM] loadAds direct error:', error.code, error.message);
         if (error.code === '42501' || error.message.includes('policy')) {
-          console.warn('[EM] Fix: go to Supabase → Table Editor → ads → RLS policies and add a SELECT policy: allow anon role with USING (true)');
+          console.warn('[EM] Fix: Supabase → Table Editor → ads → RLS → add SELECT policy: allow anon with USING (true)');
         }
-        return null; /* null = fetch failed; caller keeps existing listings */
+        return null;
       }
       return (data || []).map(_rowToListing);
     }
 
-    /* Fallback: raw fetch with anon key */
     try {
       const hdrs = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
       const r = await fetch(SB_URL + '/rest/v1/ads?select=*&order=created_at.desc&limit=500', { headers: hdrs });

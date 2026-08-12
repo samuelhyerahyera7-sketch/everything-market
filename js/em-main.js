@@ -1073,8 +1073,10 @@ function submitPostAd(e) {
       } else {
         const errMsg = result?.error?.message || result?.error?.status || 'Upload failed — check console';
         console.error('[EM] Ad upload failed:', errMsg);
-        /* Replace the confirm modal with a clear failure message */
-        if (modalBox) {
+        /* Always show toast (visible even after modal is closed) */
+        _showToast('⚠️ Ad saved on device only — server upload failed. Check console for details.', 12000);
+        /* Also update modal if it's still open */
+        if (modal.classList.contains('open') && modalBox) {
           modalBox.innerHTML = `
             <div class="em-confirm">
               <div style="font-size:48px;margin-bottom:8px">⚠️</div>
@@ -1088,16 +1090,27 @@ function submitPostAd(e) {
       }
     }).catch(err => {
       console.error('[EM] storeAd threw:', err);
-      if (modalBox) modalBox.innerHTML = `
-        <div class="em-confirm">
-          <div style="font-size:48px;margin-bottom:8px">⚠️</div>
-          <div class="em-confirm-title" style="color:#e53935">Upload Error</div>
-          <div class="em-confirm-sub">Your ad was saved on this device but could not reach the server.</div>
-          <div style="margin:12px 0;padding:10px;background:#fff3f3;border-radius:8px;font-size:13px;font-family:monospace;color:#c62828;word-break:break-all">${String(err)}</div>
-          <button class="em-confirm-close" onclick="closeModal()">OK</button>
-        </div>`;
+      _showToast('⚠️ Ad saved on device only — server upload error. Check console.', 12000);
+      if (modal.classList.contains('open') && modalBox) {
+        modalBox.innerHTML = `
+          <div class="em-confirm">
+            <div style="font-size:48px;margin-bottom:8px">⚠️</div>
+            <div class="em-confirm-title" style="color:#e53935">Upload Error</div>
+            <div class="em-confirm-sub">Your ad was saved on this device but could not reach the server.</div>
+            <div style="margin:12px 0;padding:10px;background:#fff3f3;border-radius:8px;font-size:13px;font-family:monospace;color:#c62828;word-break:break-all">${String(err)}</div>
+            <button class="em-confirm-close" onclick="closeModal()">OK</button>
+          </div>`;
+      }
     });
   }
+}
+
+function _showToast(msg, durationMs) {
+  const t = document.getElementById('em-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), durationMs || 8000);
 }
 
 function showAdPostedConfirm(title) {

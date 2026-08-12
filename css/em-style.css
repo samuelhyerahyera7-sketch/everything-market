@@ -392,6 +392,10 @@ svg { display: block; }
 .em-confirm-sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .em-confirm-close { margin-top: 20px; width: 100%; padding: 12px; background: var(--surf); border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink); }
 
+/* Toast notification */
+#em-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(120px); background: #c62828; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; max-width: 90vw; text-align: center; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,.3); transition: transform .3s ease, opacity .3s ease; opacity: 0; pointer-events: none; }
+#em-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+
 /* OTP code input */
 .em-otp-input { font-size: 26px !important; letter-spacing: 10px; text-align: center; font-weight: 800 !important; }
 
