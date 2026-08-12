@@ -1071,7 +1071,7 @@ function submitPostAd(e) {
       if (result && result.ok) {
         _saveUserAds();
       } else {
-        const errMsg = result?.error?.message || result?.error?.status || 'Unknown error';
+        const errMsg = result?.error?.message || result?.error?.status || 'Upload failed — check console';
         console.error('[EM] Ad upload failed:', errMsg);
         /* Replace the confirm modal with a clear failure message */
         if (modalBox) {
@@ -1086,6 +1086,16 @@ function submitPostAd(e) {
             </div>`;
         }
       }
+    }).catch(err => {
+      console.error('[EM] storeAd threw:', err);
+      if (modalBox) modalBox.innerHTML = `
+        <div class="em-confirm">
+          <div style="font-size:48px;margin-bottom:8px">⚠️</div>
+          <div class="em-confirm-title" style="color:#e53935">Upload Error</div>
+          <div class="em-confirm-sub">Your ad was saved on this device but could not reach the server.</div>
+          <div style="margin:12px 0;padding:10px;background:#fff3f3;border-radius:8px;font-size:13px;font-family:monospace;color:#c62828;word-break:break-all">${String(err)}</div>
+          <button class="em-confirm-close" onclick="closeModal()">OK</button>
+        </div>`;
     });
   }
 }

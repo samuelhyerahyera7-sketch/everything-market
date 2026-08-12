@@ -1,75 +1,85 @@
-/* Vercel serverless function — insert an ad using the service key.
-   This bypasses Supabase RLS so any visitor can post a public ad.
-   Required env vars (Vercel dashboard):
-     SUPABASE_URL         – https://jucphfbaueowzlbjhxmm.supabase.co
-     SUPABASE_SERVICE_KEY – service-role key (never expose to frontend)
+/* Vercel serverless — insert an ad server-side so it's always public.
+   Uses service key when available (bypasses RLS), falls back to anon key.
+   Required env var: SUPABASE_SERVICE_KEY (add in Vercel dashboard)
 */
+const https = require('https');
 
-const SB_URL = process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co';
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY ||
+const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
+const SB_HOST    = SB_URL_RAW.replace('https://', '');
+const SB_KEY     = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  let body;
-  try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON' });
-  }
-
-  const required = ['title', 'cat', 'loc', 'seller'];
-  for (const f of required) {
-    if (!body[f] || !String(body[f]).trim()) {
-      return res.status(400).json({ error: `Missing required field: ${f}` });
-    }
-  }
-
-  const payload = {
-    title:        String(body.title).trim().slice(0, 200),
-    cat:          String(body.cat).trim(),
-    price:        Math.max(0, Number(body.price) || 0),
-    loc:          String(body.loc).trim().slice(0, 100),
-    seller:       String(body.seller).trim().slice(0, 100),
-    seller_type:  body.seller_type === 'business' ? 'business' : 'private',
-    description:  String(body.description || '').trim().slice(0, 5000),
-    cond:         String(body.cond || 'N/A').trim().slice(0, 50),
-    neg:          !!body.neg,
-    photos:       Array.isArray(body.photos) ? body.photos.slice(0, 10) : [],
-    phone:        String(body.phone || '').trim().slice(0, 30),
-    contact_email:String(body.contact_email || '').trim().slice(0, 100),
-    verified:     false,
-  };
-  if (body.user_id) payload.user_id = String(body.user_id);
-
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/ads', {
+function sbPost(path, body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body);
+    const options = {
+      hostname: SB_HOST,
+      path,
       method: 'POST',
       headers: {
         'apikey': SB_KEY,
         'Authorization': 'Bearer ' + SB_KEY,
         'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
+        'Prefer': 'return=minimal',
+        'Content-Length': Buffer.byteLength(data),
       },
-      body: JSON.stringify(payload),
+    };
+    const req = https.request(options, (res) => {
+      let raw = '';
+      res.on('data', d => { raw += d; });
+      res.on('end', () => resolve({ status: res.statusCode, body: raw }));
     });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
 
-    const text = await r.text();
-    if (!r.ok) {
-      console.error('[store-ad] Supabase error', r.status, text);
-      return res.status(502).json({ error: text });
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  let body;
+  try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; }
+  catch { return res.status(400).json({ error: 'Invalid JSON' }); }
+
+  const required = ['title', 'cat', 'loc', 'seller'];
+  for (const f of required) {
+    if (!body[f] || !String(body[f]).trim())
+      return res.status(400).json({ error: 'Missing field: ' + f });
+  }
+
+  const payload = {
+    title:         String(body.title).trim().slice(0, 200),
+    cat:           String(body.cat).trim(),
+    price:         Math.max(0, Number(body.price) || 0),
+    loc:           String(body.loc).trim().slice(0, 100),
+    seller:        String(body.seller).trim().slice(0, 100),
+    seller_type:   body.seller_type === 'business' ? 'business' : 'private',
+    description:   String(body.description || '').trim().slice(0, 5000),
+    cond:          String(body.cond || 'N/A').trim().slice(0, 50),
+    neg:           !!body.neg,
+    photos:        Array.isArray(body.photos) ? body.photos.slice(0, 10) : [],
+    phone:         String(body.phone || '').trim().slice(0, 30),
+    contact_email: String(body.contact_email || '').trim().slice(0, 100),
+    verified:      false,
+  };
+  if (body.user_id) payload.user_id = String(body.user_id);
+
+  try {
+    const r = await sbPost('/rest/v1/ads', payload);
+    /* 201 = Created, 204 = No Content (both mean success with return=minimal) */
+    if (r.status !== 201 && r.status !== 204) {
+      console.error('[store-ad] Supabase responded', r.status, r.body);
+      return res.status(502).json({ error: 'DB error ' + r.status + ': ' + r.body });
     }
-
-    const rows = JSON.parse(text);
-    return res.status(200).json({ ok: true, id: rows[0]?.id || null });
+    console.log('[store-ad] ad inserted OK, title:', payload.title);
+    return res.status(200).json({ ok: true });
   } catch (e) {
-    console.error('[store-ad] exception', e);
+    console.error('[store-ad] exception:', e);
     return res.status(500).json({ error: String(e) });
   }
 };
