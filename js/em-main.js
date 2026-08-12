@@ -56,21 +56,15 @@ async function _loadSupabaseAds() {
   try {
     const raw = await window.emLoadAds();
 
+    /* Supabase returned real data — replace LISTINGS entirely (deduped by key).
+       If raw is null it means the fetch failed — keep whatever localStorage gave us. */
     if (Array.isArray(raw)) {
-      /* Build dedup map seeded from Supabase rows (source of truth) */
       const seen = new Map();
       raw.forEach(ad => {
         const k = _adKey(ad);
         const prev = seen.get(k);
         if (!prev || ad.postedAt > prev.postedAt) seen.set(k, ad);
       });
-
-      /* Preserve any locally-cached ads not yet confirmed in Supabase */
-      LISTINGS.forEach(ad => {
-        const k = _adKey(ad);
-        if (!seen.has(k)) seen.set(k, ad);
-      });
-
       LISTINGS.length = 0;
       seen.forEach(a => LISTINGS.push(a));
     }
