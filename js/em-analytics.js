@@ -69,27 +69,6 @@
 
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
-    /* Check for a duplicate posted in the last 10 minutes — wrapped in try/catch
-       so a query failure never blocks the actual insert */
-    try {
-      if (window._sb) {
-        const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-        const { data: existing } = await window._sb
-          .from('ads').select('id')
-          .eq('title', listing.title)
-          .eq('seller', listing.seller)
-          .eq('price', listing.price)
-          .gte('created_at', since)
-          .limit(1);
-        if (existing && existing.length > 0) {
-          console.log('[EM] Duplicate ad detected — skipping insert');
-          return { ok: true };
-        }
-      }
-    } catch(dupErr) {
-      console.warn('[EM] Duplicate check failed (continuing with insert):', dupErr);
-    }
-
     const authToken = await _getAuthToken();
     const folderKey = 'ad-' + String(listing.id);
     const photoUrls = [];
@@ -113,52 +92,54 @@
       photos: photoUrls,
       phone: listing.phone || '',
       contact_email: listing.contactEmail || '',
-      verified: false,
-      user_id: listing.userId || null
+      verified: false
     };
+    if (listing.userId) payload.user_id = listing.userId;
 
-    /* Insert with one automatic retry on failure */
-    if (window._sb) {
-      let data, error;
-      ({ data, error } = await window._sb.from('ads').insert(payload).select());
-      if (error) {
-        console.warn('[EM] storeAd first attempt failed:', error.code, error.message, '— retrying in 3s');
-        await new Promise(r => setTimeout(r, 3000));
-        ({ data, error } = await window._sb.from('ads').insert(payload).select());
+    async function _doInsert(p) {
+      /* Try Supabase JS client first */
+      if (window._sb) {
+        const { data, error } = await window._sb.from('ads').insert(p).select('id');
+        if (error) return { ok: false, error, data: null };
+        return { ok: true, data };
       }
-      if (error) {
-        console.error('[EM] storeAd failed after retry:', error.code, error.message, error.details);
-        return { ok: false, error };
-      }
-      if (data && data[0] && data[0].id && window.LISTINGS) {
-        const local = window.LISTINGS.find(l => l.id === listing.id);
-        if (local) { local._sbId = data[0].id; local.id = data[0].id; }
-      }
-      return { ok: true };
-    }
-
-    /* Fallback: raw fetch */
-    try {
+      /* Fallback: raw fetch */
       const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
         headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(p)
       });
       if (!r.ok) {
-        const errText = await r.text();
-        console.error('[EM] storeAd HTTP error:', r.status, errText);
-        return { ok: false, error: errText };
+        const txt = await r.text();
+        return { ok: false, error: { message: txt, status: r.status }, data: null };
       }
       const rows = await r.json();
-      if (rows && rows[0] && rows[0].id && window.LISTINGS) {
-        const local = window.LISTINGS.find(l => l.id === listing.id);
-        if (local) { local._sbId = rows[0].id; local.id = rows[0].id; }
-      }
-      return { ok: true };
-    } catch (e) {
-      console.error('[EM] storeAd exception:', e);
-      return { ok: false, error: e };
+      return { ok: true, data: rows };
     }
+
+    let result = await _doInsert(payload);
+
+    /* One retry after 2 s */
+    if (!result.ok) {
+      console.warn('[EM] storeAd attempt 1 failed:', result.error?.code, result.error?.message, result.error?.status, '— retrying in 2s');
+      await new Promise(r => setTimeout(r, 2000));
+      result = await _doInsert(payload);
+    }
+
+    if (!result.ok) {
+      const err = result.error;
+      console.error('[EM] storeAd FAILED (code=%s status=%s): %s | details: %s',
+        err?.code, err?.status, err?.message, err?.details);
+      return { ok: false, error: err };
+    }
+
+    /* Update local listing with real Supabase UUID */
+    const rows = Array.isArray(result.data) ? result.data : [result.data];
+    if (rows[0]?.id && window.LISTINGS) {
+      const local = window.LISTINGS.find(l => l.id === listing.id);
+      if (local) { local._sbId = rows[0].id; local.id = rows[0].id; }
+    }
+    return { ok: true };
   }
 
   /* ── Map a raw Supabase ads row to the app's listing shape ── */

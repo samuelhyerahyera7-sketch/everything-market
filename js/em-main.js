@@ -1076,9 +1076,22 @@ function submitPostAd(e) {
   if (window.emStoreAd) {
     emStoreAd({ ...listing, photos: photoCopy }).then(result => {
       if (result && result.ok) {
-        _saveUserAds(); /* re-save with Supabase UUID so duplicates don't appear on next load */
-      } else if (result && !result.ok) {
-        _showToast('⚠️ Could not upload your ad. Check your connection and post again.', 8000);
+        _saveUserAds();
+      } else {
+        const errMsg = result?.error?.message || result?.error?.status || 'Unknown error';
+        console.error('[EM] Ad upload failed:', errMsg);
+        /* Replace the confirm modal with a clear failure message */
+        if (modalBox) {
+          modalBox.innerHTML = `
+            <div class="em-confirm">
+              <div style="font-size:48px;margin-bottom:8px">⚠️</div>
+              <div class="em-confirm-title" style="color:#e53935">Upload Failed</div>
+              <div class="em-confirm-sub">Your ad <strong>"${listing.title}"</strong> saved on this device but could NOT be uploaded to the server — other people cannot see it yet.</div>
+              <div style="margin:12px 0;padding:10px;background:#fff3f3;border-radius:8px;font-size:13px;font-family:monospace;color:#c62828;text-align:left;word-break:break-all">${errMsg}</div>
+              <div class="em-confirm-sub" style="font-size:13px">Check your internet connection and try posting again. If this keeps happening, screenshot this error and contact support.</div>
+              <button class="em-confirm-close" onclick="closeModal()">OK</button>
+            </div>`;
+        }
       }
     });
   }
