@@ -96,14 +96,29 @@
     };
     if (listing.userId) payload.user_id = listing.userId;
 
-    async function _doInsert(p) {
-      /* Try Supabase JS client first */
+    /* Try server-side endpoint first — uses service key, bypasses RLS */
+    async function _doInsertViaAPI(p) {
+      try {
+        const r = await fetch('/api/store-ad', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(p)
+        });
+        const json = await r.json();
+        if (!r.ok) return { ok: false, error: { message: json.error || r.statusText, status: r.status }, data: null };
+        return { ok: true, data: [{ id: json.id }] };
+      } catch (e) {
+        return { ok: false, error: { message: String(e) }, data: null };
+      }
+    }
+
+    /* Fallback: direct Supabase insert (works when RLS disabled) */
+    async function _doInsertDirect(p) {
       if (window._sb) {
         const { data, error } = await window._sb.from('ads').insert(p).select('id');
         if (error) return { ok: false, error, data: null };
         return { ok: true, data };
       }
-      /* Fallback: raw fetch */
       const r = await fetch(SB_URL + '/rest/v1/ads', {
         method: 'POST',
         headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
@@ -117,13 +132,18 @@
       return { ok: true, data: rows };
     }
 
-    let result = await _doInsert(payload);
-
-    /* One retry after 2 s */
+    let result = await _doInsertViaAPI(payload);
     if (!result.ok) {
-      console.warn('[EM] storeAd attempt 1 failed:', result.error?.code, result.error?.message, result.error?.status, '— retrying in 2s');
+      console.warn('[EM] server insert failed, trying direct:', result.error?.message);
+      result = await _doInsertDirect(payload);
+    }
+
+    /* One retry after 2 s if both failed */
+    if (!result.ok) {
+      console.warn('[EM] storeAd attempt 1 failed, retrying in 2s...');
       await new Promise(r => setTimeout(r, 2000));
-      result = await _doInsert(payload);
+      result = await _doInsertViaAPI(payload);
+      if (!result.ok) result = await _doInsertDirect(payload);
     }
 
     if (!result.ok) {
