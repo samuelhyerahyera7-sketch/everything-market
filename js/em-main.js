@@ -43,11 +43,10 @@ function _saveUserAds() {
 
 /* ── Load ads from Supabase and rebuild LISTINGS ── */
 function _adKey(ad) {
+  /* Dedup by title+seller — price/loc can vary due to formatting differences */
   return [
     (ad.title  || '').trim().toLowerCase(),
-    (ad.seller || '').trim().toLowerCase(),
-    String(ad.price),
-    (ad.loc    || '').trim().toLowerCase()
+    (ad.seller || '').trim().toLowerCase()
   ].join('||');
 }
 
@@ -1186,7 +1185,7 @@ function openBuyNow(listing) {
     <div class="em-modal-divider"></div>
     <div style="padding:0 20px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact Seller</div>
     <div class="em-contact-btns">
-      <button class="em-contact-btn wa" onclick="showMessageScreen('${listing.id}')">
+      <button class="em-contact-btn wa" onclick="showMessageScreen('${listing.id}','${listing.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${(listing.contactEmail||'').replace(/'/g,"\\'")}','${listing.seller.replace(/'/g,"\\'")}')">
         <div class="em-contact-btn-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
         <div><span>Chat with Seller</span><span class="em-contact-btn-sub">Message through Everything Market</span></div>
       </button>
@@ -1343,18 +1342,18 @@ function showCallScreen(seller, phone) {
     </div>`;
 }
 
-function showMessageScreen(listingId) {
-  const l = LISTINGS.find(x => String(x.id) === String(listingId));
-  if (!l) return;
+function showMessageScreen(listingId, adTitle, recipientEmail, sellerName) {
   const sess = _getSession();
   if (!sess) { closeModal(); openSignInModal('Sign in to send a message.'); return; }
-  const safeTitle  = l.title.replace(/'/g, "\\'");
-  const safeEmail  = (l.contactEmail || '').replace(/'/g, "\\'");
-  const safeSeller = l.seller.replace(/'/g, "\\'");
-  const safeId     = String(l.id).replace(/'/g, "\\'");
-  modalBox.querySelector('.em-contact-btns').innerHTML = `
+  const safeTitle  = (adTitle    || '').replace(/'/g, "\\'");
+  const safeEmail  = (recipientEmail || '').replace(/'/g, "\\'");
+  const safeSeller = (sellerName  || '').replace(/'/g, "\\'");
+  const safeId     = String(listingId);
+  const btns = modalBox.querySelector('.em-contact-btns');
+  if (!btns) return;
+  btns.innerHTML = `
     <div style="padding:4px 0;">
-      <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${l.title}". Is it still available?</textarea>
+      <textarea id="msg-body" class="em-offer-textarea" style="margin-bottom:12px;">Hi, I'm interested in "${adTitle || 'this item'}". Is it still available?</textarea>
       <div id="msg-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
       <button class="em-offer-submit" onclick="submitMessage('${safeId}','${safeTitle}','${safeEmail}','${safeSeller}')">Send Message</button>
     </div>`;
