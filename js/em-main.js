@@ -22,9 +22,16 @@ function fmtPrice(l, large) {
     : `<span class="gt-price-val">${r}</span>${neg}`;
 }
 
-/* ── User ads: load from localStorage and prepend ── */
+/* ── User ads: load from localStorage (backup cache while Supabase syncs) ── */
 function _loadUserAds() {
-  /* Supabase is the single source of truth — localStorage is no longer used for display */
+  try {
+    const saved = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
+    if (!Array.isArray(saved) || !saved.length) return;
+    const existingIds = new Set(LISTINGS.map(l => String(l.id)));
+    saved.forEach(ad => {
+      if (!existingIds.has(String(ad.id))) LISTINGS.unshift(ad);
+    });
+  } catch(e) {}
 }
 
 function _saveUserAds() {
@@ -35,25 +42,35 @@ function _saveUserAds() {
 }
 
 /* ── Load ads from Supabase and rebuild LISTINGS ── */
+function _adKey(ad) {
+  return [
+    (ad.title  || '').trim().toLowerCase(),
+    (ad.seller || '').trim().toLowerCase(),
+    String(ad.price),
+    (ad.loc    || '').trim().toLowerCase()
+  ].join('||');
+}
+
 async function _loadSupabaseAds() {
   if (!window.emLoadAds) { window._adsLoaded = true; renderAll('all'); return; }
   try {
     const raw = await window.emLoadAds();
 
-    /* Only replace LISTINGS when Supabase returned actual rows.
-       null or [] means an error or empty DB — keep static demo data. */
-    if (Array.isArray(raw) && raw.length > 0) {
+    if (Array.isArray(raw)) {
+      /* Build dedup map seeded from Supabase rows (source of truth) */
       const seen = new Map();
       raw.forEach(ad => {
-        const key = [
-          (ad.title  || '').trim().toLowerCase(),
-          (ad.seller || '').trim().toLowerCase(),
-          String(ad.price),
-          (ad.loc    || '').trim().toLowerCase()
-        ].join('||');
-        const prev = seen.get(key);
-        if (!prev || ad.postedAt > prev.postedAt) seen.set(key, ad);
+        const k = _adKey(ad);
+        const prev = seen.get(k);
+        if (!prev || ad.postedAt > prev.postedAt) seen.set(k, ad);
       });
+
+      /* Preserve any locally-cached ads not yet confirmed in Supabase */
+      LISTINGS.forEach(ad => {
+        const k = _adKey(ad);
+        if (!seen.has(k)) seen.set(k, ad);
+      });
+
       LISTINGS.length = 0;
       seen.forEach(a => LISTINGS.push(a));
     }
