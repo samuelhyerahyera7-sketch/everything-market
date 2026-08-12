@@ -40,21 +40,23 @@ async function _loadSupabaseAds() {
   try {
     const raw = await window.emLoadAds();
 
-    /* Deduplicate in the display layer only — never touch the database */
-    const seen = new Map();
-    raw.forEach(ad => {
-      const key = [
-        (ad.title  || '').trim().toLowerCase(),
-        (ad.seller || '').trim().toLowerCase(),
-        String(ad.price),
-        (ad.loc    || '').trim().toLowerCase()
-      ].join('||');
-      const prev = seen.get(key);
-      if (!prev || ad.postedAt > prev.postedAt) seen.set(key, ad);
-    });
-
-    LISTINGS.length = 0;
-    seen.forEach(a => LISTINGS.push(a));
+    /* Only replace LISTINGS when Supabase returned actual rows.
+       null or [] means an error or empty DB — keep static demo data. */
+    if (Array.isArray(raw) && raw.length > 0) {
+      const seen = new Map();
+      raw.forEach(ad => {
+        const key = [
+          (ad.title  || '').trim().toLowerCase(),
+          (ad.seller || '').trim().toLowerCase(),
+          String(ad.price),
+          (ad.loc    || '').trim().toLowerCase()
+        ].join('||');
+        const prev = seen.get(key);
+        if (!prev || ad.postedAt > prev.postedAt) seen.set(key, ad);
+      });
+      LISTINGS.length = 0;
+      seen.forEach(a => LISTINGS.push(a));
+    }
   } catch(_) {}
   window._adsLoaded = true;
   renderAll('all');

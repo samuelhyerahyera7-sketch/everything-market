@@ -199,11 +199,10 @@
         .limit(500);
       if (error) {
         console.error('[EM] loadAds error:', error.code, error.message);
-        /* If RLS is blocking, show a clear message so the dashboard fix is obvious */
         if (error.code === '42501' || error.message.includes('policy')) {
           console.warn('[EM] Fix: go to Supabase → Table Editor → ads → RLS policies and add a SELECT policy: allow anon role with USING (true)');
         }
-        return [];
+        return null; /* null = fetch failed; caller keeps existing listings */
       }
       return (data || []).map(_rowToListing);
     }
@@ -215,13 +214,13 @@
       if (!r.ok) {
         const errText = await r.text();
         console.error('[EM] loadAds HTTP error:', r.status, errText);
-        return [];
+        return null;
       }
       const rows = await r.json();
       return rows.map(_rowToListing);
     } catch (e) {
       console.error('[EM] loadAds exception:', e);
-      return [];
+      return null;
     }
   }
 
