@@ -546,9 +546,18 @@ function renderCatResults(data) {
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
   const now = Date.now();
-  /* Dedup at render time so no ad ever appears twice regardless of LISTINGS state */
-  const _seen = new Set();
-  const deduped = data.filter(l => { const k = _adKey(l); if (_seen.has(k)) return false; _seen.add(k); return true; });
+  /* Dedup at render time by both id and title+seller so no ad ever appears twice */
+  const _seenId = new Set();
+  const _seenKey = new Set();
+  const deduped = data.filter(l => {
+    const id = String(l.id);
+    if (_seenId.has(id)) return false;
+    _seenId.add(id);
+    const k = _adKey(l);
+    if (_seenKey.has(k)) return false;
+    _seenKey.add(k);
+    return true;
+  });
   const paid    = deduped.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
   const regular = deduped.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
   /* Paid sponsors first, then all regular ads */
@@ -600,9 +609,18 @@ function renderBB(data) {
 /* ── Gumtree list render ── */
 function renderGT(data) {
   const list = document.getElementById('gt-list');
-  /* Dedup at render time */
-  const _seen = new Set();
-  const items = data.filter(l => { const k = _adKey(l); if (_seen.has(k)) return false; _seen.add(k); return true; });
+  /* Dedup at render time by both id and title+seller */
+  const _seenId = new Set();
+  const _seenKey = new Set();
+  const items = data.filter(l => {
+    const id = String(l.id);
+    if (_seenId.has(id)) return false;
+    _seenId.add(id);
+    const k = _adKey(l);
+    if (_seenKey.has(k)) return false;
+    _seenKey.add(k);
+    return true;
+  });
   if (!items.length) { list.innerHTML = ''; return; }
   items.forEach(l => {
     const card = document.createElement('div');
