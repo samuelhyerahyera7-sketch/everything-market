@@ -547,8 +547,11 @@ function renderCatResults(data) {
 function renderBB(data) {
   const grid = document.getElementById('bb-grid');
   const now = Date.now();
-  const paid    = data.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
-  const regular = data.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
+  /* Dedup at render time so no ad ever appears twice regardless of LISTINGS state */
+  const _seen = new Set();
+  const deduped = data.filter(l => { const k = _adKey(l); if (_seen.has(k)) return false; _seen.add(k); return true; });
+  const paid    = deduped.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
+  const regular = deduped.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
   /* Paid sponsors first, then all regular ads */
   const items = paid.length ? [...paid, ...regular] : data;
   if (!items.length) {
@@ -598,7 +601,9 @@ function renderBB(data) {
 /* ── Gumtree list render ── */
 function renderGT(data) {
   const list = document.getElementById('gt-list');
-  const items = data;
+  /* Dedup at render time */
+  const _seen = new Set();
+  const items = data.filter(l => { const k = _adKey(l); if (_seen.has(k)) return false; _seen.add(k); return true; });
   if (!items.length) { list.innerHTML = ''; return; }
   items.forEach(l => {
     const card = document.createElement('div');
