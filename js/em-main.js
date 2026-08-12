@@ -72,16 +72,15 @@ async function _loadSupabaseAds() {
       LISTINGS.length = 0;
       seen.forEach(a => LISTINGS.push(a));
 
-      /* Re-inject any locally saved ads that are not yet in Supabase */
+      /* Re-inject any locally saved user ads not yet in Supabase.
+         Don't depend on session state here — auth may not be ready yet.
+         em_user_ads only contains ads with a real userId (enforced by _saveUserAds). */
       try {
-        const sess = _getSession();
-        if (sess) {
-          const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
-          local.forEach(la => {
-            if (!la.userId || String(la.userId) !== String(sess.userId)) return;
-            if (!seen.has(_adKey(la))) LISTINGS.unshift(la);
-          });
-        }
+        const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
+        local.forEach(la => {
+          if (!la.userId) return;
+          if (!seen.has(_adKey(la))) LISTINGS.unshift(la);
+        });
       } catch (_) {}
     }
   } catch(_) {}
