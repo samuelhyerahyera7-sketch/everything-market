@@ -124,8 +124,8 @@ function renderSponsoredStrip() {
   if (!grid) return;
   const now = Date.now();
   const paid = LISTINGS.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
-  /* Fall back to all ads so the strip is never empty */
-  const sponsored = paid.length ? paid : [...LISTINGS];
+  /* Fall back to newest 10 ads so the strip is never empty */
+  const sponsored = paid.length ? paid : LISTINGS.slice(0, 10);
   const section = grid.closest('section') || grid.parentElement;
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
