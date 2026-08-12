@@ -27,8 +27,10 @@ function _loadUserAds() {
   try {
     const saved = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
     if (!Array.isArray(saved) || !saved.length) return;
+    /* Only load ads that have a userId (not corrupted data from older bug) */
+    const valid = saved.filter(ad => ad.userId);
     const existingIds = new Set(LISTINGS.map(l => String(l.id)));
-    saved.forEach(ad => {
+    valid.forEach(ad => {
       if (!existingIds.has(String(ad.id))) LISTINGS.unshift(ad);
     });
   } catch(e) {}
@@ -36,7 +38,10 @@ function _loadUserAds() {
 
 function _saveUserAds() {
   try {
-    const userAds = LISTINGS.filter(l => l.isUserAd);
+    const sess = _getSession();
+    if (!sess) return;
+    /* Only save ads that belong to THIS logged-in user */
+    const userAds = LISTINGS.filter(l => l.userId && String(l.userId) === String(sess.userId));
     localStorage.setItem('em_user_ads', JSON.stringify(userAds));
   } catch(e) {}
 }
@@ -1862,12 +1867,16 @@ function openMyAds() {
   if (!sess) { openSignInModal(); return; }
   document.getElementById('hdr-user-drop')?.classList.remove('open');
 
-  /* Pull user's ads: match by userId from LISTINGS, plus any in localStorage backup */
+  /* Pull user's ads: match by userId from LISTINGS, plus localStorage backup */
   const myAds = LISTINGS.filter(l => l.userId && String(l.userId) === String(sess.userId));
   try {
     const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
     const seenIds = new Set(myAds.map(l => String(l.id)));
-    local.forEach(la => { if (!seenIds.has(String(la.id))) myAds.push(la); });
+    /* Only add local ads that actually belong to this user */
+    local.forEach(la => {
+      if (!seenIds.has(String(la.id)) && la.userId && String(la.userId) === String(sess.userId))
+        myAds.push(la);
+    });
   } catch(_) {}
 
   modalBox.innerHTML = `

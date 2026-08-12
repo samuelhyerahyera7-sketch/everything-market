@@ -197,7 +197,7 @@
       contactEmail: row.contact_email || '',
       verified: !!row.verified,
       postedAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-      isUserAd: true,
+      isUserAd: !!row.user_id,
       badge: null,
       art: null,
       userId: row.user_id || null,
