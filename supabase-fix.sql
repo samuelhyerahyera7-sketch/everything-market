@@ -1,20 +1,27 @@
 -- Run this in Supabase → SQL Editor
--- Fixes RLS policies so ads can be inserted and read by everyone
+-- Step 1: Add user_id column if it doesn't exist
+ALTER TABLE ads ADD COLUMN IF NOT EXISTS user_id text;
 
+-- Step 2: Enable RLS
 ALTER TABLE ads ENABLE ROW LEVEL SECURITY;
 
--- Allow anyone (anon + authenticated) to read all ads
-DROP POLICY IF EXISTS "public_select" ON ads;
+-- Step 3: Drop old policies (if any exist)
+DROP POLICY IF EXISTS "public_select"  ON ads;
+DROP POLICY IF EXISTS "public_insert"  ON ads;
+DROP POLICY IF EXISTS "owner_update"   ON ads;
+DROP POLICY IF EXISTS "owner_delete"   ON ads;
+DROP POLICY IF EXISTS "auth_insert"    ON ads;
+
+-- Step 4: Allow anyone to read all ads
 CREATE POLICY "public_select" ON ads FOR SELECT USING (true);
 
--- Allow anyone to insert ads (server uses service key which bypasses this anyway)
-DROP POLICY IF EXISTS "public_insert" ON ads;
+-- Step 5: Allow anyone to insert ads
 CREATE POLICY "public_insert" ON ads FOR INSERT WITH CHECK (true);
 
--- Allow ad owners to update their own ads
-DROP POLICY IF EXISTS "owner_update" ON ads;
-CREATE POLICY "owner_update" ON ads FOR UPDATE USING (auth.uid()::text = user_id OR user_id IS NULL);
+-- Step 6: Allow owners to update their own ads
+CREATE POLICY "owner_update" ON ads FOR UPDATE
+  USING (user_id IS NULL OR auth.uid()::text = user_id);
 
--- Allow ad owners to delete their own ads
-DROP POLICY IF EXISTS "owner_delete" ON ads;
-CREATE POLICY "owner_delete" ON ads FOR DELETE USING (auth.uid()::text = user_id OR user_id IS NULL);
+-- Step 7: Allow owners to delete their own ads
+CREATE POLICY "owner_delete" ON ads FOR DELETE
+  USING (user_id IS NULL OR auth.uid()::text = user_id);
