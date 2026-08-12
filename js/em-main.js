@@ -40,8 +40,11 @@ function _saveUserAds() {
   try {
     const sess = _getSession();
     if (!sess) return;
-    /* Only save ads that belong to THIS logged-in user */
-    const userAds = LISTINGS.filter(l => l.userId && String(l.userId) === String(sess.userId));
+    /* Save ads that belong to this user — by userId, or by seller name as fallback */
+    const userAds = LISTINGS.filter(l =>
+      (l.userId && String(l.userId) === String(sess.userId)) ||
+      (!l.userId && l.seller && l.seller.trim().toLowerCase() === (sess.name || '').trim().toLowerCase())
+    );
     localStorage.setItem('em_user_ads', JSON.stringify(userAds));
   } catch(e) {}
 }
@@ -1914,8 +1917,11 @@ function openMyAds() {
   if (!sess) { openSignInModal(); return; }
   document.getElementById('hdr-user-drop')?.classList.remove('open');
 
-  /* Pull user's ads: match by userId from LISTINGS, plus localStorage backup */
-  const myAds = LISTINGS.filter(l => l.userId && String(l.userId) === String(sess.userId));
+  /* Pull user's ads: match by userId, or by seller name when userId wasn't stored */
+  const myAds = LISTINGS.filter(l =>
+    (l.userId && String(l.userId) === String(sess.userId)) ||
+    (!l.userId && l.seller && l.seller.trim().toLowerCase() === (sess.name || '').trim().toLowerCase())
+  );
   try {
     const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
     const seenIds = new Set(myAds.map(l => String(l.id)));
