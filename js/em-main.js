@@ -1074,6 +1074,19 @@ function submitPostAd(e) {
   errEl.style.display = 'none';
 
   const sess = _getSession();
+
+  /* Prevent duplicate: if this user already has an active ad with the same title, block it */
+  const titleLow = title.trim().toLowerCase();
+  const existingDup = LISTINGS.find(l =>
+    l.userId && sess && String(l.userId) === String(sess.userId) &&
+    (l.title || '').trim().toLowerCase() === titleLow
+  );
+  if (existingDup) {
+    errEl.textContent = 'You already have an active ad with this title. Edit or delete it first.';
+    errEl.style.display = '';
+    return;
+  }
+
   const listing = {
     id: Date.now(),
     title,

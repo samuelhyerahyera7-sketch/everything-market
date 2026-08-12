@@ -5,6 +5,17 @@ ALTER TABLE ads ADD COLUMN IF NOT EXISTS user_id text;
 -- Give the id column a default (timestamp-based bigint) so inserts without an id still work
 ALTER TABLE ads ALTER COLUMN id SET DEFAULT floor(extract(epoch from now()) * 1000)::bigint;
 
+-- Ensure id is unique so upsert (on_conflict=id) works correctly
+ALTER TABLE ads DROP CONSTRAINT IF EXISTS ads_id_unique;
+ALTER TABLE ads ADD CONSTRAINT ads_id_unique UNIQUE (id);
+
+-- Delete any duplicate rows keeping only the most recent one per title+seller
+DELETE FROM ads a
+USING ads b
+WHERE a.created_at < b.created_at
+  AND lower(trim(a.title)) = lower(trim(b.title))
+  AND lower(trim(a.seller)) = lower(trim(b.seller));
+
 -- Step 2: Enable RLS
 ALTER TABLE ads ENABLE ROW LEVEL SECURITY;
 

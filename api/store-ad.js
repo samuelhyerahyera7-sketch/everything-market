@@ -20,7 +20,7 @@ function sbPost(path, body) {
         'apikey': SB_KEY,
         'Authorization': 'Bearer ' + SB_KEY,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal',
+        'Prefer': 'resolution=ignore-duplicates,return=minimal',
         'Content-Length': Buffer.byteLength(data),
       },
     };
@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
   if (body.user_id) payload.user_id = String(body.user_id);
 
   try {
-    const r = await sbPost('/rest/v1/ads', payload);
+    const r = await sbPost('/rest/v1/ads?on_conflict=id', payload);
     /* 201 = Created, 204 = No Content (both mean success with return=minimal) */
     if (r.status !== 201 && r.status !== 204) {
       console.error('[store-ad] Supabase responded', r.status, r.body);
