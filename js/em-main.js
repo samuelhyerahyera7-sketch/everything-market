@@ -532,8 +532,8 @@ function renderBB(data) {
   const now = Date.now();
   const paid    = data.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
   const regular = data.filter(l => !l.sponsored || (l.sponsoredUntil && l.sponsoredUntil <= now));
-  /* If no paid sponsors yet, show the newest 10 ads in the top grid for free */
-  const items = paid.length ? [...paid.slice(0, 10), ...regular].slice(0, 10) : data.slice(0, 10);
+  /* Paid sponsors first, then all regular ads */
+  const items = paid.length ? [...paid, ...regular] : data;
   if (!items.length) {
     grid.innerHTML = window._adsLoaded
       ? '<p class="em-empty-state">No ads yet — be the first to post one!</p>'
@@ -581,7 +581,7 @@ function renderBB(data) {
 /* ── Gumtree list render ── */
 function renderGT(data) {
   const list = document.getElementById('gt-list');
-  const items = data.slice(0, 4);
+  const items = data;
   if (!items.length) { list.innerHTML = ''; return; }
   items.forEach(l => {
     const card = document.createElement('div');
