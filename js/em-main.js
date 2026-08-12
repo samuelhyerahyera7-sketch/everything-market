@@ -60,8 +60,8 @@ async function _loadSupabaseAds() {
   try {
     const raw = await window.emLoadAds();
 
-    /* Supabase returned real data — replace LISTINGS entirely (deduped by key).
-       If raw is null it means the fetch failed — keep whatever localStorage gave us. */
+    /* Supabase returned real data — replace LISTINGS (deduped), then re-add any
+       local user ads that didn't make it to Supabase yet so they never flash away. */
     if (Array.isArray(raw)) {
       const seen = new Map();
       raw.forEach(ad => {
@@ -71,6 +71,18 @@ async function _loadSupabaseAds() {
       });
       LISTINGS.length = 0;
       seen.forEach(a => LISTINGS.push(a));
+
+      /* Re-inject any locally saved ads that are not yet in Supabase */
+      try {
+        const sess = _getSession();
+        if (sess) {
+          const local = JSON.parse(localStorage.getItem('em_user_ads') || '[]');
+          local.forEach(la => {
+            if (!la.userId || String(la.userId) !== String(sess.userId)) return;
+            if (!seen.has(_adKey(la))) LISTINGS.unshift(la);
+          });
+        }
+      } catch (_) {}
     }
   } catch(_) {}
   window._adsLoaded = true;
@@ -1235,7 +1247,7 @@ function openBuyNow(listing) {
     <div style="padding:16px 20px 0;">
       ${listing.sponsored
         ? `<div style="text-align:center;font-size:13px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:10px;border-radius:10px;">&#x26A1; This ad is currently Sponsored</div>`
-        : `<button onclick="closeModal();setTimeout(()=>openSponsorModal('${listing.id}'),250)" style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.02em;">&#x26A1; Boost This Ad</button>`}
+        : `<button onclick="closeModal();setTimeout(()=>openSponsorModal('${listing.id}'),350)" style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.02em;">&#x26A1; Boost This Ad</button>`}
     </div>` : ''}
     ${relatedHTML}`;
 
