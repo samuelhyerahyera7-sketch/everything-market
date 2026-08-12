@@ -67,6 +67,7 @@ module.exports = async function handler(req, res) {
     contact_email: String(body.contact_email || '').trim().slice(0, 100),
     verified:      false,
   };
+  if (body.id)      payload.id      = Number(body.id);
   if (body.user_id) payload.user_id = String(body.user_id);
 
   try {

@@ -61,6 +61,7 @@ module.exports = async function handler(req, res) {
   /* Test 2: INSERT (uses a clearly-test title, deleted right after) */
   let insertOk = false, insertErr = '', insertedId = null;
   const testPayload = {
+    id: Date.now(),
     title: '__debug_test__', cat: 'other', price: 0,
     loc: 'test', seller: 'test', seller_type: 'private',
     description: 'debug test', cond: 'N/A', neg: false,

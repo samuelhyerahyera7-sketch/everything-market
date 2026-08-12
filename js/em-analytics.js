@@ -82,20 +82,22 @@
     }
 
     const payload = {
-      title: listing.title,
-      cat: listing.cat,
-      price: listing.price,
-      loc: listing.loc,
-      seller: listing.seller,
-      seller_type: listing.sellerType || 'private',
-      description: listing.desc || '',
-      cond: listing.cond || 'N/A',
-      neg: listing.neg || false,
-      photos: photoUrls,
-      phone: listing.phone || '',
+      id:            listing.id ? Number(listing.id) : undefined,
+      title:         listing.title,
+      cat:           listing.cat,
+      price:         listing.price,
+      loc:           listing.loc,
+      seller:        listing.seller,
+      seller_type:   listing.sellerType || 'private',
+      description:   listing.desc || '',
+      cond:          listing.cond || 'N/A',
+      neg:           listing.neg || false,
+      photos:        photoUrls,
+      phone:         listing.phone || '',
       contact_email: listing.contactEmail || '',
-      verified: false
+      verified:      false
     };
+    if (!payload.id) delete payload.id;
     if (listing.userId) payload.user_id = listing.userId;
 
     /* Try server-side endpoint first — uses service key, bypasses RLS INSERT restrictions */

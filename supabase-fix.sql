@@ -1,6 +1,9 @@
 -- Run this in Supabase → SQL Editor
--- Step 1: Add user_id column if it doesn't exist
+-- Step 1: Add missing columns
 ALTER TABLE ads ADD COLUMN IF NOT EXISTS user_id text;
+
+-- Give the id column a default (timestamp-based bigint) so inserts without an id still work
+ALTER TABLE ads ALTER COLUMN id SET DEFAULT floor(extract(epoch from now()) * 1000)::bigint;
 
 -- Step 2: Enable RLS
 ALTER TABLE ads ENABLE ROW LEVEL SECURITY;
