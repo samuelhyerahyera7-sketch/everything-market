@@ -49,33 +49,28 @@
     return SB_KEY;
   }
 
-  /* ── Upload a single photo (base64 data URL) to ad-photos storage ── */
-  async function _uploadPhoto(adId, index, dataUrl, authToken) {
+  /* ── Upload a single photo via server endpoint (uses service key, always works) ── */
+  async function _uploadPhoto(adId, index, dataUrl) {
     try {
-      const res  = await fetch(dataUrl);
-      const blob = await res.blob();
-      const ext  = (blob.type || 'image/jpeg').split('/')[1] || 'jpg';
-      const path = adId + '/' + index + '.' + ext;
-
-      const r = await fetch(SB_URL + '/storage/v1/object/ad-photos/' + path, {
+      const r = await fetch('/api/upload-photo', {
         method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + (authToken || SB_KEY), 'Content-Type': blob.type },
-        body: blob
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adId, index, dataUrl })
       });
-      if (!r.ok) return null;
-      return SB_URL + '/storage/v1/object/public/ad-photos/' + path;
-    } catch (_) { return null; }
+      if (!r.ok) { console.error('[EM] upload-photo', r.status); return null; }
+      const json = await r.json();
+      return json.url || null;
+    } catch (e) { console.error('[EM] upload-photo exception', e); return null; }
   }
 
   /* ── Store full ad: upload photos, then insert row ── */
   async function storeAd(listing) {
-    const authToken = await _getAuthToken();
-    const folderKey = 'ad-' + String(listing.id);
+    const folderKey = String(listing.id);
     const photoUrls = [];
     if (Array.isArray(listing.photos) && listing.photos.length) {
       console.log('[EM] storeAd: uploading', listing.photos.length, 'photo(s)...');
       for (let i = 0; i < listing.photos.length; i++) {
-        const url = await _uploadPhoto(folderKey, i, listing.photos[i], authToken);
+        const url = await _uploadPhoto(folderKey, i, listing.photos[i]);
         if (url) photoUrls.push(url);
       }
       console.log('[EM] storeAd: uploaded', photoUrls.length, '/', listing.photos.length, 'photos');
