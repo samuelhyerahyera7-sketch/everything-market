@@ -110,12 +110,16 @@ const _ART_ICON = {
   apt:      { emoji:'🏢', color:'#E3F2FD', icon:'M3 21V7l9-4 9 4v14H3zM3 21h18M9 21V9M15 21V9M9 9h6M9 13h6M9 17h6' },
 };
 
-function _renderImg(el, l) {
+function _renderImg(el, l, tappable) {
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
     img.src = l.photos[0];
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
+    if (tappable) {
+      img.style.cursor = 'zoom-in';
+      img.onclick = () => emLightboxOpen(l.photos[0]);
+    }
     img.onerror = () => { img.remove(); _renderArtIcon(el, l.art); };
     el.appendChild(img);
   } else {
@@ -1233,6 +1237,21 @@ function emGalleryGo(idx) {
 }
 function emGalleryMove(dir) { emGalleryGo((window._emGalleryIdx || 0) + dir); }
 
+function emLightboxOpen(src) {
+  const lb = document.getElementById('em-lightbox');
+  const img = document.getElementById('em-lightbox-img');
+  if (!lb || !img || !src) return;
+  img.src = src;
+  lb.classList.add('open');
+  document.addEventListener('keydown', _lbKey);
+}
+function emLightboxClose() {
+  const lb = document.getElementById('em-lightbox');
+  if (lb) lb.classList.remove('open');
+  document.removeEventListener('keydown', _lbKey);
+}
+function _lbKey(e) { if (e.key === 'Escape') emLightboxClose(); }
+
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
@@ -1265,7 +1284,7 @@ function openBuyNow(listing) {
   const galleryHTML = photos.length > 1
     ? `<div class="em-gallery" id="em-gallery">
         <div class="em-gallery-track" id="em-gallery-track">
-          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onerror="this.style.display='none'"></div>`).join('')}
+          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen('${p}')" onerror="this.style.display='none'"></div>`).join('')}
         </div>
         <button class="em-gallery-arrow em-gallery-prev" onclick="emGalleryMove(-1)">&#8249;</button>
         <button class="em-gallery-arrow em-gallery-next" onclick="emGalleryMove(1)">&#8250;</button>
@@ -1328,7 +1347,7 @@ function openBuyNow(listing) {
   _openModal();
   setTimeout(async () => {
     const imgEl = document.getElementById('modal-img');
-    if (imgEl) _renderImg(imgEl, listing);
+    if (imgEl) _renderImg(imgEl, listing, true);
     related.forEach(r => {
       const relEl = document.getElementById(`rel-img-${r.id}`);
       if (relEl) _renderImg(relEl, r);
