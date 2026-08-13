@@ -985,8 +985,22 @@ window._paAddPhotos = function(files) {
     if (!file.type.startsWith('image/')) return;
     const reader = new FileReader();
     reader.onload = e => {
-      window._paPhotos.push(e.target.result);
-      _paRenderPreviews();
+      /* Compress to max 1200px and JPEG 82% — keeps mobile photos under 300 KB */
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        window._paPhotos.push(canvas.toDataURL('image/jpeg', 0.82));
+        _paRenderPreviews();
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
