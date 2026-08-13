@@ -624,7 +624,8 @@ function renderGT(data) {
     _seenKey.add(k);
     return true;
   });
-  if (!items.length) { list.innerHTML = ''; return; }
+  list.innerHTML = '';
+  if (!items.length) return;
   items.forEach(l => {
     const card = document.createElement('div');
     card.className = 'gt-card';
