@@ -1222,6 +1222,17 @@ function openSponsoredAd(s) {
   });
 }
 
+function emGalleryGo(idx) {
+  const track = document.getElementById('em-gallery-track');
+  const dots  = document.querySelectorAll('.em-gallery-dot');
+  if (!track) return;
+  const count = track.children.length;
+  window._emGalleryIdx = (idx + count) % count;
+  track.style.transform = `translateX(-${window._emGalleryIdx * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle('active', i === window._emGalleryIdx));
+}
+function emGalleryMove(dir) { emGalleryGo((window._emGalleryIdx || 0) + dir); }
+
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
@@ -1250,12 +1261,26 @@ function openBuyNow(listing) {
       </div>
     </div>` : '';
 
+  const photos = Array.isArray(listing.photos) ? listing.photos.filter(Boolean) : [];
+  const galleryHTML = photos.length > 1
+    ? `<div class="em-gallery" id="em-gallery">
+        <div class="em-gallery-track" id="em-gallery-track">
+          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onerror="this.style.display='none'"></div>`).join('')}
+        </div>
+        <button class="em-gallery-arrow em-gallery-prev" onclick="emGalleryMove(-1)">&#8249;</button>
+        <button class="em-gallery-arrow em-gallery-next" onclick="emGalleryMove(1)">&#8250;</button>
+        <div class="em-gallery-dots">
+          ${photos.map((_, i) => `<span class="em-gallery-dot${i===0?' active':''}" onclick="emGalleryGo(${i})"></span>`).join('')}
+        </div>
+      </div>`
+    : `<div class="em-ad-photo" id="modal-img"></div>`;
+
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Ad Details</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div class="em-ad-photo" id="modal-img"></div>
+    ${galleryHTML}
     <div class="em-ad-detail-body">
       <div class="em-ad-detail-price">${price}</div>
       <div class="em-ad-detail-title">${listing.title}</div>
@@ -1304,6 +1329,7 @@ function openBuyNow(listing) {
     </div>` : ''}
     ${relatedHTML}`;
 
+  window._emGalleryIdx = 0;
   modalBox.scrollTop = 0;
   _openModal();
   setTimeout(async () => {

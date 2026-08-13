@@ -353,6 +353,18 @@ svg { display: block; }
 /* Ad detail full view */
 .em-ad-photo { width: 100%; height: 220px; background: var(--surf2); overflow: hidden; border-radius: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .em-ad-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Photo gallery slider */
+.em-gallery { position: relative; width: 100%; height: 240px; overflow: hidden; background: #111; flex-shrink: 0; }
+.em-gallery-track { display: flex; height: 100%; transition: transform .3s ease; will-change: transform; }
+.em-gallery-slide { flex: 0 0 100%; height: 100%; }
+.em-gallery-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.em-gallery-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.45); color: #fff; border: none; font-size: 26px; line-height: 1; padding: 6px 12px; cursor: pointer; z-index: 2; border-radius: 6px; }
+.em-gallery-prev { left: 8px; }
+.em-gallery-next { right: 8px; }
+.em-gallery-dots { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+.em-gallery-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.5); cursor: pointer; transition: background .2s; }
+.em-gallery-dot.active { background: #fff; }
 .em-ad-detail-body { padding: 16px 20px 12px; }
 .em-ad-detail-price { font-size: 22px; font-weight: 900; color: var(--forest); letter-spacing: -.02em; margin-bottom: 4px; }
 .em-ad-detail-title { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.35; margin-bottom: 10px; }
