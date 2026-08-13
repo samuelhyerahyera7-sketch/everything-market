@@ -2080,12 +2080,21 @@ window._selectSponsorPlan  = _selectSponsorPlan;
 window._startSponsorPayment = _startSponsorPayment;
 window.openSponsorModal = openSponsorModal;
 
-window._deleteMyAd = function(id) {
+window._deleteMyAd = async function(id) {
+  /* Remove from local state immediately */
   const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
   if (idx !== -1) LISTINGS.splice(idx, 1);
   _saveUserAds();
   renderAll('all');
   openMyAds();
+  /* Delete from Supabase so it doesn't come back on refresh */
+  try {
+    await fetch('/api/delete-ad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+  } catch (_) {}
 };
 
 /* ── Info modals (footer links) ── */
