@@ -285,6 +285,8 @@ svg { display: block; }
 .pi input:focus { border-color: var(--leaf); }
 .btn-fltr { width: 100%; background: var(--forest); color: #fff; border: none; border-radius: var(--r); padding: 7.5px; font-size: 12px; font-weight: 700; margin-top: 7px; transition: .13s; }
 .btn-fltr:hover { background: var(--mid); }
+.sb-province-sel { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 12px; color: var(--ink); background: var(--white); font-family: inherit; cursor: pointer; }
+.sb-province-sel:focus { border-color: var(--leaf); outline: none; }
 .safety-list { display: flex; flex-direction: column; gap: 7px; }
 .si { display: flex; gap: 7px; font-size: 11px; color: var(--muted); line-height: 1.5; }
 .si-dot { color: var(--ochre); font-weight: 900; flex-shrink: 0; font-size: 14px; line-height: 1.2; }

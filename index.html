@@ -219,6 +219,21 @@
         </div>
         <div class="sb-body">
           <div class="fg">
+            <div class="fl">Province</div>
+            <select class="sb-province-sel" onchange="toast('Province filter applied')">
+              <option value="">All Provinces</option>
+              <option value="gauteng">Gauteng</option>
+              <option value="western-cape">Western Cape</option>
+              <option value="kwazulu-natal">KwaZulu-Natal</option>
+              <option value="eastern-cape">Eastern Cape</option>
+              <option value="limpopo">Limpopo</option>
+              <option value="mpumalanga">Mpumalanga</option>
+              <option value="north-west">North West</option>
+              <option value="northern-cape">Northern Cape</option>
+              <option value="free-state">Free State</option>
+            </select>
+          </div>
+          <div class="fg">
             <div class="fl">Category</div>
             <label class="fo"><input type="radio" name="cat" checked> All Categories</label>
             <label class="fo"><input type="radio" name="cat"> Vehicles</label>
@@ -226,6 +241,7 @@
             <label class="fo"><input type="radio" name="cat"> Electronics</label>
             <label class="fo"><input type="radio" name="cat"> Services</label>
             <label class="fo"><input type="radio" name="cat"> Fashion</label>
+            <label class="fo"><input type="radio" name="cat"> Other</label>
           </div>
           <div class="fg">
             <div class="fl">Price Range (R)</div>
@@ -245,9 +261,9 @@
           <div class="fg">
             <div class="fl">Ad Type</div>
             <label class="fo"><input type="checkbox" checked> For Sale</label>
-            <label class="fo"><input type="checkbox" checked> Services</label>
             <label class="fo"><input type="checkbox" checked> To Let / Rent</label>
-            <label class="fo"><input type="checkbox"> Wanted</label>
+            <label class="fo"><input type="checkbox" checked> Services</label>
+            <label class="fo"><input type="checkbox" checked> Other</label>
           </div>
         </div>
       </div>
