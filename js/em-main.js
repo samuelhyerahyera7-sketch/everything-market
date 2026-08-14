@@ -118,7 +118,7 @@ function _renderImg(el, l, tappable) {
     img.alt = l.title;
     if (tappable) {
       img.style.cursor = 'zoom-in';
-      img.onclick = () => emLightboxOpen(l.photos[0]);
+      img.onclick = () => emLightboxOpen(l.photos[0], l.photos, 0);
     }
     img.onerror = () => { img.remove(); _renderArtIcon(el, l.art); };
     el.appendChild(img);
@@ -1390,12 +1390,19 @@ function emGalleryGo(idx) {
 }
 function emGalleryMove(dir) { emGalleryGo((window._emGalleryIdx || 0) + dir); }
 
-function emLightboxOpen(src) {
-  const lb = document.getElementById('em-lightbox');
+let _lbPhotos = [];
+let _lbIdx = 0;
+
+function emLightboxOpen(src, allPhotos, startIdx) {
+  const lb  = document.getElementById('em-lightbox');
   const img = document.getElementById('em-lightbox-img');
   if (!lb || !img || !src) return;
-  img.src = src;
+  _lbPhotos = Array.isArray(allPhotos) && allPhotos.length > 1 ? allPhotos : [src];
+  _lbIdx    = (startIdx != null) ? startIdx : _lbPhotos.indexOf(src);
+  if (_lbIdx < 0) _lbIdx = 0;
+  img.src = _lbPhotos[_lbIdx];
   lb.classList.add('open');
+  _lbUpdateNav();
   document.addEventListener('keydown', _lbKey);
 }
 function emLightboxClose() {
@@ -1403,7 +1410,43 @@ function emLightboxClose() {
   if (lb) lb.classList.remove('open');
   document.removeEventListener('keydown', _lbKey);
 }
-function _lbKey(e) { if (e.key === 'Escape') emLightboxClose(); }
+function _lbGo(idx) {
+  _lbIdx = (idx + _lbPhotos.length) % _lbPhotos.length;
+  const img = document.getElementById('em-lightbox-img');
+  if (img) img.src = _lbPhotos[_lbIdx];
+  _lbUpdateNav();
+}
+function _lbUpdateNav() {
+  const counter = document.getElementById('em-lightbox-counter');
+  const prevBtn = document.getElementById('em-lightbox-prev');
+  const nextBtn = document.getElementById('em-lightbox-next');
+  const multi = _lbPhotos.length > 1;
+  if (counter) { counter.textContent = multi ? (_lbIdx + 1) + ' / ' + _lbPhotos.length : ''; counter.style.display = multi ? '' : 'none'; }
+  if (prevBtn) prevBtn.style.display = multi ? '' : 'none';
+  if (nextBtn) nextBtn.style.display = multi ? '' : 'none';
+}
+function _lbKey(e) {
+  if (e.key === 'Escape') emLightboxClose();
+  if (e.key === 'ArrowRight') _lbGo(_lbIdx + 1);
+  if (e.key === 'ArrowLeft')  _lbGo(_lbIdx - 1);
+}
+
+/* Swipe gestures inside lightbox */
+(function() {
+  let lbTouchX = 0;
+  document.addEventListener('DOMContentLoaded', () => {
+    const lb = document.getElementById('em-lightbox');
+    if (!lb) return;
+    lb.addEventListener('touchstart', e => { lbTouchX = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend', e => {
+      if (!lb.classList.contains('open')) return;
+      const dx = e.changedTouches[0].clientX - lbTouchX;
+      if (Math.abs(dx) < 40) return;
+      if (dx < 0) _lbGo(_lbIdx + 1);
+      else        _lbGo(_lbIdx - 1);
+    }, { passive: true });
+  });
+})();
 
 function openBuyNow(listing) {
   if (!listing) return;
@@ -1437,7 +1480,7 @@ function openBuyNow(listing) {
   const galleryHTML = photos.length > 1
     ? `<div class="em-gallery" id="em-gallery">
         <div class="em-gallery-track" id="em-gallery-track">
-          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen('${p}')" onerror="this.style.display='none'"></div>`).join('')}
+          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen('${p}',${JSON.stringify(photos)},${i})" onerror="this.style.display='none'"></div>`).join('')}
         </div>
         <button class="em-gallery-arrow em-gallery-prev" onclick="emGalleryMove(-1)">&#8249;</button>
         <button class="em-gallery-arrow em-gallery-next" onclick="emGalleryMove(1)">&#8250;</button>
