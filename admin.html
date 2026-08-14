@@ -186,7 +186,7 @@
       const photo = Array.isArray(a.photos) && a.photos[0]
         ? `<img class="ad-photo" src="${a.photos[0]}" onerror="this.style.display='none'">`
         : `<div class="no-photo">📷</div>`;
-      const price = a.price === 0 ? 'Free' : 'R ' + Number(a.price).toLocaleString('en-ZA');
+      const price = a.price === 0 ? 'Contact for Price' : 'R ' + Number(a.price).toLocaleString('en-ZA');
       const date  = a.created_at ? new Date(a.created_at).toLocaleDateString('en-ZA') : '–';
       const badge = a.seller_type === 'business'
         ? `<span class="badge badge-biz">Business</span>`

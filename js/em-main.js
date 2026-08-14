@@ -13,8 +13,8 @@ function toggleWL(id, btn) {
 /* ── Price formatting ── */
 function fmtPrice(l, large) {
   if (l.price === 0) return large
-    ? '<span class="bb-price-free">Free / Contact for Price</span>'
-    : '<span class="gt-price-free">Free / Contact for Price</span>';
+    ? '<span class="bb-price-free">Contact for Price</span>'
+    : '<span class="gt-price-free">Contact for Price</span>';
   const r = 'R ' + l.price.toLocaleString('en-ZA');
   const neg = l.neg ? (large ? '<span class="bb-neg">neg.</span>' : '<span class="gt-neg">neg.</span>') : '';
   return large
@@ -862,7 +862,7 @@ function openPostAdModal() {
       <div id="pa-cat-extra" style="display:none;"></div>
 
       <div class="em-post-field">
-        <label class="em-post-label" for="pa-price">Price (R) <span>— enter 0 for Free / Contact</span></label>
+        <label class="em-post-label" for="pa-price">Price (R) <span>— enter 0 for Contact for Price</span></label>
         <div style="display:flex;align-items:center;gap:14px;">
           <input class="em-post-input" id="pa-price" type="number" placeholder="0" min="0" style="flex:1;max-width:180px;">
           <label class="em-post-check"><input type="checkbox" id="pa-neg"> Negotiable</label>
@@ -1411,7 +1411,7 @@ function openBuyNow(listing) {
   const _sess = _getSession();
   const isOwner = _sess && listing.userId && String(listing.userId) === String(_sess.userId);
   const sd = BB_SELLER_DATA[listing.id] || { delivery: false };
-  const price = listing._priceStr || (listing.price === 0 ? 'Free / Contact' : 'R ' + listing.price.toLocaleString('en-ZA'));
+  const price = listing._priceStr || (listing.price === 0 ? 'Contact for Price' : 'R ' + listing.price.toLocaleString('en-ZA'));
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
   const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
@@ -1426,7 +1426,7 @@ function openBuyNow(listing) {
             <div class="em-related-img" id="rel-img-${r.id}"></div>
             <div class="em-related-body">
               <div class="em-related-title">${r.title}</div>
-              <div class="em-related-price">${r.price === 0 ? 'Free' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
+              <div class="em-related-price">${r.price === 0 ? 'Contact for Price' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
               <div class="em-related-loc">${r.loc}</div>
             </div>
           </div>`).join('')}
@@ -1564,7 +1564,7 @@ function openSellerProfile(sellerName, userId, sellerType, verified, contactEmai
             <div class="em-related-img" id="sp-img-${r.id}"></div>
             <div class="em-related-body">
               <div class="em-related-title">${r.title}</div>
-              <div class="em-related-price">${r.price === 0 ? 'Free / Contact' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
+              <div class="em-related-price">${r.price === 0 ? 'Contact for Price' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
               <div class="em-related-loc">${r.loc}</div>
             </div>
           </div>`).join('')}
@@ -2144,7 +2144,7 @@ function openMyAds() {
             <div class="em-myad-img" id="myad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
-              <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
               ${l.sponsored ? `<span style="font-size:11px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:2px 7px;border-radius:20px;">&#x26A1; Sponsored</span>` : `<button class="em-boost-btn" onclick="event.stopPropagation();openSponsorModal('${l.id}')">&#x26A1; Boost this ad</button>`}
             </div>
             <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd('${l.id}')" title="Delete ad">&#x2715;</button>
@@ -2174,7 +2174,7 @@ function openSavedAds() {
             <div class="em-myad-img" id="svad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
-              <div class="em-myad-meta">${l.price === 0 ? 'Free / Contact' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc}</div>
             </div>
           </div>`).join('')
       }
