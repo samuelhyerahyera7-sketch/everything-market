@@ -275,6 +275,8 @@ function _openResultsPage(title) {
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
   _lockScroll();
+  /* Push a history entry so the browser back gesture returns here instead of leaving the site */
+  history.pushState({ emPage: 'results', title }, '', window.location.pathname);
 }
 
 function openCategoryPage(catId, catName) {
@@ -323,11 +325,36 @@ function runSearch() {
   if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
+let _closingCatPage = false;
 function closeCategoryPage() {
   document.getElementById('cat-page').style.display = 'none';
   _searchQuery = '';
   _unlockScroll();
+  /* Go back to undo the pushState from _openResultsPage, but don't let popstate re-close */
+  if (history.state && history.state.emPage === 'results') {
+    _closingCatPage = true;
+    history.back();
+  }
 }
+
+/* Handle browser back button / swipe-back gesture */
+window.addEventListener('popstate', function(e) {
+  if (_closingCatPage) { _closingCatPage = false; return; }
+
+  /* If the results page is open, close it instead of leaving the site */
+  const catPage = document.getElementById('cat-page');
+  if (catPage && catPage.style.display !== 'none') {
+    catPage.style.display = 'none';
+    _searchQuery = '';
+    _unlockScroll();
+    return;
+  }
+  /* If a modal is open, close it and stay on the page */
+  if (modal && modal.classList.contains('open')) {
+    closeModal();
+    history.pushState(null, '', window.location.pathname);
+  }
+});
 
 function toggleCatFilters() {
   const aside = document.querySelector('.cat-filters');
