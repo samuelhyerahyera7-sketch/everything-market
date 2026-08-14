@@ -275,8 +275,7 @@ function _openResultsPage(title) {
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
   _lockScroll();
-  /* Push a history entry so the browser back gesture returns here instead of leaving the site */
-  history.pushState({ emPage: 'results', title }, '', window.location.pathname);
+  _navPush('results');
 }
 
 function openCategoryPage(catId, catName) {
@@ -325,34 +324,58 @@ function runSearch() {
   if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
-let _closingCatPage = false;
-function closeCategoryPage() {
-  document.getElementById('cat-page').style.display = 'none';
-  _searchQuery = '';
-  _unlockScroll();
-  /* Go back to undo the pushState from _openResultsPage, but don't let popstate re-close */
-  if (history.state && history.state.emPage === 'results') {
-    _closingCatPage = true;
+/* ── In-app navigation stack (pushState per layer so back gesture stays in the app) ── */
+let _navSuppressNext = false;
+
+function _navPush(layer) {
+  history.pushState({ emNav: layer }, '', window.location.pathname);
+}
+
+function _navBack() {
+  /* Called when the user explicitly closes a layer (X button, cancel, etc.)
+     Undoes the pushState that was pushed when the layer opened. */
+  if (history.state && history.state.emNav) {
+    _navSuppressNext = true;
     history.back();
+    setTimeout(() => { _navSuppressNext = false; }, 200);
   }
 }
 
-/* Handle browser back button / swipe-back gesture */
-window.addEventListener('popstate', function(e) {
-  if (_closingCatPage) { _closingCatPage = false; return; }
+function _closeCatPageUI() {
+  document.getElementById('cat-page').style.display = 'none';
+  _searchQuery = '';
+  _unlockScroll();
+}
 
-  /* If the results page is open, close it instead of leaving the site */
-  const catPage = document.getElementById('cat-page');
-  if (catPage && catPage.style.display !== 'none') {
-    catPage.style.display = 'none';
-    _searchQuery = '';
+function closeCategoryPage() {
+  _closeCatPageUI();
+  _navBack();
+}
+
+/* Single popstate listener — handles all layers in order (topmost first) */
+window.addEventListener('popstate', function() {
+  if (_navSuppressNext) { _navSuppressNext = false; return; }
+
+  /* Lightbox */
+  const lb = document.getElementById('em-lightbox');
+  if (lb && lb.classList.contains('open')) {
+    lb.classList.remove('open');
+    document.removeEventListener('keydown', _lbKey);
+    return;
+  }
+
+  /* Modal */
+  if (modal && modal.classList.contains('open')) {
+    modal.classList.remove('open');
+    setTimeout(() => { modalBox.innerHTML = ''; }, 250);
     _unlockScroll();
     return;
   }
-  /* If a modal is open, close it and stay on the page */
-  if (modal && modal.classList.contains('open')) {
-    closeModal();
-    history.pushState(null, '', window.location.pathname);
+
+  /* Results / category page */
+  const catPage = document.getElementById('cat-page');
+  if (catPage && catPage.style.display !== 'none') {
+    _closeCatPageUI();
   }
 });
 
@@ -779,10 +802,12 @@ function closeModal() {
   modal.classList.remove('open');
   setTimeout(() => { modalBox.innerHTML = ''; }, 250);
   _unlockScroll();
+  _navBack();
 }
 function _openModal() {
-  if (!modal.classList.contains('open')) _lockScroll();
+  _lockScroll();
   modal.classList.add('open');
+  _navPush('modal');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
@@ -1403,12 +1428,14 @@ function emLightboxOpen(src, allPhotos, startIdx) {
   img.src = _lbPhotos[_lbIdx];
   lb.classList.add('open');
   _lbUpdateNav();
+  _navPush('lightbox');
   document.addEventListener('keydown', _lbKey);
 }
 function emLightboxClose() {
   const lb = document.getElementById('em-lightbox');
   if (lb) lb.classList.remove('open');
   document.removeEventListener('keydown', _lbKey);
+  _navBack();
 }
 function _lbGo(idx) {
   _lbIdx = (idx + _lbPhotos.length) % _lbPhotos.length;
