@@ -805,9 +805,9 @@ function closeModal() {
   _navBack();
 }
 function _openModal() {
-  _lockScroll();
+  const alreadyOpen = modal.classList.contains('open');
+  if (!alreadyOpen) { _lockScroll(); _navPush('modal'); }
   modal.classList.add('open');
-  _navPush('modal');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
