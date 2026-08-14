@@ -10,6 +10,80 @@ function toggleWL(id, btn) {
   btn.classList.toggle('on', wl.has(id));
 }
 
+/* ── Location display: auto-append province for legacy bare-city entries ── */
+const _SA_CITY_PROV = {
+  /* Gauteng */
+  'johannesburg':'Gauteng','joburg':'Gauteng','jo\'burg':'Gauteng','jozi':'Gauteng',
+  'soweto':'Gauteng','sandton':'Gauteng','randburg':'Gauteng','roodepoort':'Gauteng',
+  'boksburg':'Gauteng','benoni':'Gauteng','germiston':'Gauteng','alberton':'Gauteng',
+  'springs':'Gauteng','krugersdorp':'Gauteng','tembisa':'Gauteng','midrand':'Gauteng',
+  'centurion':'Gauteng','pretoria':'Gauteng','tshwane':'Gauteng','mamelodi':'Gauteng',
+  'soshanguve':'Gauteng','mabopane':'Gauteng','atteridgeville':'Gauteng',
+  'vanderbijlpark':'Gauteng','vereeniging':'Gauteng','evaton':'Gauteng',
+  'edenvale':'Gauteng','kempton park':'Gauteng','brakpan':'Gauteng',
+  'fourways':'Gauteng','rivonia':'Gauteng','bryanston':'Gauteng',
+  'rosebank':'Gauteng','melville':'Gauteng','alexandra':'Gauteng',
+  'diepsloot':'Gauteng','orange farm':'Gauteng','lenasia':'Gauteng',
+  /* Western Cape */
+  'cape town':'Western Cape','kaapstad':'Western Cape','bellville':'Western Cape',
+  'mitchells plain':'Western Cape','khayelitsha':'Western Cape','gugulethu':'Western Cape',
+  'stellenbosch':'Western Cape','paarl':'Western Cape','worcester':'Western Cape',
+  'george':'Western Cape','knysna':'Western Cape','mossel bay':'Western Cape',
+  'oudtshoorn':'Western Cape','strand':'Western Cape','somerset west':'Western Cape',
+  'durbanville':'Western Cape','brackenfell':'Western Cape','milnerton':'Western Cape',
+  'tableview':'Western Cape','bloubergstrand':'Western Cape','retreat':'Western Cape',
+  'plettenberg bay':'Western Cape','hermanus':'Western Cape','swellendam':'Western Cape',
+  /* KwaZulu-Natal */
+  'durban':'KwaZulu-Natal','ethekwini':'KwaZulu-Natal','pietermaritzburg':'KwaZulu-Natal',
+  'msunduzi':'KwaZulu-Natal','newcastle':'KwaZulu-Natal','richardsbaai':'KwaZulu-Natal',
+  'richards bay':'KwaZulu-Natal','empangeni':'KwaZulu-Natal','ladysmith':'KwaZulu-Natal',
+  'pinetown':'KwaZulu-Natal','chatsworth':'KwaZulu-Natal','umlazi':'KwaZulu-Natal',
+  'tongaat':'KwaZulu-Natal','ballito':'KwaZulu-Natal','umhlanga':'KwaZulu-Natal',
+  'berea':'KwaZulu-Natal','westville':'KwaZulu-Natal','kloof':'KwaZulu-Natal',
+  'amanzimtoti':'KwaZulu-Natal','port shepstone':'KwaZulu-Natal',
+  /* Eastern Cape */
+  'port elizabeth':'Eastern Cape','gqeberha':'Eastern Cape','buffalo city':'Eastern Cape',
+  'east london':'Eastern Cape','mthatha':'Eastern Cape','king william\'s town':'Eastern Cape',
+  'bhisho':'Eastern Cape','grahamstown':'Eastern Cape','makhanda':'Eastern Cape',
+  'uitenhage':'Eastern Cape','queenstown':'Eastern Cape','komani':'Eastern Cape',
+  'butterworth':'Eastern Cape','jeffreys bay':'Eastern Cape','humansdorp':'Eastern Cape',
+  'port alfred':'Eastern Cape',
+  /* Limpopo */
+  'polokwane':'Limpopo','pietersburg':'Limpopo','tzaneen':'Limpopo',
+  'thohoyandou':'Limpopo','makhado':'Limpopo','musina':'Limpopo',
+  'lephalale':'Limpopo','bela-bela':'Limpopo','mokopane':'Limpopo',
+  'groblersdal':'Limpopo','burgersfort':'Limpopo','phalaborwa':'Limpopo',
+  /* Mpumalanga */
+  'nelspruit':'Mpumalanga','mbombela':'Mpumalanga','witbank':'Mpumalanga',
+  'emalahleni':'Mpumalanga','secunda':'Mpumalanga','middelburg':'Mpumalanga',
+  'standerton':'Mpumalanga','ermelo':'Mpumalanga','carolina':'Mpumalanga',
+  'barberton':'Mpumalanga','hazyview':'Mpumalanga','white river':'Mpumalanga',
+  'lydenburg':'Mpumalanga','mashishing':'Mpumalanga',
+  /* Free State */
+  'bloemfontein':'Free State','mangaung':'Free State','welkom':'Free State',
+  'botshabelo':'Free State','thaba nchu':'Free State','kroonstad':'Free State',
+  'sasolburg':'Free State','phuthaditjhaba':'Free State','bethlehem':'Free State',
+  'parys':'Free State',
+  /* North West */
+  'mahikeng':'North West','mafikeng':'North West','klerksdorp':'North West',
+  'matlosana':'North West','rustenburg':'North West','potchefstroom':'North West',
+  'brits':'North West','orkney':'North West','stilfontein':'North West',
+  'lichtenburg':'North West','vryburg':'North West','wolmaransstad':'North West',
+  /* Northern Cape */
+  'kimberley':'Northern Cape','sol plaatje':'Northern Cape','upington':'Northern Cape',
+  'springbok':'Northern Cape','de aar':'Northern Cape','kuruman':'Northern Cape',
+  'kathu':'Northern Cape','postmasburg':'Northern Cape','colesberg':'Northern Cape',
+  /* Gauteng extra */
+  'ekurhuleni':'Gauteng','ivory park':'Gauteng','katlehong':'Gauteng',
+  'thokoza':'Gauteng','vosloorus':'Gauteng','daveyton':'Gauteng',
+};
+function _fmtLoc(loc) {
+  if (!loc) return '';
+  if (loc.includes(',')) return loc;
+  const prov = _SA_CITY_PROV[loc.trim().toLowerCase()];
+  return prov ? loc.trim() + ', ' + prov : loc;
+}
+
 /* ── Price formatting ── */
 function fmtPrice(l, large) {
   if (l.price === 0) return large
@@ -167,7 +241,7 @@ function renderSponsoredStrip() {
         <div class="spons-tag">${l.cat.charAt(0).toUpperCase()+l.cat.slice(1)}</div>
         <div class="spons-title">${l.title}</div>
         <div class="spons-price">${fmtPrice(l, false)}</div>
-        <div class="spons-loc">${l.loc}</div>
+        <div class="spons-loc">${_fmtLoc(l.loc)}</div>
       </div>`;
     grid.appendChild(card);
     _renderImg(card.querySelector(`#spons-img-${l.id}-s${idx}`), l);
@@ -441,7 +515,7 @@ function renderCatResults(data) {
         <div class="bb-price-tag">${fmtPrice(l, true)}</div>
         <div class="bb-title">${l.title}</div>
         <div class="bb-meta" style="margin-top:4px">
-          <span>${ICO.pin} ${l.loc}</span>
+          <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
@@ -650,7 +724,7 @@ function renderBB(data) {
         ${sd.delivery ? `<div class="bb-delivery"><span class="bb-delivery-dot"></span>Delivery available</div>` : ''}
         ${l.cond !== 'N/A' ? `<div class="bb-cond" style="margin-top:3px">${l.cond}</div>` : ''}
         <div class="bb-meta" style="margin-top:4px">
-          <span>${ICO.pin} ${l.loc}</span>
+          <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
@@ -700,7 +774,7 @@ function renderGT(data) {
         <div class="gt-title">${l.title}</div>
         <div class="gt-desc">${l.desc}</div>
         <div class="gt-meta">
-          <span>${ICO.pin} ${l.loc}</span>
+          <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="gt-chips">
@@ -1518,7 +1592,7 @@ function openBuyNow(listing) {
             <div class="em-related-body">
               <div class="em-related-title">${r.title}</div>
               <div class="em-related-price">${r.price === 0 ? 'Contact for Price' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
-              <div class="em-related-loc">${r.loc}</div>
+              <div class="em-related-loc">${_fmtLoc(r.loc)}</div>
             </div>
           </div>`).join('')}
       </div>
@@ -1550,7 +1624,7 @@ function openBuyNow(listing) {
       <div class="em-ad-detail-title">${listing.title}</div>
       <div class="em-ad-detail-meta">
         ${listing.cond !== 'N/A' ? `<span class="gt-chip">${listing.cond}</span>` : ''}
-        <span class="gt-chip">${listing.loc}</span>
+        <span class="gt-chip">${_fmtLoc(listing.loc)}</span>
         <span class="gt-chip">${fmtTime(listing.postedAt)}</span>
         <span class="gt-chip em-view-count" id="modal-view-count"></span>
       </div>
@@ -1657,7 +1731,7 @@ function openSellerProfile(sellerName, userId, sellerType, verified, contactEmai
             <div class="em-related-body">
               <div class="em-related-title">${r.title}</div>
               <div class="em-related-price">${r.price === 0 ? 'Contact for Price' : 'R ' + r.price.toLocaleString('en-ZA')}</div>
-              <div class="em-related-loc">${r.loc}</div>
+              <div class="em-related-loc">${_fmtLoc(r.loc)}</div>
             </div>
           </div>`).join('')}
       </div>` : '<div style="padding:24px 0;text-align:center;color:var(--muted);font-size:13px;">No other active listings from this seller.</div>'}
@@ -2236,7 +2310,7 @@ function openMyAds() {
             <div class="em-myad-img" id="myad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
-              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc} &middot; ${fmtTime(l.postedAt)}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${_fmtLoc(l.loc)} &middot; ${fmtTime(l.postedAt)}</div>
               ${l.sponsored ? `<span style="font-size:11px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:2px 7px;border-radius:20px;">&#x26A1; Sponsored</span>` : `<button class="em-boost-btn" onclick="event.stopPropagation();openSponsorModal('${l.id}')">&#x26A1; Boost this ad</button>`}
             </div>
             <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd('${l.id}')" title="Delete ad">&#x2715;</button>
@@ -2266,7 +2340,7 @@ function openSavedAds() {
             <div class="em-myad-img" id="svad-img-${l.id}"></div>
             <div class="em-myad-info">
               <div class="em-myad-title">${l.title}</div>
-              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${l.loc}</div>
+              <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${_fmtLoc(l.loc)}</div>
             </div>
           </div>`).join('')
       }
