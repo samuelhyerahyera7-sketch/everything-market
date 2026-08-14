@@ -1504,10 +1504,11 @@ function openBuyNow(listing) {
     </div>` : '';
 
   const photos = Array.isArray(listing.photos) ? listing.photos.filter(Boolean) : [];
+  window._emCurrentPhotos = photos;
   const galleryHTML = photos.length > 1
     ? `<div class="em-gallery" id="em-gallery">
         <div class="em-gallery-track" id="em-gallery-track">
-          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen('${p}',${JSON.stringify(photos)},${i})" onerror="this.style.display='none'"></div>`).join('')}
+          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen(window._emCurrentPhotos[${i}],window._emCurrentPhotos,${i})" onerror="this.style.display='none'"></div>`).join('')}
         </div>
         <button class="em-gallery-arrow em-gallery-prev" onclick="emGalleryMove(-1)">&#8249;</button>
         <button class="em-gallery-arrow em-gallery-next" onclick="emGalleryMove(1)">&#8250;</button>
