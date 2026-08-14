@@ -504,6 +504,10 @@ svg { display: block; }
 .em-post-error { font-size: 12px; color: var(--red); background: #FEF0EE; border: 1px solid #FBBBB3; border-radius: 6px; padding: 9px 12px; }
 .em-post-submit { width: 100%; padding: 14px; background: var(--forest); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .13s; font-family: inherit; margin-top: 2px; }
 .em-post-submit:hover { background: var(--mid); }
+.em-post-cancel-btn { width: 100%; padding: 12px; background: none; color: var(--muted); border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 4px; text-decoration: underline; }
+.em-post-cancel-btn:hover { color: #c62828; }
+.pa-draft-banner { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #5D4037; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pa-draft-banner button { background: none; border: none; color: var(--forest); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
 
 /* ── Empty state ── */
 .em-empty-state { grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }

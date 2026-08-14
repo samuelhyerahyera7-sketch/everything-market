@@ -891,9 +891,95 @@ function openPostAdModal() {
       <div id="pa-error" class="em-post-error" style="display:none;"></div>
 
       <button type="submit" class="em-post-submit">Post Ad Now</button>
+      <button type="button" class="em-post-cancel-btn" onclick="_paDiscardDraft()">Discard &amp; Cancel</button>
     </form>`;
 
   _openModal();
+  _paRestoreDraft();
+  _paStartAutosave();
+}
+
+const _PA_DRAFT_KEY = 'em_ad_draft';
+
+function _paSaveDraft() {
+  const get = id => document.getElementById(id);
+  const stypeBtn = document.querySelector('#pa-stype .em-post-toggle-btn.active');
+  const draft = {
+    title:      get('pa-title')?.value || '',
+    cat:        get('pa-cat')?.value   || '',
+    cond:       get('pa-cond')?.value  || '',
+    price:      get('pa-price')?.value || '',
+    neg:        get('pa-neg')?.checked || false,
+    sellerType: stypeBtn?.dataset.val  || 'private',
+    name:       get('pa-name')?.value  || '',
+    phone:      get('pa-phone')?.value || '',
+    email:      get('pa-email')?.value || '',
+    loc:        get('pa-loc')?.value   || '',
+    desc:       get('pa-desc')?.value  || '',
+    photos:     [],
+    ts:         Date.now(),
+  };
+  /* Save photos only if total size is under 3 MB */
+  const photos = window._paPhotos || [];
+  const totalBytes = photos.reduce((s, p) => s + p.length, 0);
+  if (totalBytes < 3 * 1024 * 1024) draft.photos = photos;
+  try { localStorage.setItem(_PA_DRAFT_KEY, JSON.stringify(draft)); } catch(_) {}
+}
+
+function _paRestoreDraft() {
+  let draft;
+  try { draft = JSON.parse(localStorage.getItem(_PA_DRAFT_KEY) || 'null'); } catch(_) {}
+  if (!draft) return;
+
+  /* Only restore drafts less than 7 days old with at least something typed */
+  if (!draft.title && !draft.desc && !draft.phone) return;
+  if (Date.now() - (draft.ts || 0) > 7 * 24 * 60 * 60 * 1000) {
+    localStorage.removeItem(_PA_DRAFT_KEY); return;
+  }
+
+  const get = id => document.getElementById(id);
+  if (draft.title)  { const el = get('pa-title');  if (el) el.value = draft.title; }
+  if (draft.cat)    { const el = get('pa-cat');     if (el) { el.value = draft.cat; window._paCatChange(); } }
+  if (draft.cond)   { const el = get('pa-cond');    if (el) el.value = draft.cond; }
+  if (draft.price)  { const el = get('pa-price');   if (el) el.value = draft.price; }
+  if (draft.neg)    { const el = get('pa-neg');      if (el) el.checked = true; }
+  if (draft.name)   { const el = get('pa-name');    if (el) el.value = draft.name; }
+  if (draft.phone)  { const el = get('pa-phone');   if (el) el.value = draft.phone; }
+  if (draft.email)  { const el = get('pa-email');   if (el) el.value = draft.email; }
+  if (draft.loc)    { const el = get('pa-loc');     if (el) el.value = draft.loc; }
+  if (draft.desc)   { const el = get('pa-desc');    if (el) el.value = draft.desc; }
+  if (draft.sellerType) {
+    document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.val === draft.sellerType);
+    });
+  }
+  if (Array.isArray(draft.photos) && draft.photos.length) {
+    window._paPhotos = draft.photos;
+    _paRenderPreviews();
+  }
+
+  /* Show a non-intrusive banner */
+  const form = document.getElementById('post-form');
+  if (form && !document.getElementById('pa-draft-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'pa-draft-banner';
+    banner.className = 'pa-draft-banner';
+    banner.innerHTML = `📝 <strong>Draft restored</strong> — continue where you left off. <button type="button" onclick="_paDiscardDraft()">Start fresh</button>`;
+    form.prepend(banner);
+  }
+}
+
+function _paStartAutosave() {
+  const form = document.getElementById('post-form');
+  if (!form) return;
+  form.addEventListener('input', _paSaveDraft);
+  form.addEventListener('change', _paSaveDraft);
+}
+
+function _paDiscardDraft() {
+  try { localStorage.removeItem(_PA_DRAFT_KEY); } catch(_) {}
+  window._paPhotos = [];
+  closeModal();
 }
 
 window._paCatChange = function() {
@@ -1164,6 +1250,9 @@ function submitPostAd(e) {
   _saveUserAds();
   renderAll('all');
   if (window.emTrack) emTrack('ad_post', { cat: listing.cat });
+
+  /* Clear saved draft on successful post */
+  try { localStorage.removeItem(_PA_DRAFT_KEY); } catch(_) {}
 
   /* Show confirmation immediately; upload to Supabase in background */
   const photoCopy = [...(window._paPhotos || [])];
