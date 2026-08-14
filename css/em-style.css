@@ -341,6 +341,7 @@ svg { display: block; }
 .em-modal-backdrop.open { opacity: 1; pointer-events: all; }
 .em-modal-backdrop.open .em-modal-box { transform: translateY(0); }
 .em-modal-box { background: var(--white); border-radius: 16px 16px 0 0; width: 100%; max-width: 540px; padding: 0 0 32px; transform: translateY(40px); transition: transform .24s cubic-bezier(.22,1,.36,1); max-height: 90vh; overflow-y: auto; overscroll-behavior: contain; }
+.em-modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 0; flex-shrink: 0; }
 .em-modal-bar { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--border-lt); }
 .em-modal-bar h3 { font-size: 15px; font-weight: 800; color: var(--ink); }
 .em-modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--surf); border: none; cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; transition: .13s; }

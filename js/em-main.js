@@ -759,6 +759,35 @@ function _openModal() {
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
+/* ── Swipe-down to close modal ── */
+(function() {
+  let startY = 0, startScrollTop = 0, dragging = false;
+  modalBox.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+    startScrollTop = modalBox.scrollTop;
+    dragging = true;
+  }, { passive: true });
+  modalBox.addEventListener('touchend', e => {
+    if (!dragging) return;
+    dragging = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    /* Only close if user swiped down ≥80px while already at the top of the modal */
+    if (dy > 80 && startScrollTop === 0) closeModal();
+    modalBox.style.transform = '';
+    modalBox.style.transition = '';
+  }, { passive: true });
+  modalBox.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    /* Only apply pull-down effect when at top of scroll */
+    if (dy > 0 && startScrollTop === 0) {
+      const pull = Math.min(dy * 0.4, 120);
+      modalBox.style.transform = `translateY(${pull}px)`;
+      modalBox.style.transition = 'none';
+    }
+  }, { passive: true });
+})();
+
 /* ── Post Ad modal ── */
 window._paPhotos = [];
 
