@@ -919,8 +919,23 @@ function openPostAdModal() {
       </div>
 
       <div class="em-post-field">
-        <label class="em-post-label" for="pa-loc">Location <span>(required)</span></label>
-        <input class="em-post-input" id="pa-loc" type="text" placeholder="e.g. Sandton, Gauteng" maxlength="80">
+        <label class="em-post-label" for="pa-city">Location <span>(required)</span></label>
+        <div class="em-post-row" style="gap:8px;">
+          <input class="em-post-input" id="pa-city" type="text" placeholder="City / Town (e.g. Soweto)" maxlength="60" style="flex:1;">
+          <select class="em-post-select" id="pa-prov" style="flex:1;min-width:0;">
+            <option value="">— Province —</option>
+            <option value="Gauteng">Gauteng</option>
+            <option value="Western Cape">Western Cape</option>
+            <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+            <option value="Eastern Cape">Eastern Cape</option>
+            <option value="Limpopo">Limpopo</option>
+            <option value="Mpumalanga">Mpumalanga</option>
+            <option value="North West">North West</option>
+            <option value="Northern Cape">Northern Cape</option>
+            <option value="Free State">Free State</option>
+          </select>
+        </div>
+        <input type="hidden" id="pa-loc">
       </div>
 
       <div class="em-post-field">
@@ -967,7 +982,8 @@ function _paSaveDraft() {
     name:       get('pa-name')?.value  || '',
     phone:      get('pa-phone')?.value || '',
     email:      get('pa-email')?.value || '',
-    loc:        get('pa-loc')?.value   || '',
+    city:       get('pa-city')?.value  || '',
+    prov:       get('pa-prov')?.value  || '',
     desc:       get('pa-desc')?.value  || '',
     photos:     [],
     ts:         Date.now(),
@@ -999,7 +1015,8 @@ function _paRestoreDraft() {
   if (draft.name)   { const el = get('pa-name');    if (el) el.value = draft.name; }
   if (draft.phone)  { const el = get('pa-phone');   if (el) el.value = draft.phone; }
   if (draft.email)  { const el = get('pa-email');   if (el) el.value = draft.email; }
-  if (draft.loc)    { const el = get('pa-loc');     if (el) el.value = draft.loc; }
+  if (draft.city)   { const el = get('pa-city');    if (el) el.value = draft.city; }
+  if (draft.prov)   { const el = get('pa-prov');    if (el) el.value = draft.prov; }
   if (draft.desc)   { const el = get('pa-desc');    if (el) el.value = draft.desc; }
   if (draft.sellerType) {
     document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => {
@@ -1221,7 +1238,9 @@ function submitPostAd(e) {
   const name  = (document.getElementById('pa-name').value  || '').trim();
   const phone = (document.getElementById('pa-phone').value || '').trim();
   const email = (document.getElementById('pa-email').value || '').trim();
-  const loc   = (document.getElementById('pa-loc').value   || '').trim();
+  const city  = (document.getElementById('pa-city')?.value || '').trim();
+  const prov  = (document.getElementById('pa-prov')?.value || '').trim();
+  const loc   = city && prov ? city + ', ' + prov : city || prov || (document.getElementById('pa-loc')?.value || '').trim();
   const cat   = document.getElementById('pa-cat').value;
   const price = Math.max(0, Number(document.getElementById('pa-price').value) || 0);
   const neg   = document.getElementById('pa-neg').checked;
@@ -1260,6 +1279,8 @@ function submitPostAd(e) {
   if (!name)               errors.push('Your name is required.');
   if (!phone)              errors.push('Phone number is required.');
   if (!email || !email.includes('@')) errors.push('A valid contact email is required.');
+  if (!city)               errors.push('Please enter your city or town.');
+  if (!prov)               errors.push('Please select a province.');
   if (!loc)                errors.push('Location is required.');
   if (!desc)               errors.push('Description is required.');
 
