@@ -501,6 +501,9 @@ svg { display: block; }
 .em-photo-thumb-wrap { position: relative; display: inline-flex; }
 .em-photo-thumb { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; border: 1.5px solid var(--border); display: block; }
 .em-photo-rm { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: #fff; border: none; cursor: pointer; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0; font-family: inherit; }
+.em-photo-main-lbl { position: absolute; bottom: 3px; left: 3px; font-size: 9px; font-weight: 800; background: var(--forest); color: #fff; border-radius: 3px; padding: 1px 4px; pointer-events: none; }
+.em-add-more-photos-btn { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px dashed var(--leaf); border-radius: 8px; background: var(--leaf-lt); color: var(--forest); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: .13s; }
+.em-add-more-photos-btn:hover { background: var(--surf2); }
 .em-post-error { font-size: 12px; color: var(--red); background: #FEF0EE; border: 1px solid #FBBBB3; border-radius: 6px; padding: 9px 12px; }
 .em-post-submit { width: 100%; padding: 14px; background: var(--forest); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; transition: .13s; font-family: inherit; margin-top: 2px; }
 .em-post-submit:hover { background: var(--mid); }

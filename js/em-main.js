@@ -877,15 +877,16 @@ function openPostAdModal() {
       </div>
 
       <div class="em-post-field">
-        <label class="em-post-label">Photos <span>(up to 5 — first photo is the main image)</span></label>
+        <label class="em-post-label">Photos <span id="pa-photo-count-lbl">(0 / 5 added — first photo is the main image)</span></label>
         <div class="em-photo-zone" id="pa-dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="_paDrop(event)">
           <input type="file" accept="image/*" multiple id="pa-photos" onchange="_paAddPhotos(this.files);this.value=''">
           <div class="em-photo-zone-txt">
-            <strong>Click to upload photos</strong>
-            or drag and drop here
+            <strong>📷 Tap to add photos</strong><br>
+            <span style="font-size:11px;color:var(--muted)">Select multiple from gallery, or add one at a time</span>
           </div>
         </div>
         <div class="em-photo-previews" id="pa-previews"></div>
+        <button type="button" class="em-add-more-photos-btn" id="pa-add-more-btn" onclick="document.getElementById('pa-photos').click()" style="display:none">+ Add More Photos</button>
       </div>
 
       <div id="pa-error" class="em-post-error" style="display:none;"></div>
@@ -1139,14 +1140,21 @@ window._paRemovePhoto = function(idx) {
 function _paRenderPreviews() {
   const container = document.getElementById('pa-previews');
   if (!container) return;
+  const count = window._paPhotos.length;
   container.innerHTML = window._paPhotos.map((url, i) =>
     `<div class="em-photo-thumb-wrap">
       <img class="em-photo-thumb" src="${url}" alt="Photo ${i+1}">
+      ${i === 0 ? '<span class="em-photo-main-lbl">Main</span>' : ''}
       <button type="button" class="em-photo-rm" onclick="_paRemovePhoto(${i})" title="Remove">&#x2715;</button>
     </div>`
   ).join('');
   const zone = document.getElementById('pa-dropzone');
-  if (zone) zone.style.display = window._paPhotos.length >= 5 ? 'none' : '';
+  const addMoreBtn = document.getElementById('pa-add-more-btn');
+  const countLbl = document.getElementById('pa-photo-count-lbl');
+  const full = count >= 5;
+  if (zone) zone.style.display = full ? 'none' : '';
+  if (addMoreBtn) addMoreBtn.style.display = (count > 0 && !full) ? '' : 'none';
+  if (countLbl) countLbl.textContent = `(${count} / 5 added — first photo is the main image)`;
 }
 
 function submitPostAd(e) {
