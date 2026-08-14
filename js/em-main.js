@@ -149,7 +149,7 @@ function renderSponsoredStrip() {
   const paid = LISTINGS.filter(l => l.sponsored && (!l.sponsoredUntil || l.sponsoredUntil > now));
   /* Fall back to all ads so the strip is never empty */
   const sponsored = paid.length ? paid : [...LISTINGS];
-  const section = grid.closest('section') || grid.parentElement;
+  const section = grid.closest('.sponsored-strip') || grid.closest('section') || grid.parentElement;
   if (!sponsored.length) { if (section) section.style.display = 'none'; return; }
   if (section) section.style.display = '';
   grid.innerHTML = '';
