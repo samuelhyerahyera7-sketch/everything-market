@@ -1553,7 +1553,7 @@ function openBuyNow(listing) {
         <div><span>Chat with Seller</span><span class="em-contact-btn-sub">Message through Everything Market</span></div>
       </button>
       <div style="text-align:center;padding-top:4px;">
-        <button onclick="openReportModal('${String(listing.id)}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;">
+        <button onclick="openReportModal('${String(listing.id)}','${listing.title.replace(/'/g,"\\'")}')" style="font-size:11px;color:#c62828;background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;font-weight:600;">
           ⚑ Report this ad
         </button>
       </div>
