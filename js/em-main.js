@@ -342,8 +342,9 @@ function _getCatListings() {
 
 function _openResultsPage(title) {
   document.getElementById('cat-page-title').textContent = title;
-  document.getElementById('cat-page').style.display = 'block';
-  document.getElementById('cat-page').scrollTop = 0;
+  document.getElementById('cat-page').style.display = 'flex';
+  const scrollEl = document.getElementById('cat-page-scroll');
+  if (scrollEl) scrollEl.scrollTop = 0;
   document.getElementById('cf-min').value = '';
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });

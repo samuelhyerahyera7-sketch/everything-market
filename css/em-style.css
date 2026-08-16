@@ -712,21 +712,25 @@ svg { display: block; }
 #cat-page {
   position: fixed;
   inset: 0;
-  top: 0;
   z-index: 50;
   background: var(--surf);
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  display: flex;
+  flex-direction: column;
 }
 
 .cat-page-hdr {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0;
   background: var(--hdr);
   border-bottom: 1px solid rgba(255,255,255,.07);
   padding: 12px 0;
+  z-index: 10;
+}
+
+.cat-page-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 .cat-page-hdr-in {
   display: flex;
@@ -775,7 +779,7 @@ svg { display: block; }
   border-radius: 14px;
   overflow: hidden;
   position: sticky;
-  top: 62px;
+  top: 8px;
   z-index: 2;
   max-height: calc(100vh - 80px);
   overflow-y: auto;
