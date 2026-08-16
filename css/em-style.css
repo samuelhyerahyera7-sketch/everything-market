@@ -908,3 +908,86 @@ svg { display: block; }
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* ── SEO Hero Banner ── */
+.seo-hero {
+  background: linear-gradient(135deg, #0A3D22 0%, #145C35 100%);
+  color: #fff;
+  padding: 18px 0 16px;
+  text-align: center;
+}
+.seo-hero h1 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  line-height: 1.25;
+  color: #fff;
+}
+.seo-hero p {
+  font-size: 13px;
+  color: rgba(255,255,255,.80);
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .seo-hero h1 { font-size: 17px; }
+  .seo-hero p  { font-size: 12px; }
+}
+
+/* ── SEO Browse Section ── */
+.seo-browse {
+  background: var(--surf2);
+  padding: 36px 0 40px;
+  border-top: 1px solid var(--border-lt);
+}
+.seo-browse h2 {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--forest);
+  margin: 0 0 8px;
+}
+.seo-browse-intro {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 24px;
+  max-width: 680px;
+}
+.seo-browse-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+@media (max-width: 768px) {
+  .seo-browse-cols { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .seo-browse-cols { grid-template-columns: 1fr; }
+}
+.seo-browse-col h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.seo-browse-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.seo-browse-col ul li {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.seo-browse-col ul li a {
+  color: var(--leaf);
+  text-decoration: none;
+  transition: color .12s;
+}
+.seo-browse-col ul li a:hover { color: var(--mid); text-decoration: underline; }
+.seo-why-list li {
+  color: var(--ink2) !important;
+  font-size: 13px !important;
+}
