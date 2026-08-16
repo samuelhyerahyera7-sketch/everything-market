@@ -991,3 +991,87 @@ svg { display: block; }
   color: var(--ink2) !important;
   font-size: 13px !important;
 }
+
+/* ── SEO Alternative Section ── */
+.seo-alt-section {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-lt);
+}
+.seo-alt-section > h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--forest);
+  margin: 0 0 10px;
+  line-height: 1.35;
+}
+.seo-alt-section > p {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0 0 20px;
+  max-width: 740px;
+}
+.seo-alt-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 900px) { .seo-alt-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px)  { .seo-alt-grid { grid-template-columns: 1fr; } }
+.seo-alt-card {
+  background: var(--surf);
+  border: 1px solid var(--border-lt);
+  border-radius: 10px;
+  padding: 16px 14px;
+}
+.seo-alt-icon { font-size: 20px; margin-bottom: 8px; }
+.seo-alt-card h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  margin: 0 0 6px;
+}
+.seo-alt-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── SEO Popular Search Tags ── */
+.seo-terms {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-lt);
+}
+.seo-terms h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.seo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.seo-tags a {
+  display: inline-block;
+  padding: 5px 12px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--leaf);
+  text-decoration: none;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+}
+.seo-tags a:hover {
+  background: var(--leaf-lt);
+  border-color: var(--leaf);
+  color: var(--mid);
+}
