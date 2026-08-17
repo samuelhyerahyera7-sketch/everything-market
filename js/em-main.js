@@ -1921,7 +1921,7 @@ async function openInbox() {
   const sess = _getSession();
   if (!sess) { openSignInModal(); return; }
   localStorage.setItem('em_inbox_read_' + sess.email, Date.now().toString());
-  _setMsgBadge(false);
+  _setMsgBadge(0);
   clearTimeout(_msgPollTimer);
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -2236,17 +2236,19 @@ function _updateAuthUI() {
     if (sbAuth)      sbAuth.style.display = '';
     if (sbAuthIn)    sbAuthIn.style.display = 'none';
     if (mobAuthBtn)  { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = () => openSignInModal(); }
-    _setMsgBadge(false);
+    _setMsgBadge(0);
   }
 }
 
-function _setMsgBadge(show) {
+function _setMsgBadge(count) {
   const mob  = document.getElementById('mob-msg-badge');
   const desk = document.getElementById('desk-msg-badge');
   const menu = document.getElementById('menu-msg-badge');
-  if (mob)  mob.style.display  = show ? '' : 'none';
-  if (desk) desk.style.display = show ? '' : 'none';
-  if (menu) menu.style.display = show ? '' : 'none';
+  const label = count > 9 ? '9+' : String(count);
+  const show = count > 0;
+  if (mob)  { mob.style.display  = show ? '' : 'none'; mob.textContent  = ''; }
+  if (desk) { desk.style.display = show ? '' : 'none'; desk.textContent = label; }
+  if (menu) { menu.style.display = show ? '' : 'none'; menu.textContent = label; }
 }
 
 let _msgPollTimer = null;
@@ -2255,11 +2257,11 @@ async function _checkUnreadMessages(email) {
   try {
     const lastRead = Number(localStorage.getItem('em_inbox_read_' + email) || 0);
     const { received } = await window.emLoadMessages(email);
-    const hasNew = received.some(m => {
+    const unreadCount = received.filter(m => {
       const ts = m.created_at ? new Date(m.created_at).getTime() : 0;
       return ts > lastRead;
-    });
-    _setMsgBadge(hasNew);
+    }).length;
+    _setMsgBadge(unreadCount);
   } catch(_) {}
   /* Poll every 60s while the tab is open */
   clearTimeout(_msgPollTimer);
