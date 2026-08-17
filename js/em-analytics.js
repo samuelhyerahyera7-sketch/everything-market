@@ -277,18 +277,12 @@
     } catch(_) {}
   }
 
-  /* ── Load messages for a user (sent + received) ── */
+  /* ── Load messages via server endpoint (bypasses RLS) ── */
   async function loadMessages(userEmail) {
     try {
-      const enc = encodeURIComponent(userEmail);
-      const hdrs = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
-      const [r1, r2] = await Promise.all([
-        fetch(SB_URL + '/rest/v1/events?event_type=eq.em_message&payload->>recipient_email=eq.' + enc + '&order=created_at.desc&limit=100', { headers: hdrs }),
-        fetch(SB_URL + '/rest/v1/events?event_type=eq.em_message&payload->>sender_email=eq.' + enc + '&order=created_at.desc&limit=100', { headers: hdrs })
-      ]);
-      const received = r1.ok ? await r1.json() : [];
-      const sent     = r2.ok ? await r2.json() : [];
-      return { received, sent };
+      const r = await fetch('/api/load-messages?email=' + encodeURIComponent(userEmail));
+      if (r.ok) return await r.json();
+      return { received: [], sent: [] };
     } catch(_) { return { received: [], sent: [] }; }
   }
 

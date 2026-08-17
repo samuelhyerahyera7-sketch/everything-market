@@ -1898,7 +1898,6 @@ async function openInbox() {
   document.getElementById('hdr-user-drop')?.classList.remove('open');
   const sess = _getSession();
   if (!sess) { openSignInModal(); return; }
-  /* Mark all messages as read */
   localStorage.setItem('em_inbox_read_' + sess.email, Date.now().toString());
   _setMsgBadge(false);
   clearTimeout(_msgPollTimer);
@@ -1916,24 +1915,83 @@ async function openInbox() {
   const inboxEl = document.getElementById('inbox-body');
   if (!inboxEl) return;
 
-  const all = [
-    ...(data.received || []).map(e => ({ ...(e.payload || {}), dir: 'in',  time: e.created_at })),
-    ...(data.sent     || []).map(e => ({ ...(e.payload || {}), dir: 'out', time: e.created_at }))
-  ].sort((a, b) => new Date(b.time) - new Date(a.time));
+  /* Group into conversation threads */
+  const convMap = {};
+  [...(data.received || []), ...(data.sent || [])].forEach(e => {
+    const p = e.payload || {};
+    const se = (p.sender_email || '').toLowerCase();
+    const re = (p.recipient_email || '').toLowerCase();
+    const key = [se, re].sort().join('|') + '|' + (p.ad_title || '');
+    if (!convMap[key]) {
+      const otherEmail = se === sess.email.toLowerCase() ? re : se;
+      const otherName  = se === sess.email.toLowerCase() ? (p.seller || re) : (p.sender_name || se);
+      convMap[key] = { otherEmail, otherName, adTitle: p.ad_title || 'Ad', messages: [] };
+    }
+    convMap[key].messages.push({
+      ...p,
+      dir: (p.sender_email || '').toLowerCase() === sess.email.toLowerCase() ? 'out' : 'in',
+      time: e.created_at
+    });
+  });
 
-  if (!all.length) {
+  const convs = Object.values(convMap).sort((a, b) => {
+    const la = Math.max(...a.messages.map(m => new Date(m.time).getTime()));
+    const lb = Math.max(...b.messages.map(m => new Date(m.time).getTime()));
+    return lb - la;
+  });
+  window._inboxConvs = convs;
+
+  if (!convs.length) {
     inboxEl.innerHTML = '<div class="em-myads-empty"><p>No messages yet.<br>When you send or receive messages, they will appear here.</p></div>';
     return;
   }
-  inboxEl.innerHTML = all.map(m => `
-    <div style="padding:12px 0;border-bottom:1px solid var(--border-lt);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
-        <div style="font-weight:700;font-size:13px;color:var(--ink);">${m.dir === 'in' ? '📨 ' + (m.sender_name || m.sender_email || 'Buyer') : '📤 To: ' + (m.seller || m.recipient_email || 'Seller')}</div>
-        <div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px;">${fmtTime(new Date(m.time).getTime())}</div>
-      </div>
-      <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px;">Re: <em>${m.ad_title || 'Ad'}</em></div>
-      <div style="font-size:13px;color:var(--ink);line-height:1.5;">${(m.message || '').slice(0, 200)}</div>
-    </div>`).join('');
+
+  inboxEl.innerHTML = convs.map((conv, ci) => {
+    const sorted = [...conv.messages].sort((a, b) => new Date(a.time) - new Date(b.time));
+    const bubbles = sorted.map(m => `
+      <div style="display:flex;flex-direction:column;align-items:${m.dir === 'out' ? 'flex-end' : 'flex-start'};margin-bottom:8px;">
+        <div style="max-width:82%;background:${m.dir === 'out' ? 'var(--leaf)' : 'var(--surf3)'};color:${m.dir === 'out' ? '#fff' : 'var(--ink)'};padding:9px 13px;border-radius:${m.dir === 'out' ? '14px 14px 3px 14px' : '14px 14px 14px 3px'};font-size:13px;line-height:1.5;word-break:break-word;">${m.message || ''}</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${fmtTime(new Date(m.time).getTime())}</div>
+      </div>`).join('');
+    return `
+      <div style="border-bottom:1px solid var(--border-lt);padding:14px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+          <div style="font-weight:700;font-size:13px;color:var(--ink);">${conv.otherName}</div>
+          <div style="font-size:11px;color:var(--muted);">${fmtTime(new Date(sorted[sorted.length-1].time).getTime())}</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Re: <em>${conv.adTitle}</em></div>
+        ${bubbles}
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <input id="reply-${ci}" class="em-post-input" type="text" placeholder="Reply…" style="flex:1;padding:9px 12px;font-size:13px;border-radius:8px;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitReply(${ci});}">
+          <button onclick="submitReply(${ci})" style="background:var(--leaf);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">Send</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function submitReply(ci) {
+  const sess = _getSession();
+  if (!sess) return;
+  const conv = window._inboxConvs?.[ci];
+  if (!conv) return;
+  const input = document.getElementById('reply-' + ci);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.disabled = true;
+  if (window.emStoreMessage) {
+    await window.emStoreMessage({
+      sender_email: sess.email,
+      sender_name: sess.name,
+      recipient_email: conv.otherEmail,
+      ad_title: conv.adTitle,
+      message: text
+    });
+  }
+  input.disabled = false;
+  input.value = '';
+  toast('Reply sent!');
+  setTimeout(openInbox, 400);
 }
 
 function openMobileUserMenu() {
