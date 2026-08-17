@@ -879,8 +879,8 @@ function closeModal() {
   _unlockScroll();
   _navBack();
   /* Reset URL and page title when closing an ad */
-  if (location.search.includes('ad=')) {
-    history.replaceState(null, '', location.pathname);
+  if (location.pathname.startsWith('/ad/') || location.search.includes('ad=')) {
+    history.replaceState(null, '', '/');
     document.title = 'Marketplace South Africa – Buy & Sell Anything Free | Everything Market';
   }
 }
@@ -1645,8 +1645,8 @@ function _lbKey(e) {
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
-  /* Shareable URL */
-  history.pushState({ adId: String(listing.id) }, '', '?ad=' + listing.id);
+  /* Shareable URL — /ad/:id gets indexed by Google as its own page */
+  history.pushState({ adId: String(listing.id) }, '', '/ad/' + listing.id);
   document.title = listing.title + ' – Everything Market';
   const ogTitle = document.querySelector('meta[property="og:title"]');
   const ogDesc  = document.querySelector('meta[property="og:description"]');
@@ -1728,11 +1728,11 @@ function openBuyNow(listing) {
       </button>
     </div>
     <div style="padding:10px 20px;display:flex;gap:10px;">
-      <a href="https://wa.me/?text=${encodeURIComponent('Check out this listing on Everything Market! 🛒\n\n*' + listing.title + '*\n' + (listing.price === 0 ? 'Contact for Price' : 'R ' + listing.price.toLocaleString('en-ZA')) + '\n📍 ' + _fmtLoc(listing.loc) + '\n\nhttps://everythingmarket.co.za/?ad=' + listing.id)}" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#fff;padding:11px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
+      <a href="https://wa.me/?text=${encodeURIComponent('Check out this listing on Everything Market! 🛒\n\n*' + listing.title + '*\n' + (listing.price === 0 ? 'Contact for Price' : 'R ' + listing.price.toLocaleString('en-ZA')) + '\n📍 ' + _fmtLoc(listing.loc) + '\n\nhttps://everythingmarket.co.za/ad/' + listing.id)}" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#fff;padding:11px;border-radius:10px;text-decoration:none;font-weight:700;font-size:13px;">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.564 4.14 1.542 5.877L.057 23.882a.5.5 0 00.613.613l5.99-1.485A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 01-5.13-1.42l-.37-.22-3.785.937.977-3.67-.24-.38A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         Share on WhatsApp
       </a>
-      <button onclick="navigator.clipboard.writeText('https://everythingmarket.co.za/?ad=${listing.id}').then(()=>toast('Link copied!'))" style="background:var(--surf3);border:none;border-radius:10px;padding:11px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);">
+      <button onclick="navigator.clipboard.writeText('https://everythingmarket.co.za/ad/${listing.id}').then(()=>toast('Link copied!'))" style="background:var(--surf3);border:none;border-radius:10px;padding:11px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
         Copy Link
       </button>
@@ -2302,9 +2302,10 @@ async function _initAuth() {
 }
 _initAuth();
 
-/* ── Open ad from shared link (?ad=ID) ── */
+/* ── Open ad from shared link (/ad/:id or ?ad=ID) ── */
 (function() {
-  const adId = new URLSearchParams(location.search).get('ad');
+  const pathMatch = location.pathname.match(/^\/ad\/([^/]+)$/);
+  const adId = pathMatch ? pathMatch[1] : new URLSearchParams(location.search).get('ad');
   if (!adId) return;
   function _tryOpenAd(attempts) {
     const listing = LISTINGS.find(l => String(l.id) === String(adId));

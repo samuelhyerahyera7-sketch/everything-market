@@ -14,7 +14,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/ad/:id", "destination": "/api/ad?id=:id" }
   ],
   "headers": [
     {
