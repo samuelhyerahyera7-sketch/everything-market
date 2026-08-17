@@ -2082,7 +2082,7 @@ function _updateAuthUI() {
     if (hdrUser)     hdrUser.style.display = 'none';
     if (sbAuth)      sbAuth.style.display = '';
     if (sbAuthIn)    sbAuthIn.style.display = 'none';
-    if (mobAuthBtn)  { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = openSignInModal; }
+    if (mobAuthBtn)  { mobAuthBtn.title = 'Sign In'; mobAuthBtn.onclick = () => openSignInModal(); }
     _setMsgBadge(false);
   }
 }
