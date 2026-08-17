@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://marketplacesouthafrica.co.za/</loc>
-    <changefreq>hourly</changefreq>
-    <priority>1.0</priority>
-    <lastmod>2026-08-16</lastmod>
-  </url>
-  <url>
-    <loc>https://everythingmarket.co.za/</loc>
-    <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-08-16</lastmod>
-  </url>
+  <url><loc>https://everythingmarket.co.za/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=cars</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=property</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=electronics</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=furniture</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=fashion</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=services</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=kids</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=sports</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=garden</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=pets</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=books</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=agri</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=construction</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://everythingmarket.co.za/?cat=other</loc><changefreq>hourly</changefreq><priority>0.6</priority></url>
 </urlset>

@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /api/
 
-Sitemap: https://marketplacesouthafrica.co.za/sitemap.xml
+Sitemap: https://everythingmarket.co.za/sitemap.xml
