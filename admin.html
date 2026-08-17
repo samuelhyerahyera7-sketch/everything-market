@@ -277,12 +277,16 @@
         ? `<span class="badge badge-biz">Business</span>`
         : `<span class="badge badge-priv">Private</span>`;
       const spons = a.sponsored ? `<span class="badge badge-spons">⚡ Boosted</span>` : '';
+      const email = a.contact_email ? `<a href="mailto:${a.contact_email}" style="color:#1565C0;text-decoration:none;">${a.contact_email}</a>` : '–';
+      const phone = a.phone ? `<a href="tel:${a.phone}" style="color:#1565C0;text-decoration:none;">${a.phone}</a>` : '–';
       return `<tr id="row-${a.id}">
         <td>${photo}</td>
         <td><div class="ad-title" title="${(a.title||'').replace(/"/g,'&quot;')}">${a.title || '–'}</div></td>
         <td>${a.cat || '–'}</td>
         <td>${price}</td>
         <td>${a.seller || '–'} ${badge} ${spons}</td>
+        <td>${email}</td>
+        <td>${phone}</td>
         <td>${a.loc || '–'}</td>
         <td>${date}</td>
         <td><button class="btn-del" onclick="deleteAd('${a.id}',this)">Delete</button></td>
@@ -290,7 +294,7 @@
     }).join('');
     document.getElementById('ads-wrap').innerHTML = `
       <table>
-        <thead><tr><th>Photo</th><th>Title</th><th>Cat</th><th>Price</th><th>Seller</th><th>Location</th><th>Posted</th><th>Action</th></tr></thead>
+        <thead><tr><th>Photo</th><th>Title</th><th>Cat</th><th>Price</th><th>Seller</th><th>Email</th><th>Phone</th><th>Location</th><th>Posted</th><th>Action</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
   }
@@ -344,8 +348,14 @@
       const confBadge = u.confirmed
         ? '<span class="badge badge-conf">Verified</span>'
         : '<span class="badge badge-pend">Unverified</span>';
+      /* Pull phone from any ad belonging to this user */
+      const userAd = ALL_ADS.find(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
+      const phone  = userAd?.phone ? `<a href="tel:${userAd.phone}" style="color:#1565C0;text-decoration:none;">${userAd.phone}</a>` : '–';
+      const email  = u.email ? `<a href="mailto:${u.email}" style="color:#1565C0;text-decoration:none;">${u.email}</a>` : '–';
       return `<tr id="urow-${u.id}">
-        <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div><div style="font-size:11px;color:#666;">${u.email}</div></div></div></td>
+        <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div></div></td>
+        <td>${email}</td>
+        <td>${phone}</td>
         <td>${confBadge}</td>
         <td>${u.ad_count || 0}</td>
         <td>${joined}</td>
@@ -355,7 +365,7 @@
     }).join('');
     document.getElementById('users-wrap').innerHTML = `
       <table>
-        <thead><tr><th>User</th><th>Status</th><th>Ads</th><th>Joined</th><th>Last Seen</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Ads</th><th>Joined</th><th>Last Seen</th><th>Action</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
   }
