@@ -625,6 +625,12 @@ svg { display: block; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: .13s;
 }
 .em-myad-del:hover { border-color: var(--red); color: var(--red); background: #FEF0EE; }
+.em-myad-edit {
+  padding: 3px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+  background: none; color: var(--muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: .13s;
+}
+.em-myad-edit:hover { border-color: #1A7A42; color: #1A7A42; background: #E8F5E9; }
 
 /* ── Boost button in My Ads ── */
 .em-boost-btn {

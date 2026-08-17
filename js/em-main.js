@@ -2380,7 +2380,10 @@ function openMyAds() {
               <div class="em-myad-meta">${l.price === 0 ? 'Contact for Price' : 'R ' + l.price.toLocaleString('en-ZA')} &middot; ${_fmtLoc(l.loc)} &middot; ${fmtTime(l.postedAt)}</div>
               ${l.sponsored ? `<span style="font-size:11px;font-weight:700;color:#1565C0;background:#E3F0FF;padding:2px 7px;border-radius:20px;">&#x26A1; Sponsored</span>` : `<button class="em-boost-btn" onclick="event.stopPropagation();openSponsorModal('${l.id}')">&#x26A1; Boost this ad</button>`}
             </div>
-            <button class="em-myad-del" onclick="event.stopPropagation();_deleteMyAd('${l.id}')" title="Delete ad">&#x2715;</button>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+              <button class="em-myad-edit" onclick="event.stopPropagation();openEditAdModal('${l.id}')" title="Edit ad">&#x270E; Edit</button>
+              <button class="em-myad-del"  onclick="event.stopPropagation();_deleteMyAd('${l.id}')"  title="Delete ad">&#x2715;</button>
+            </div>
           </div>`).join('')
       }
     </div>`;
@@ -2524,6 +2527,207 @@ window._deleteMyAd = async function(id) {
       body: JSON.stringify({ id })
     });
   } catch (_) {}
+};
+
+/* ── Edit Ad ── */
+window._editPhotos = [];  // new photos added during editing
+
+window.openEditAdModal = function(id) {
+  const listing = LISTINGS.find(l => String(l.id) === String(id));
+  if (!listing) return;
+  const sess = _getSession();
+  if (!sess) return;
+
+  const ageMs        = Date.now() - new Date(listing.postedAt || listing.created_at || 0).getTime();
+  const withinWindow = ageMs <= 24 * 60 * 60 * 1000;
+  window._editPhotos = [];
+  window._editExistingPhotos = Array.isArray(listing.photos) ? [...listing.photos] : [];
+
+  const conditions = ['New','Like New','Good','Fair','For Parts'];
+  const condOpts   = conditions.map(c => `<option value="${c}"${listing.cond===c?' selected':''}>${c}</option>`).join('');
+
+  const restrictedNote = withinWindow ? '' : `
+    <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#7B5200;margin-bottom:16px;">
+      ⏱ <strong>24-hour edit window has passed.</strong> You can still reduce the price or add more photos.
+    </div>`;
+
+  const fullFields = withinWindow ? `
+    <div class="em-post-field">
+      <label class="em-post-label">Title</label>
+      <input class="em-post-input" id="ea-title" value="${(listing.title||'').replace(/"/g,'&quot;')}" maxlength="200">
+    </div>
+    <div class="em-post-field">
+      <label class="em-post-label">Description</label>
+      <textarea class="em-post-input" id="ea-desc" rows="4" style="resize:vertical">${listing.description||''}</textarea>
+    </div>
+    <div class="em-post-field">
+      <label class="em-post-label">Condition</label>
+      <select class="em-post-input" id="ea-cond">${condOpts}</select>
+    </div>` : '';
+
+  const existingPhotosHtml = window._editExistingPhotos.length
+    ? `<div style="margin-bottom:8px;font-size:12px;color:var(--muted);">${withinWindow ? 'Current photos (tap ✕ to remove):' : 'Existing photos (locked — cannot remove after 24h):'}</div>
+       <div class="em-photo-previews" id="ea-existing-previews">
+         ${window._editExistingPhotos.map((url, i) => `
+           <div class="em-photo-thumb-wrap">
+             <img class="em-photo-thumb" src="${url}" alt="Photo ${i+1}">
+             ${i === 0 ? '<span class="em-photo-main-lbl">Main</span>' : ''}
+             ${withinWindow ? `<button type="button" class="em-photo-rm" onclick="_editRemoveExisting(${i})" title="Remove">&#x2715;</button>` : ''}
+           </div>`).join('')}
+       </div>`
+    : '';
+
+  const maxNewPhotos = 10 - window._editExistingPhotos.length;
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Edit Ad</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="em-myads-body" style="padding:16px 20px 24px;">
+      ${restrictedNote}
+      ${fullFields}
+      <div class="em-post-field">
+        <label class="em-post-label">Price (R) ${!withinWindow ? '<span style="color:#E37400;font-size:11px;">— can only reduce</span>' : ''}</label>
+        <input class="em-post-input" id="ea-price" type="number" min="0" value="${listing.price||0}">
+        <label style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:13px;">
+          <input type="checkbox" id="ea-neg" ${listing.neg?' checked':''}> Price negotiable
+        </label>
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label">Photos ${maxNewPhotos > 0 ? `<span id="ea-photo-count-lbl" style="font-weight:400;color:var(--muted);"> (${window._editExistingPhotos.length} existing${window._editExistingPhotos.length < 10 ? ' — can add more' : ''})</span>` : ''}</label>
+        ${existingPhotosHtml}
+        ${maxNewPhotos > 0 ? `
+        <div class="em-photo-zone" id="ea-dropzone" style="margin-top:8px;" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="_editDrop(event)">
+          <input type="file" accept="image/*" multiple id="ea-photos" onchange="_editAddPhotos(this.files);this.value=''">
+          <div class="em-photo-zone-txt"><strong>📷 Add more photos</strong><br><span style="font-size:11px;color:var(--muted)">Up to ${maxNewPhotos} more</span></div>
+        </div>
+        <div class="em-photo-previews" id="ea-new-previews"></div>` : ''}
+      </div>
+      <div id="ea-msg" style="font-size:13px;margin-bottom:10px;display:none;"></div>
+      <button class="em-post-submit" id="ea-save-btn" onclick="submitEditAd('${id}')">Save Changes</button>
+    </div>`;
+  _openModal();
+};
+
+window._editRemoveExisting = function(idx) {
+  window._editExistingPhotos.splice(idx, 1);
+  const wrap = document.getElementById('ea-existing-previews');
+  if (wrap) wrap.innerHTML = window._editExistingPhotos.map((url, i) => `
+    <div class="em-photo-thumb-wrap">
+      <img class="em-photo-thumb" src="${url}" alt="Photo ${i+1}">
+      ${i === 0 ? '<span class="em-photo-main-lbl">Main</span>' : ''}
+      <button type="button" class="em-photo-rm" onclick="_editRemoveExisting(${i})" title="Remove">&#x2715;</button>
+    </div>`).join('');
+};
+
+window._editAddPhotos = function(files) {
+  const max = 10 - window._editExistingPhotos.length;
+  const remaining = max - window._editPhotos.length;
+  Array.from(files).slice(0, remaining).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        window._editPhotos.push(canvas.toDataURL('image/jpeg', 0.82));
+        _editRenderNewPreviews();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+window._editDrop = function(e) {
+  e.preventDefault();
+  document.getElementById('ea-dropzone')?.classList.remove('drag');
+  _editAddPhotos(e.dataTransfer.files);
+};
+
+window._editRemoveNew = function(idx) {
+  window._editPhotos.splice(idx, 1);
+  _editRenderNewPreviews();
+};
+
+function _editRenderNewPreviews() {
+  const container = document.getElementById('ea-new-previews');
+  if (!container) return;
+  const offset = window._editExistingPhotos.length;
+  container.innerHTML = window._editPhotos.map((url, i) => `
+    <div class="em-photo-thumb-wrap">
+      <img class="em-photo-thumb" src="${url}" alt="New photo ${i+1}">
+      ${offset === 0 && i === 0 ? '<span class="em-photo-main-lbl">Main</span>' : ''}
+      <button type="button" class="em-photo-rm" onclick="_editRemoveNew(${i})" title="Remove">&#x2715;</button>
+    </div>`).join('');
+  const zone = document.getElementById('ea-dropzone');
+  const max  = 10 - window._editExistingPhotos.length;
+  if (zone) zone.style.display = window._editPhotos.length >= max ? 'none' : '';
+}
+
+window.submitEditAd = async function(id) {
+  const sess = _getSession();
+  if (!sess) return;
+  const btn = document.getElementById('ea-save-btn');
+  const msg = document.getElementById('ea-msg');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  if (msg) { msg.style.display = 'none'; }
+
+  const body = { id, user_id: sess.userId };
+
+  const titleEl = document.getElementById('ea-title');
+  const descEl  = document.getElementById('ea-desc');
+  const condEl  = document.getElementById('ea-cond');
+  const priceEl = document.getElementById('ea-price');
+  const negEl   = document.getElementById('ea-neg');
+
+  if (titleEl) body.title       = titleEl.value.trim();
+  if (descEl)  body.description = descEl.value.trim();
+  if (condEl)  body.cond        = condEl.value;
+  if (priceEl) body.price       = Math.max(0, Number(priceEl.value) || 0);
+  if (negEl)   body.neg         = negEl.checked;
+
+  body.photos = [...window._editExistingPhotos, ...window._editPhotos];
+
+  try {
+    const r = await fetch('/api/edit-ad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if (!j.ok) {
+      if (msg) { msg.textContent = j.error || 'Save failed.'; msg.style.color = '#c0392b'; msg.style.display = 'block'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+      return;
+    }
+    /* Update local LISTINGS so UI reflects change immediately */
+    const listing = LISTINGS.find(l => String(l.id) === String(id));
+    if (listing) {
+      if (body.title)       listing.title       = body.title;
+      if (body.description) listing.description = body.description;
+      if (body.cond)        listing.cond        = body.cond;
+      if (body.price !== undefined) listing.price = body.price;
+      if (body.neg  !== undefined)  listing.neg   = body.neg;
+      if (body.photos)      listing.photos      = body.photos;
+    }
+    renderAll('all');
+    if (msg) { msg.textContent = 'Changes saved!'; msg.style.color = '#1A7A42'; msg.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Saved ✓'; }
+    setTimeout(() => { closeModal(); openMyAds(); }, 1200);
+  } catch(e) {
+    if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#c0392b'; msg.style.display = 'block'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+  }
 };
 
 /* ── Info modals (footer links) ── */
