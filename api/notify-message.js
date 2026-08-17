@@ -32,11 +32,8 @@ async function sendEmail(to, senderName, adTitle, message) {
     subject: `New message from ${senderName} — ${adTitle}`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#fff;">
-        <div style="background:#0A3D22;padding:20px 28px;border-radius:8px 8px 0 0;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60" width="180" height="42">
-            <text x="0" y="48" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#ffffff">Everything</text>
-            <text x="262" y="48" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#E09A12">Market</text>
-          </svg>
+        <div style="background:#0A3D22;padding:20px 28px;border-radius:8px 8px 0 0;text-align:center;">
+          <img src="https://everythingmarket.co.za/logo.png" alt="Everything Market" width="200" style="max-width:200px;height:auto;display:inline-block;" onerror="this.style.display='none'">
         </div>
         <div style="padding:24px 28px;">
           <h2 style="color:#0A3D22;margin:0 0 4px;">New Message</h2>

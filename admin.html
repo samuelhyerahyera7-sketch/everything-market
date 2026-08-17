@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin – Everything Market</title>
+<link rel="icon" type="image/png" href="/logo.png">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,6 +72,11 @@
   .btn-del { background: #c0392b; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .btn-del:hover { background: #922b21; }
   .btn-del:disabled { background: #ccc; cursor: default; }
+  .btn-vfy { background: #1A7A42; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; margin-right: 4px; }
+  .btn-vfy:hover { background: #145C35; }
+  .btn-vfy.unvfy { background: #7B4800; }
+  .btn-vfy.unvfy:hover { background: #5a3400; }
+  .btn-vfy:disabled { background: #ccc; cursor: default; }
   .empty { text-align: center; padding: 40px; color: #999; }
   .loading { text-align: center; padding: 40px; color: #666; }
 
@@ -346,9 +352,9 @@
       const initials = (u.name || u.email || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
       const joined   = u.created_at ? new Date(u.created_at).toLocaleDateString('en-ZA') : '–';
       const lastSeen = u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('en-ZA') : 'Never';
-      const confBadge = u.confirmed
-        ? '<span class="badge badge-conf">Verified</span>'
-        : '<span class="badge badge-pend">Unverified</span>';
+      const confBadge = u.verified
+        ? '<span class="badge badge-conf">✅ Verified Seller</span>'
+        : (u.confirmed ? '<span class="badge badge-pend">Email OK</span>' : '<span class="badge badge-pend">Unverified</span>');
       /* Pull phone from any ad belonging to this user */
       const userAd = ALL_ADS.find(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
       const phone  = userAd?.phone ? `<a href="tel:${userAd.phone}" style="color:#1565C0;text-decoration:none;">${userAd.phone}</a>` : '–';
@@ -361,14 +367,43 @@
         <td>${u.ad_count || 0}</td>
         <td>${joined}</td>
         <td>${lastSeen}</td>
-        <td><button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button></td>
+        <td>
+          <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+          <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>
+        </td>
       </tr>`;
     }).join('');
     document.getElementById('users-wrap').innerHTML = `
       <table>
-        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Ads</th><th>Joined</th><th>Last Seen</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Ads</th><th>Joined</th><th>Last Seen</th><th>Actions</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
+  }
+
+  async function toggleVerify(userId, newVerified, btn) {
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const r = await fetch('/api/verify-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, verified: newVerified }) });
+      const j = await r.json();
+      if (j.ok) {
+        const u = ALL_USERS.find(x => x.id === userId);
+        if (u) u.verified = newVerified;
+        btn.textContent = newVerified ? 'Unverify' : 'Verify';
+        btn.classList.toggle('unvfy', newVerified);
+        btn.onclick = () => toggleVerify(userId, !newVerified, btn);
+        /* Update status badge in same row */
+        const row = btn.closest('tr');
+        if (row) {
+          const statusCell = row.querySelector('td:nth-child(4)');
+          if (statusCell) statusCell.innerHTML = newVerified
+            ? '<span class="badge badge-conf">✅ Verified Seller</span>'
+            : '<span class="badge badge-pend">Email OK</span>';
+        }
+      } else {
+        btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify';
+        alert('Failed: ' + (j.error || 'unknown'));
+      }
+    } catch(e) { btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify'; alert('Error: ' + e.message); }
   }
 
   async function deleteUser(userId, email, btn) {

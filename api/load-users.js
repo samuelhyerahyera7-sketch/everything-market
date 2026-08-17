@@ -56,6 +56,7 @@ module.exports = async function handler(req, res) {
       created_at: u.created_at,
       last_sign_in: u.last_sign_in_at,
       confirmed:  !!u.confirmed_at,
+      verified:   !!u.user_metadata?.verified,
       ad_count:   adCounts[u.email] || 0,
     }));
 
