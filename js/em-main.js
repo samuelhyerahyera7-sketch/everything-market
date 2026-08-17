@@ -2063,9 +2063,12 @@ function openMobileUserMenu() {
     <div style="padding:0 20px 12px;">
       <div style="display:flex;align-items:center;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:4px;">
         <div style="width:48px;height:48px;border-radius:50%;background:var(--forest);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;flex-shrink:0;">${initials}</div>
-        <div>
+        <div style="flex:1;min-width:0;">
           <div style="font-weight:800;font-size:15px;color:var(--ink);">${sess.name}</div>
           <div style="font-size:12px;color:var(--muted);">${sess.email}</div>
+          ${_sbUser?.user_metadata?.verified
+            ? `<div style="display:inline-flex;align-items:center;gap:4px;background:#E8F5E9;color:#2E7D32;border-radius:20px;padding:2px 9px;font-size:11.5px;font-weight:700;margin-top:4px;">✅ Verified</div>`
+            : `<button onclick="openGetVerifiedModal()" style="display:inline-flex;align-items:center;gap:4px;background:#FFF3E0;color:#E65100;border:none;border-radius:20px;padding:3px 9px;font-size:11.5px;font-weight:700;margin-top:4px;cursor:pointer;">⚠️ Unverified · Get Verified</button>`}
         </div>
       </div>
       <button class="em-menu-item" onclick="closeModal();setTimeout(openMyAds,250)">
@@ -2090,6 +2093,35 @@ function openMobileUserMenu() {
       </button>
     </div>`;
   _openModal();
+}
+
+function openGetVerifiedModal() {
+  closeModal();
+  setTimeout(() => {
+    modalBox.innerHTML = `
+      <div class="em-modal-bar">
+        <h3>Get Verified</h3>
+        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div style="padding:20px;">
+        <div style="text-align:center;font-size:40px;margin-bottom:12px;">🛡️</div>
+        <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">Become a Verified Seller</h3>
+        <p style="font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:20px;">Verified sellers get a green badge on all their listings, which builds trust with buyers and leads to more sales.</p>
+        <div style="background:var(--surf2);border-radius:10px;padding:16px;margin-bottom:20px;">
+          <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:10px;">How to get verified:</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+            1. Email us at <strong style="color:var(--ink);">admin@everythingmarket.co.za</strong><br>
+            2. Include your <strong style="color:var(--ink);">full name</strong> and the <strong style="color:var(--ink);">email on your account</strong><br>
+            3. Attach a photo of your <strong style="color:var(--ink);">South African ID or passport</strong><br>
+            4. We'll verify you within 24 hours
+          </div>
+        </div>
+        <a href="mailto:admin@everythingmarket.co.za?subject=Verification Request&body=Hi, I'd like to get verified on Everything Market.%0A%0AName: %0AAccount email: ${_getSession()?.email || ''}" style="display:block;text-align:center;background:var(--leaf);color:#fff;padding:13px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
+          ✉️ Send Verification Request
+        </a>
+      </div>`;
+    _openModal();
+  }, 250);
 }
 
 /* ── Make Offer modal ── */
@@ -2190,6 +2222,12 @@ function _updateAuthUI() {
     if (sbAuthIn)    sbAuthIn.style.display = '';
     if (sbWelcome)   sbWelcome.textContent = 'Hi ' + first + '! Manage your listings below.';
     if (mobAuthBtn)  { mobAuthBtn.title = first; mobAuthBtn.onclick = openMobileUserMenu; }
+    const vfyBadge = document.getElementById('hdr-vfy-badge');
+    if (vfyBadge) {
+      vfyBadge.innerHTML = _sbUser?.user_metadata?.verified
+        ? '<span style="color:#2E7D32;">✅ Verified</span>'
+        : '<button onclick="document.getElementById(\'hdr-user-drop\').classList.remove(\'open\');openGetVerifiedModal();" style="background:none;border:none;color:#E65100;cursor:pointer;font-size:11.5px;font-weight:700;padding:0;font-family:inherit;">⚠️ Unverified · Get Verified →</button>';
+    }
     _checkUnreadMessages(sess.email);
   } else {
     if (hdrSignIn)   hdrSignIn.style.display = '';
