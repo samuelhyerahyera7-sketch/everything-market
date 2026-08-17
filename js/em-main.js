@@ -1918,6 +1918,7 @@ async function submitMessage(adId, adTitle, recipientEmail, sellerName) {
 
 async function openInbox() {
   document.getElementById('hdr-user-drop')?.classList.remove('open');
+  modalBox.scrollTop = 0;
   const sess = _getSession();
   if (!sess) { openSignInModal(); return; }
   localStorage.setItem('em_inbox_read_' + sess.email, Date.now().toString());
