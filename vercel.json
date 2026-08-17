@@ -11,12 +11,6 @@
       "has": [{ "type": "host", "value": "www.marketplacesouthafrica.co.za" }],
       "destination": "https://everythingmarket.co.za/$1",
       "permanent": true
-    },
-    {
-      "source": "/(.*)",
-      "has": [{ "type": "host", "value": "www.everythingmarket.co.za" }],
-      "destination": "https://everythingmarket.co.za/$1",
-      "permanent": true
     }
   ],
   "rewrites": [
