@@ -274,8 +274,36 @@
         headers: sbHeaders(),
         body: JSON.stringify({ event_type: 'em_message', payload: msg, created_at: new Date().toISOString() })
       });
+      /* Send email + push notification to recipient */
+      const pushSub = window._pushSubscription || null;
+      fetch('/api/notify-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...msg, push_subscription: pushSub })
+      }).catch(() => {});
     } catch(_) {}
   }
+
+  /* ── Register service worker + subscribe to push notifications ── */
+  async function initPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      const VAPID_PUBLIC = 'SKbwVcFDx4x60D2T_MW0tGoPECa85AY3QwnpocMcJrltRtMKdPc3QoI9uLMeBXl7ZTlZhJV4h5FFAO4PIWOfow';
+      const existing = await reg.pushManager.getSubscription();
+      const sub = existing || await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+      });
+      window._pushSubscription = sub.toJSON();
+    } catch(_) {}
+  }
+  function urlBase64ToUint8Array(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+  initPush();
 
   /* ── Load messages via server endpoint (bypasses RLS) ── */
   async function loadMessages(userEmail) {
