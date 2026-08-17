@@ -2126,8 +2126,11 @@ function openGetVerifiedModal() {
 }
 
 /* ── Make Offer modal ── */
+let _offerListing = null;
+
 function openMakeOffer(listing) {
   if (!listing) return;
+  _offerListing = listing;
   const price = listing.price === 0 ? 0 : listing.price;
 
   modalBox.innerHTML = `
@@ -2147,7 +2150,8 @@ function openMakeOffer(listing) {
       <input id="offer-amt" class="em-offer-input" type="number" placeholder="${Math.round(price * 0.9).toLocaleString('en-ZA')}" min="1">
       <label class="em-offer-label">Message to seller <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <textarea id="offer-msg" class="em-offer-textarea" placeholder="Explain your offer or ask a question…"></textarea>
-      <button class="em-offer-submit" onclick="submitOffer()">Send Offer</button>
+      <div id="offer-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" onclick="submitOffer(this)">Send Offer</button>
     </div>`;
 
   _openModal();
@@ -2157,12 +2161,31 @@ function openMakeOffer(listing) {
   }, 10);
 }
 
-function submitOffer() {
-  const amt = document.getElementById('offer-amt').value;
+async function submitOffer(btn) {
+  const sess = _getSession();
+  if (!sess) { closeModal(); openSignInModal('Sign in to make an offer.'); return; }
+  const listing = _offerListing;
+  if (!listing) return;
+  const amt  = document.getElementById('offer-amt').value;
+  const msg  = (document.getElementById('offer-msg')?.value || '').trim();
+  const errEl = document.getElementById('offer-err');
   if (!amt || isNaN(amt) || Number(amt) <= 0) {
     document.getElementById('offer-amt').style.borderColor = 'var(--red)';
     document.getElementById('offer-amt').focus();
     return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  const offerText = `💰 Offer: R ${Number(amt).toLocaleString('en-ZA')}${msg ? '\n\n' + msg : ''}`;
+  if (window.emStoreMessage) {
+    await window.emStoreMessage({
+      sender_email: sess.email,
+      sender_name: sess.name,
+      recipient_email: listing.contactEmail || listing.contact_email || '',
+      ad_id: String(listing.id),
+      ad_title: listing.title,
+      seller: listing.seller,
+      message: offerText.slice(0, 1000)
+    });
   }
   showSentConfirm('offer', 'R ' + Number(amt).toLocaleString('en-ZA'));
 }
@@ -2332,12 +2355,10 @@ async function signOut() {
   toast('You have been signed out.');
 }
 
-/* ── OTP Auth — no passwords, just email + 6-digit code ── */
-let _otpEmail = '';
+/* ── Auth — email + password only ── */
 
 function openSignInModal(hint) {
   if (_sbUser) { closeModal(); return; }
-  _otpEmail = '';
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Sign In</h3>
@@ -2350,7 +2371,7 @@ function openSignInModal(hint) {
         <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="em-post-field">
-        <label class="em-post-label" for="si-pass">Password <span style="font-weight:400;color:var(--muted)">(leave blank to get a code by email)</span></label>
+        <label class="em-post-label" for="si-pass">Password</label>
         <div style="position:relative;">
           <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password" style="padding-right:44px;">
           <button type="button" onclick="const f=document.getElementById('si-pass');f.type=f.type==='password'?'text':'password';this.textContent=f.type==='password'?'👁':'🙈';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;">👁</button>
@@ -2370,62 +2391,45 @@ async function submitSignIn(e) {
   const pass  = (document.getElementById('si-pass')?.value || '');
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
-
   if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
-
+  if (!pass) { errEl.textContent = 'Please enter your password.'; errEl.style.display = ''; return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
-
-  if (pass) {
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-    btn.disabled = false; btn.textContent = 'Sign In';
-    if (error) {
-      errEl.innerHTML = `Incorrect password or unconfirmed account. <button type="button" onclick="_switchToOtpSignIn()" style="text-decoration:underline;background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;color:var(--forest);padding:0;">Sign in with code instead?</button>`;
-      errEl.style.display = '';
-      return;
-    }
-    _sbUser = data.user;
-    _updateAuthUI();
-    closeModal();
-    const name = data.user.user_metadata?.name || email.split('@')[0];
-    if (window.emTrack) emTrack('login');
-    toast('Welcome back, ' + name.split(' ')[0] + '!');
-  } else {
-    const opts = { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' };
-    const { error } = await _sb.auth.signInWithOtp({ email, options: opts });
-    btn.disabled = false; btn.textContent = 'Sign In';
-    if (error) {
-      errEl.textContent = 'Could not send code. Please check your email and try again.';
-      errEl.style.display = '';
-      return;
-    }
-    _otpEmail = email;
-    _showOtpCodeScreen(email, '');
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Sign In';
+  if (error) {
+    errEl.textContent = 'Incorrect email or password. Check your details and try again.';
+    errEl.style.display = '';
+    return;
   }
-}
-
-async function _switchToOtpSignIn() {
-  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
-  if (!email.includes('@')) return;
-  const { error } = await _sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' } });
-  if (!error) { _otpEmail = email; _showOtpCodeScreen(email, ''); }
-  else { const e = document.getElementById('auth-error'); if (e) { e.textContent = 'Could not send code. Please try again.'; e.style.display = ''; } }
+  _sbUser = data.user;
+  _updateAuthUI();
+  closeModal();
+  const name = data.user.user_metadata?.name || email.split('@')[0];
+  if (window.emTrack) emTrack('login');
+  toast('Welcome back, ' + name.split(' ')[0] + '!');
 }
 
 function openRegisterModal() {
-  _otpEmail = '';
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Create Account</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <form class="em-post-form" onsubmit="submitSendOtp(event,true)" novalidate>
+    <form class="em-post-form" onsubmit="submitRegister(event)" novalidate>
       <div class="em-post-field">
         <label class="em-post-label" for="reg-name">Your name <span>(shown on your listings)</span></label>
         <input class="em-post-input" id="reg-name" type="text" placeholder="e.g. Sipho Dlamini" maxlength="60" autocomplete="name">
       </div>
       <div class="em-post-field">
-        <label class="em-post-label" for="si-email">Email address</label>
-        <input class="em-post-input" id="si-email" type="email" placeholder="you@example.com" autocomplete="email">
+        <label class="em-post-label" for="reg-email">Email address</label>
+        <input class="em-post-input" id="reg-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label" for="reg-pass">Password</label>
+        <div style="position:relative;">
+          <input class="em-post-input" id="reg-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" style="padding-right:44px;">
+          <button type="button" onclick="const f=document.getElementById('reg-pass');f.type=f.type==='password'?'text':'password';this.textContent=f.type==='password'?'👁':'🙈';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;">👁</button>
+        </div>
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Create Account</button>
@@ -2435,82 +2439,29 @@ function openRegisterModal() {
   setTimeout(() => document.getElementById('reg-name')?.focus(), 80);
 }
 
-async function submitSendOtp(e, isRegister) {
+async function submitRegister(e) {
   e.preventDefault();
-  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
-  const name  = isRegister ? (document.getElementById('reg-name')?.value || '').trim() : '';
+  const name  = (document.getElementById('reg-name')?.value || '').trim();
+  const email = (document.getElementById('reg-email')?.value || '').trim().toLowerCase();
+  const pass  = (document.getElementById('reg-pass')?.value || '');
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
-
-  if (isRegister && !name) { errEl.textContent = 'Name is required.'; errEl.style.display = ''; return; }
-  if (!email.includes('@'))  { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
-
-  btn.disabled = true; btn.textContent = 'Sending…';
-  const opts = { shouldCreateUser: true, emailRedirectTo: 'https://everythingmarket.co.za' };
-  if (isRegister && name) opts.data = { name };
-  const { error } = await _sb.auth.signInWithOtp({ email, options: opts });
-  btn.disabled = false; btn.textContent = isRegister ? 'Create Account' : 'Send Code';
-
+  if (!name)               { errEl.textContent = 'Please enter your name.'; errEl.style.display = ''; return; }
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  if (pass.length < 6)     { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  const { data, error } = await _sb.auth.signUp({ email, password: pass, options: { data: { name } } });
+  btn.disabled = false; btn.textContent = 'Create Account';
   if (error) {
-    errEl.textContent = 'Could not send code. Please try again in a moment.';
-    errEl.style.display = '';
-    return;
-  }
-
-  _otpEmail = email;
-  _showOtpCodeScreen(email, isRegister ? name : '');
-}
-
-function _showOtpCodeScreen(email, name) {
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <h3>Enter Your Code</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <form class="em-post-form" onsubmit="submitVerifyOtp(event)" novalidate>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">
-        We sent a sign-in code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
-      </p>
-      <div class="em-post-field">
-        <label class="em-post-label" for="otp-code">6-digit code</label>
-        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" maxlength="6" autocomplete="one-time-code">
-      </div>
-      <div id="auth-error" class="em-post-error" style="display:none;"></div>
-      <button type="submit" class="em-post-submit">Verify Code</button>
-      <p class="em-auth-switch">
-        Wrong email? <button type="button" onclick="openSignInModal()">Go back</button> &nbsp;·&nbsp;
-        <button type="button" onclick="resendOtp()">Resend code</button>
-      </p>
-    </form>`;
-  setTimeout(() => document.getElementById('otp-code')?.focus(), 80);
-}
-
-async function submitVerifyOtp(e) {
-  e.preventDefault();
-  const token = (document.getElementById('otp-code')?.value || '').replace(/\D/g, '');
-  const errEl = document.getElementById('auth-error');
-  const btn   = e.target.querySelector('[type=submit]');
-  if (token.length !== 6) { errEl.textContent = 'Please enter the 6-digit code from your email.'; errEl.style.display = ''; return; }
-  btn.disabled = true; btn.textContent = 'Verifying…';
-  const { data, error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
-  btn.disabled = false; btn.textContent = 'Verify Code';
-  if (error) {
-    errEl.textContent = 'Incorrect or expired code. Check your inbox or resend.';
+    errEl.textContent = error.message || 'Could not create account. Please try again.';
     errEl.style.display = '';
     return;
   }
   _sbUser = data.user;
   _updateAuthUI();
   closeModal();
-  const name = data.user.user_metadata?.name || _otpEmail.split('@')[0];
-  if (window.emTrack) emTrack('login');
-  toast('Welcome, ' + name.split(' ')[0] + '!');
-}
-
-async function resendOtp() {
-  if (!_otpEmail) return;
-  await _sb.auth.signInWithOtp({ email: _otpEmail, options: { shouldCreateUser: true } });
-  toast('Code resent — check your inbox.');
+  if (window.emTrack) emTrack('register');
+  toast('Welcome to Everything Market, ' + name.split(' ')[0] + '!');
 }
 
 /* ── My Ads ── */
