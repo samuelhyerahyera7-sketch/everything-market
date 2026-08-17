@@ -31,14 +31,24 @@ async function sendEmail(to, senderName, adTitle, message) {
     to: [to],
     subject: `New message from ${senderName} — ${adTitle}`,
     html: `
-      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
-        <h2 style="color:#0A3D22;margin-bottom:4px;">New Message</h2>
-        <p style="color:#555;margin-top:0;">From <strong>${senderName}</strong> about <em>${adTitle}</em></p>
-        <div style="background:#f4f4f4;border-radius:8px;padding:16px 20px;margin:20px 0;font-size:15px;line-height:1.6;color:#222;">
-          ${message}
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#fff;">
+        <div style="background:#0A3D22;padding:20px 28px;border-radius:8px 8px 0 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60" width="180" height="42">
+            <text x="0" y="48" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#ffffff">Everything</text>
+            <text x="262" y="48" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="52" fill="#E09A12">Market</text>
+          </svg>
         </div>
-        <a href="https://everythingmarket.co.za" style="display:inline-block;background:#1A7A42;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;">Reply on Everything Market</a>
-        <p style="color:#aaa;font-size:12px;margin-top:24px;">You received this because someone messaged you on everythingmarket.co.za</p>
+        <div style="padding:24px 28px;">
+          <h2 style="color:#0A3D22;margin:0 0 4px;">New Message</h2>
+          <p style="color:#555;margin:0 0 16px;">From <strong>${senderName}</strong> about <em>${adTitle}</em></p>
+          <div style="background:#f4f4f4;border-radius:8px;padding:16px 20px;margin-bottom:24px;font-size:15px;line-height:1.6;color:#222;">
+            ${message}
+          </div>
+          <a href="https://everythingmarket.co.za" style="display:inline-block;background:#1A7A42;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;">Reply on Everything Market</a>
+        </div>
+        <div style="padding:16px 28px;border-top:1px solid #eee;">
+          <p style="color:#aaa;font-size:12px;margin:0;">You received this because someone messaged you on <a href="https://everythingmarket.co.za" style="color:#1A7A42;">everythingmarket.co.za</a></p>
+        </div>
       </div>`
   }, { 'Authorization': 'Bearer ' + RESEND_KEY });
 }
