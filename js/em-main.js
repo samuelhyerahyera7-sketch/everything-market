@@ -831,7 +831,7 @@ function _unlockScroll() {
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.overflow = '';
-    window.scrollTo(0, _scrollLockY);
+    window.scrollTo(0, 0);
   }
 }
 
