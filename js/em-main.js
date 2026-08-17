@@ -2167,6 +2167,7 @@ async function signOut() {
 let _otpEmail = '';
 
 function openSignInModal(hint) {
+  if (_sbUser) { closeModal(); return; }
   _otpEmail = '';
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -2302,8 +2303,8 @@ function _showOtpCodeScreen(email, name) {
         We sent a sign-in code to <strong style="color:var(--ink);">${email}</strong>.<br>Check your inbox (and spam folder).
       </p>
       <div class="em-post-field">
-        <label class="em-post-label" for="otp-code">8-digit code</label>
-        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="12345678" maxlength="8" autocomplete="one-time-code">
+        <label class="em-post-label" for="otp-code">6-digit code</label>
+        <input class="em-post-input em-otp-input" id="otp-code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" maxlength="6" autocomplete="one-time-code">
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Verify Code</button>
@@ -2320,7 +2321,7 @@ async function submitVerifyOtp(e) {
   const token = (document.getElementById('otp-code')?.value || '').replace(/\D/g, '');
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
-  if (token.length < 6) { errEl.textContent = 'Please enter the full code from your email.'; errEl.style.display = ''; return; }
+  if (token.length !== 6) { errEl.textContent = 'Please enter the 6-digit code from your email.'; errEl.style.display = ''; return; }
   btn.disabled = true; btn.textContent = 'Verifying…';
   const { data, error } = await _sb.auth.verifyOtp({ email: _otpEmail, token, type: 'email' });
   btn.disabled = false; btn.textContent = 'Verify Code';
