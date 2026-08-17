@@ -8,7 +8,7 @@
   <meta name="description" content="South Africa's best free online marketplace. Buy and sell second-hand cars, property, electronics, furniture, jobs &amp; more. Post free, reach buyers in Johannesburg, Cape Town, Durban and all 9 provinces.">
   <meta name="keywords" content="marketplace south africa, online marketplace south africa, free classifieds south africa, buy and sell south africa, second hand south africa, used cars south africa, second hand furniture south africa, second hand electronics south africa, sell online south africa free, buy second hand south africa, online shopping south africa, property for sale south africa, jobs south africa, second hand iphone south africa, used cars under r100000 south africa, free ads south africa, local marketplace south africa, buy and sell online south africa">
   <link rel="icon" type="image/png" href="/logo.png">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/logo.png">
   <link rel="canonical" href="https://everythingmarket.co.za/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Marketplace South Africa – Buy &amp; Sell Anything Free">
@@ -291,41 +291,42 @@
       <div class="sb-sec">
         <div class="sb-hd">
           <span>Filter Results</span>
-          <button onclick="toast('Filters cleared')">Clear all</button>
+          <button onclick="sbClearFilters()">Clear all</button>
         </div>
         <div class="sb-body">
           <div class="fg">
             <div class="fl">Province</div>
-            <select class="sb-province-sel" onchange="toast('Province filter applied')">
+            <select class="sb-province-sel" id="sb-prov" onchange="sbApplyFilters()">
               <option value="">All Provinces</option>
-              <option value="gauteng">Gauteng</option>
-              <option value="western-cape">Western Cape</option>
-              <option value="kwazulu-natal">KwaZulu-Natal</option>
-              <option value="eastern-cape">Eastern Cape</option>
-              <option value="limpopo">Limpopo</option>
-              <option value="mpumalanga">Mpumalanga</option>
-              <option value="north-west">North West</option>
-              <option value="northern-cape">Northern Cape</option>
-              <option value="free-state">Free State</option>
+              <option value="Gauteng">Gauteng</option>
+              <option value="Western Cape">Western Cape</option>
+              <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+              <option value="Eastern Cape">Eastern Cape</option>
+              <option value="Limpopo">Limpopo</option>
+              <option value="Mpumalanga">Mpumalanga</option>
+              <option value="North West">North West</option>
+              <option value="Northern Cape">Northern Cape</option>
+              <option value="Free State">Free State</option>
             </select>
           </div>
           <div class="fg">
             <div class="fl">Category</div>
-            <label class="fo"><input type="radio" name="cat" checked> All Categories</label>
-            <label class="fo"><input type="radio" name="cat"> Vehicles</label>
-            <label class="fo"><input type="radio" name="cat"> Property</label>
-            <label class="fo"><input type="radio" name="cat"> Electronics</label>
-            <label class="fo"><input type="radio" name="cat"> Services</label>
-            <label class="fo"><input type="radio" name="cat"> Fashion</label>
-            <label class="fo"><input type="radio" name="cat"> Other</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="" checked onchange="sbApplyFilters()"> All Categories</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="cars" onchange="sbApplyFilters()"> Vehicles</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="prop" onchange="sbApplyFilters()"> Property</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="elec" onchange="sbApplyFilters()"> Electronics</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="serv" onchange="sbApplyFilters()"> Services</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="fash" onchange="sbApplyFilters()"> Fashion</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="furn" onchange="sbApplyFilters()"> Furniture</label>
+            <label class="fo"><input type="radio" name="sb-cat" value="jobs" onchange="sbApplyFilters()"> Jobs</label>
           </div>
           <div class="fg">
             <div class="fl">Price Range (R)</div>
             <div class="pi">
-              <input type="number" placeholder="Min">
-              <input type="number" placeholder="Max">
+              <input type="number" id="sb-min" placeholder="Min">
+              <input type="number" id="sb-max" placeholder="Max">
             </div>
-            <button class="btn-fltr" onclick="toast('Filter applied')">Apply</button>
+            <button class="btn-fltr" onclick="sbApplyFilters()">Apply</button>
           </div>
           <div class="fg">
             <div class="fl">Condition</div>

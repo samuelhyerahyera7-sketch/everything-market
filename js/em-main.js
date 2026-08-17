@@ -497,6 +497,43 @@ function clearCatFilters() {
   renderCatResults(_getCatListings());
 }
 
+/* ── Sidebar (homepage) filters ── */
+function sbApplyFilters() {
+  const prov = document.getElementById('sb-prov')?.value || '';
+  const catEl = document.querySelector('[name="sb-cat"]:checked');
+  const cat = catEl?.value || '';
+  const catLabel = catEl?.closest('label')?.textContent.trim() || 'All Ads';
+  const minV = document.getElementById('sb-min')?.value || '';
+  const maxV = document.getElementById('sb-max')?.value || '';
+
+  if (!prov && !cat && !minV && !maxV) { toast('Choose at least one filter.'); return; }
+
+  if (cat) {
+    openCategoryPage(cat, catLabel);
+  } else if (prov) {
+    openProvincePage(prov);
+  } else {
+    openCategoryPage('all', 'All Ads');
+  }
+
+  /* _openResultsPage (called inside above) clears cf-* — set them back after */
+  if (prov && cat) { const el = document.getElementById('cf-loc'); if (el) el.value = prov; }
+  if (minV) { const el = document.getElementById('cf-min'); if (el) el.value = minV; }
+  if (maxV) { const el = document.getElementById('cf-max'); if (el) el.value = maxV; }
+  if ((prov && cat) || minV || maxV) applyCatFilters();
+}
+
+function sbClearFilters() {
+  const provEl = document.getElementById('sb-prov');
+  if (provEl) provEl.value = '';
+  const allRadio = document.querySelector('[name="sb-cat"][value=""]');
+  if (allRadio) allRadio.checked = true;
+  const minEl = document.getElementById('sb-min');
+  const maxEl = document.getElementById('sb-max');
+  if (minEl) minEl.value = '';
+  if (maxEl) maxEl.value = '';
+}
+
 function renderCatResults(data) {
   const container = document.getElementById('cat-results');
   if (!data.length) {
@@ -1994,11 +2031,20 @@ function openThread(ci) {
   const conv = window._inboxConvs?.[ci];
   if (!conv) return;
   const sorted = [...conv.messages].sort((a, b) => new Date(a.time) - new Date(b.time));
-  const bubbles = sorted.map(m => `
+  const bubbles = sorted.map((m, mi) => {
+    const isOffer = m.dir === 'in' && (m.message || '').startsWith('💰 Offer:');
+    const offerActions = isOffer ? `
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button onclick="acceptOffer(${ci},${mi})" style="flex:1;background:var(--leaf);color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">✅ Accept</button>
+        <button onclick="counterOffer(${ci},${mi})" style="flex:1;background:var(--surf2);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">💬 Counter</button>
+      </div>` : '';
+    return `
     <div style="display:flex;flex-direction:column;align-items:${m.dir === 'out' ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
       <div style="max-width:82%;background:${m.dir === 'out' ? 'var(--leaf)' : 'var(--surf3)'};color:${m.dir === 'out' ? '#fff' : 'var(--ink)'};padding:9px 13px;border-radius:${m.dir === 'out' ? '14px 14px 3px 14px' : '14px 14px 14px 3px'};font-size:13px;line-height:1.5;word-break:break-word;">${m.message || ''}</div>
+      ${offerActions}
       <div style="font-size:10.5px;color:var(--muted);margin-top:3px;">${fmtTime(new Date(m.time).getTime())}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   modalBox.innerHTML = `
     <div class="em-modal-bar" style="gap:8px;">
@@ -2052,6 +2098,69 @@ async function submitReply(ci) {
   openThread(ci);
 }
 
+async function acceptOffer(ci, mi) {
+  const sess = _getSession();
+  if (!sess) return;
+  const conv = window._inboxConvs?.[ci];
+  if (!conv) return;
+  const offerMsg = conv.messages[mi]?.message || '';
+  const offerLine = offerMsg.split('\n')[0]; // "💰 Offer: R X"
+  const replyText = `✅ Offer accepted! Your ${offerLine.replace('💰 Offer: ','offer of ')} has been accepted. Let's arrange payment and delivery — reply here to confirm next steps.`;
+  if (window.emStoreMessage) {
+    await window.emStoreMessage({
+      sender_email: sess.email,
+      sender_name: sess.name,
+      recipient_email: conv.otherEmail,
+      ad_title: conv.adTitle,
+      message: replyText
+    });
+  }
+  conv.messages.push({ dir: 'out', message: replyText, time: new Date().toISOString() });
+  openThread(ci);
+}
+
+function counterOffer(ci, mi) {
+  const conv = window._inboxConvs?.[ci];
+  if (!conv) return;
+  const threadBubbles = document.getElementById('thread-bubbles');
+  if (!threadBubbles) return;
+  /* Replace bottom reply area with a counter form */
+  const replyRow = document.querySelector('#thread-bubbles + div');
+  if (replyRow) {
+    replyRow.innerHTML = `
+      <div style="padding:12px 16px;background:var(--surf2);border-top:1px solid var(--border-lt);">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">Your counter offer (R)</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input id="counter-amt" class="em-post-input" type="number" placeholder="Enter amount" style="flex:1;padding:9px 12px;font-size:13px;">
+          <button onclick="submitCounterOffer(${ci})" style="background:var(--leaf);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Send</button>
+        </div>
+        <button onclick="openThread(${ci})" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0;">Cancel</button>
+      </div>`;
+    document.getElementById('counter-amt')?.focus();
+  }
+}
+
+async function submitCounterOffer(ci) {
+  const sess = _getSession();
+  if (!sess) return;
+  const conv = window._inboxConvs?.[ci];
+  if (!conv) return;
+  const amt = document.getElementById('counter-amt')?.value;
+  if (!amt || Number(amt) < 1) { toast('Enter a valid amount.'); return; }
+  const replyText = `💬 Counter offer: R ${Number(amt).toLocaleString('en-ZA')} — is this price acceptable?`;
+  if (window.emStoreMessage) {
+    await window.emStoreMessage({
+      sender_email: sess.email,
+      sender_name: sess.name,
+      recipient_email: conv.otherEmail,
+      ad_title: conv.adTitle,
+      message: replyText
+    });
+  }
+  conv.messages.push({ dir: 'out', message: replyText, time: new Date().toISOString() });
+  openThread(ci);
+}
+
 function openMobileUserMenu() {
   const sess = _getSession();
   if (!sess) { openSignInModal(); return; }
@@ -2098,31 +2207,107 @@ function openMobileUserMenu() {
 
 function openGetVerifiedModal() {
   closeModal();
-  setTimeout(() => {
-    modalBox.innerHTML = `
-      <div class="em-modal-bar">
-        <h3>Get Verified</h3>
-        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+  setTimeout(() => { _renderVerifyStep1(); _openModal(); }, 250);
+}
+
+function _renderVerifyStep1() {
+  const sess = _getSession();
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Get Verified</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="text-align:center;font-size:38px;margin-bottom:8px;">🛡️</div>
+      <h3 style="text-align:center;color:var(--ink);margin-bottom:6px;">Become a Verified Seller</h3>
+      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:18px;">Verified sellers get a green badge on all their listings — builds buyer trust and leads to more sales.</p>
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:${i===0?'var(--leaf)':'var(--border)'};color:${i===0?'#fff':'var(--muted)'};font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i+1}</div><div style="font-size:10px;color:${i===0?'var(--ink)':'var(--muted)'};">${s}</div></div>`).join('')}
       </div>
-      <div style="padding:20px;">
-        <div style="text-align:center;font-size:40px;margin-bottom:12px;">🛡️</div>
-        <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">Become a Verified Seller</h3>
-        <p style="font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:20px;">Verified sellers get a green badge on all their listings, which builds trust with buyers and leads to more sales.</p>
-        <div style="background:var(--surf2);border-radius:10px;padding:16px;margin-bottom:20px;">
-          <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:10px;">How to get verified:</div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.8;">
-            1. Email us at <strong style="color:var(--ink);">admin@everythingmarket.co.za</strong><br>
-            2. Include your <strong style="color:var(--ink);">full name</strong> and the <strong style="color:var(--ink);">email on your account</strong><br>
-            3. Attach a photo of your <strong style="color:var(--ink);">South African ID or passport</strong><br>
-            4. We'll verify you within 24 hours
-          </div>
-        </div>
-        <a href="mailto:admin@everythingmarket.co.za?subject=Verification Request&body=Hi, I'd like to get verified on Everything Market.%0A%0AName: %0AAccount email: ${_getSession()?.email || ''}" style="display:block;text-align:center;background:var(--leaf);color:#fff;padding:13px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">
-          ✉️ Send Verification Request
-        </a>
-      </div>`;
-    _openModal();
-  }, 250);
+      <label class="em-offer-label">Full name</label>
+      <input id="vfy-name" class="em-post-input" type="text" placeholder="As on your ID" value="${(sess?.name||'').replace(/"/g,'&quot;')}" style="margin-bottom:12px;">
+      <label class="em-offer-label">Account email</label>
+      <input class="em-post-input" type="text" value="${(sess?.email||'').replace(/"/g,'&quot;')}" disabled style="margin-bottom:16px;background:var(--surf2);">
+      <div id="vfy-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" onclick="vfyStep2()">Next →</button>
+    </div>`;
+}
+
+function vfyStep2() {
+  const name = document.getElementById('vfy-name').value.trim();
+  const err = document.getElementById('vfy-err');
+  if (!name) { err.textContent='Enter your full name.'; err.style.display='block'; return; }
+  err.style.display='none';
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="_renderVerifyStep1()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Get Verified</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:${i<=1?'var(--leaf)':'var(--border)'};color:${i<=1?'#fff':'var(--muted)'};font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i===0?'✓':i+1}</div><div style="font-size:10px;color:${i<=1?'var(--ink)':'var(--muted)'};">${s}</div></div>`).join('')}
+      </div>
+      <label class="em-offer-label">SA ID or Passport number</label>
+      <input id="vfy-id" class="em-post-input" type="text" placeholder="e.g. 8501015800085" style="margin-bottom:8px;letter-spacing:1px;">
+      <p style="font-size:11.5px;color:var(--muted);margin-bottom:16px;">Your ID number is never shared publicly. It's only used to confirm your identity.</p>
+      <div id="vfy-err2" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <input type="hidden" id="vfy-name-val" value="${name.replace(/"/g,'&quot;')}">
+      <button class="em-offer-submit" onclick="vfyStep3()">Next →</button>
+    </div>`;
+}
+
+function vfyStep3() {
+  const idNum = document.getElementById('vfy-id').value.trim();
+  const name = document.getElementById('vfy-name-val').value;
+  const err = document.getElementById('vfy-err2');
+  if (idNum.length < 8) { err.textContent='Enter a valid ID or passport number (min 8 characters).'; err.style.display='block'; return; }
+  err.style.display='none';
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="vfyStep2()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Get Verified</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:var(--leaf);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i<2?'✓':3}</div><div style="font-size:10px;color:var(--ink);">${s}</div></div>`).join('')}
+      </div>
+      <label class="em-offer-label">Phone number</label>
+      <input id="vfy-phone" class="em-post-input" type="tel" placeholder="+27 81 234 5678" style="margin-bottom:16px;">
+      <div id="vfy-err3" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <input type="hidden" id="vfy-name-v3" value="${name.replace(/"/g,'&quot;')}">
+      <input type="hidden" id="vfy-id-v3" value="${idNum.replace(/"/g,'&quot;')}">
+      <button class="em-offer-submit" id="vfy-submit-btn" onclick="submitVerifyRequest(this)">Submit Verification</button>
+    </div>`;
+}
+
+async function submitVerifyRequest(btn) {
+  const phone = document.getElementById('vfy-phone').value.trim();
+  const name = document.getElementById('vfy-name-v3').value;
+  const idNum = document.getElementById('vfy-id-v3').value;
+  const err = document.getElementById('vfy-err3');
+  if (phone.replace(/\D/g,'').length < 9) { err.textContent='Enter a valid phone number.'; err.style.display='block'; return; }
+  err.style.display='none';
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const sess = _getSession();
+  try {
+    await _sb.from('events').insert({
+      event_type: 'verification_request',
+      payload: { user_id: sess?.id, email: sess?.email, name, id_number: idNum, phone },
+      user_email: sess?.email
+    });
+  } catch(e) { /* non-fatal */ }
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Verification Submitted</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:28px 20px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <h3 style="color:var(--ink);margin-bottom:8px;">Request Received!</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your verification request has been submitted. We'll review it within 24 hours and you'll receive a notification when your account is verified.</p>
+    </div>`;
 }
 
 /* ── Make Offer modal ── */
