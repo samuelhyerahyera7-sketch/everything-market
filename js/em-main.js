@@ -1915,7 +1915,6 @@ async function openInbox() {
   const inboxEl = document.getElementById('inbox-body');
   if (!inboxEl) return;
 
-  /* Group into conversation threads */
   const convMap = {};
   [...(data.received || []), ...(data.sent || [])].forEach(e => {
     const p = e.payload || {};
@@ -1946,27 +1945,62 @@ async function openInbox() {
     return;
   }
 
+  /* Conversation list — one row per thread */
   inboxEl.innerHTML = convs.map((conv, ci) => {
     const sorted = [...conv.messages].sort((a, b) => new Date(a.time) - new Date(b.time));
-    const bubbles = sorted.map(m => `
-      <div style="display:flex;flex-direction:column;align-items:${m.dir === 'out' ? 'flex-end' : 'flex-start'};margin-bottom:8px;">
-        <div style="max-width:82%;background:${m.dir === 'out' ? 'var(--leaf)' : 'var(--surf3)'};color:${m.dir === 'out' ? '#fff' : 'var(--ink)'};padding:9px 13px;border-radius:${m.dir === 'out' ? '14px 14px 3px 14px' : '14px 14px 14px 3px'};font-size:13px;line-height:1.5;word-break:break-word;">${m.message || ''}</div>
-        <div style="font-size:10.5px;color:var(--muted);margin-top:2px;">${fmtTime(new Date(m.time).getTime())}</div>
-      </div>`).join('');
+    const last   = sorted[sorted.length - 1];
+    const preview = (last.message || '').slice(0, 80);
+    const unread = conv.messages.some(m => m.dir === 'in');
     return `
-      <div style="border-bottom:1px solid var(--border-lt);padding:14px 0;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-          <div style="font-weight:700;font-size:13px;color:var(--ink);">${conv.otherName}</div>
-          <div style="font-size:11px;color:var(--muted);">${fmtTime(new Date(sorted[sorted.length-1].time).getTime())}</div>
+      <button onclick="openThread(${ci})" style="width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border-lt);padding:13px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;">
+        <div style="width:42px;height:42px;border-radius:50%;background:var(--forest);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;">${(conv.otherName||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${conv.otherName}</div>
+            <div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px;">${fmtTime(new Date(last.time).getTime())}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Re: ${conv.adTitle}</div>
+          <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${last.dir === 'out' ? 'You: ' : ''}${preview}</div>
         </div>
-        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Re: <em>${conv.adTitle}</em></div>
-        ${bubbles}
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <input id="reply-${ci}" class="em-post-input" type="text" placeholder="Reply…" style="flex:1;padding:9px 12px;font-size:13px;border-radius:8px;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitReply(${ci});}">
-          <button onclick="submitReply(${ci})" style="background:var(--leaf);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">Send</button>
-        </div>
-      </div>`;
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
   }).join('');
+}
+
+function openThread(ci) {
+  const conv = window._inboxConvs?.[ci];
+  if (!conv) return;
+  const sorted = [...conv.messages].sort((a, b) => new Date(a.time) - new Date(b.time));
+  const bubbles = sorted.map(m => `
+    <div style="display:flex;flex-direction:column;align-items:${m.dir === 'out' ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
+      <div style="max-width:82%;background:${m.dir === 'out' ? 'var(--leaf)' : 'var(--surf3)'};color:${m.dir === 'out' ? '#fff' : 'var(--ink)'};padding:9px 13px;border-radius:${m.dir === 'out' ? '14px 14px 3px 14px' : '14px 14px 14px 3px'};font-size:13px;line-height:1.5;word-break:break-word;">${m.message || ''}</div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:3px;">${fmtTime(new Date(m.time).getTime())}</div>
+    </div>`).join('');
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar" style="gap:8px;">
+      <button onclick="openInbox()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${conv.otherName}</div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Re: ${conv.adTitle}</div>
+      </div>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:16px 16px 8px;" id="thread-bubbles">
+      ${bubbles}
+    </div>
+    <div style="padding:10px 16px 16px;border-top:1px solid var(--border-lt);display:flex;gap:8px;">
+      <input id="thread-reply" class="em-post-input" type="text" placeholder="Type a reply…" style="flex:1;padding:10px 14px;font-size:13px;border-radius:20px;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitReply(${ci});}">
+      <button onclick="submitReply(${ci})" style="background:var(--leaf);color:#fff;border:none;border-radius:50%;width:42px;height:42px;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">&#10148;</button>
+    </div>`;
+  /* Scroll to bottom */
+  setTimeout(() => {
+    const el = document.getElementById('thread-bubbles');
+    if (el) el.scrollTop = el.scrollHeight;
+    document.getElementById('thread-reply')?.focus();
+  }, 50);
 }
 
 async function submitReply(ci) {
@@ -1974,7 +2008,7 @@ async function submitReply(ci) {
   if (!sess) return;
   const conv = window._inboxConvs?.[ci];
   if (!conv) return;
-  const input = document.getElementById('reply-' + ci);
+  const input = document.getElementById('thread-reply');
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
@@ -1988,10 +2022,11 @@ async function submitReply(ci) {
       message: text
     });
   }
+  /* Add bubble immediately without reloading */
+  conv.messages.push({ dir: 'out', message: text, time: new Date().toISOString() });
   input.disabled = false;
   input.value = '';
-  toast('Reply sent!');
-  setTimeout(openInbox, 400);
+  openThread(ci);
 }
 
 function openMobileUserMenu() {
