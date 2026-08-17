@@ -2181,7 +2181,10 @@ function openSignInModal(hint) {
       </div>
       <div class="em-post-field">
         <label class="em-post-label" for="si-pass">Password <span style="font-weight:400;color:var(--muted)">(leave blank to get a code by email)</span></label>
-        <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password">
+        <div style="position:relative;">
+          <input class="em-post-input" id="si-pass" type="password" placeholder="Your password" autocomplete="current-password" style="padding-right:44px;">
+          <button type="button" onclick="const f=document.getElementById('si-pass');f.type=f.type==='password'?'text':'password';this.textContent=f.type==='password'?'👁':'🙈';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;">👁</button>
+        </div>
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Sign In</button>
