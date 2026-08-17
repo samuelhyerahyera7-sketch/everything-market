@@ -15,7 +15,13 @@
   ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/ad/:id", "destination": "/api/ad?id=:id" }
+    { "source": "/ad/:id", "destination": "/api/ad?id=:id" },
+    { "source": "/api/verify/phone-start",        "destination": "/api/verify-phone-start" },
+    { "source": "/api/verify/biometric-challenge","destination": "/api/verify-biometric-challenge" },
+    { "source": "/api/verify/biometric-submit",   "destination": "/api/verify-biometric-submit" },
+    { "source": "/api/verify/biometric-poll",     "destination": "/api/verify-biometric-poll" },
+    { "source": "/api/verify/status",             "destination": "/api/verify-status" },
+    { "source": "/api/whatsapp-webhook",          "destination": "/api/whatsapp-webhook" }
   ],
   "headers": [
     {

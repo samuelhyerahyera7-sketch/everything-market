@@ -2205,109 +2205,494 @@ function openMobileUserMenu() {
   _openModal();
 }
 
+/* ── Verification Centre state ── */
+let _vfyJwt = null;
+let _vfyRtChannel = null;
+let _bioStream = null;
+let _bioRecorder = null;
+let _bioChunks = [];
+
 function openGetVerifiedModal() {
   closeModal();
-  setTimeout(() => { _renderVerifyStep1(); _openModal(); }, 250);
+  setTimeout(openVerificationCenter, 250);
 }
 
-function _renderVerifyStep1() {
+async function openVerificationCenter() {
   const sess = _getSession();
+  if (!sess) { openSignInModal('Sign in to access verification.'); return; }
+  _vfyJwt = (await _sb.auth.getSession()).data?.session?.access_token || null;
+
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Get Verified</h3>
+      <h3>Verification Centre</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div style="padding:20px;">
-      <div style="text-align:center;font-size:38px;margin-bottom:8px;">🛡️</div>
-      <h3 style="text-align:center;color:var(--ink);margin-bottom:6px;">Become a Verified Seller</h3>
-      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:18px;">Verified sellers get a green badge on all their listings — builds buyer trust and leads to more sales.</p>
-      <div style="display:flex;gap:8px;margin-bottom:20px;">
-        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:${i===0?'var(--leaf)':'var(--border)'};color:${i===0?'#fff':'var(--muted)'};font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i+1}</div><div style="font-size:10px;color:${i===0?'var(--ink)':'var(--muted)'};">${s}</div></div>`).join('')}
-      </div>
-      <label class="em-offer-label">Full name</label>
-      <input id="vfy-name" class="em-post-input" type="text" placeholder="As on your ID" value="${(sess?.name||'').replace(/"/g,'&quot;')}" style="margin-bottom:12px;">
-      <label class="em-offer-label">Account email</label>
-      <input class="em-post-input" type="text" value="${(sess?.email||'').replace(/"/g,'&quot;')}" disabled style="margin-bottom:16px;background:var(--surf2);">
-      <div id="vfy-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
-      <button class="em-offer-submit" onclick="vfyStep2()">Next →</button>
-    </div>`;
-}
+    <div style="padding:28px 20px;text-align:center;color:var(--muted);">Loading…</div>`;
+  _openModal();
 
-function vfyStep2() {
-  const name = document.getElementById('vfy-name').value.trim();
-  const err = document.getElementById('vfy-err');
-  if (!name) { err.textContent='Enter your full name.'; err.style.display='block'; return; }
-  err.style.display='none';
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <button onclick="_renderVerifyStep1()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Get Verified</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <div style="padding:20px;">
-      <div style="display:flex;gap:8px;margin-bottom:20px;">
-        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:${i<=1?'var(--leaf)':'var(--border)'};color:${i<=1?'#fff':'var(--muted)'};font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i===0?'✓':i+1}</div><div style="font-size:10px;color:${i<=1?'var(--ink)':'var(--muted)'};">${s}</div></div>`).join('')}
-      </div>
-      <label class="em-offer-label">SA ID or Passport number</label>
-      <input id="vfy-id" class="em-post-input" type="text" placeholder="e.g. 8501015800085" style="margin-bottom:8px;letter-spacing:1px;">
-      <p style="font-size:11.5px;color:var(--muted);margin-bottom:16px;">Your ID number is never shared publicly. It's only used to confirm your identity.</p>
-      <div id="vfy-err2" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
-      <input type="hidden" id="vfy-name-val" value="${name.replace(/"/g,'&quot;')}">
-      <button class="em-offer-submit" onclick="vfyStep3()">Next →</button>
-    </div>`;
-}
-
-function vfyStep3() {
-  const idNum = document.getElementById('vfy-id').value.trim();
-  const name = document.getElementById('vfy-name-val').value;
-  const err = document.getElementById('vfy-err2');
-  if (idNum.length < 8) { err.textContent='Enter a valid ID or passport number (min 8 characters).'; err.style.display='block'; return; }
-  err.style.display='none';
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <button onclick="vfyStep2()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Get Verified</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
-    </div>
-    <div style="padding:20px;">
-      <div style="display:flex;gap:8px;margin-bottom:20px;">
-        ${['Confirm Details','ID Number','Phone'].map((s,i)=>`<div style="flex:1;text-align:center;"><div style="width:26px;height:26px;border-radius:50%;background:var(--leaf);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-bottom:3px;">${i<2?'✓':3}</div><div style="font-size:10px;color:var(--ink);">${s}</div></div>`).join('')}
-      </div>
-      <label class="em-offer-label">Phone number</label>
-      <input id="vfy-phone" class="em-post-input" type="tel" placeholder="+27 81 234 5678" style="margin-bottom:16px;">
-      <div id="vfy-err3" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
-      <input type="hidden" id="vfy-name-v3" value="${name.replace(/"/g,'&quot;')}">
-      <input type="hidden" id="vfy-id-v3" value="${idNum.replace(/"/g,'&quot;')}">
-      <button class="em-offer-submit" id="vfy-submit-btn" onclick="submitVerifyRequest(this)">Submit Verification</button>
-    </div>`;
-}
-
-async function submitVerifyRequest(btn) {
-  const phone = document.getElementById('vfy-phone').value.trim();
-  const name = document.getElementById('vfy-name-v3').value;
-  const idNum = document.getElementById('vfy-id-v3').value;
-  const err = document.getElementById('vfy-err3');
-  if (phone.replace(/\D/g,'').length < 9) { err.textContent='Enter a valid phone number.'; err.style.display='block'; return; }
-  err.style.display='none';
-  btn.disabled = true; btn.textContent = 'Submitting…';
-  const sess = _getSession();
+  let status = null;
   try {
-    await _sb.from('events').insert({
-      event_type: 'verification_request',
-      payload: { user_id: sess?.id, email: sess?.email, name, id_number: idNum, phone },
-      user_email: sess?.email
-    });
-  } catch(e) { /* non-fatal */ }
+    const r = await fetch('/api/verify/status', { headers: { 'Authorization': 'Bearer ' + _vfyJwt } });
+    if (r.ok) status = await r.json();
+  } catch(e) {}
+
+  _renderVeriCenter(status, sess);
+}
+
+function _vfyLvlColor(level) {
+  if (level === 'Fully Verified')    return '#2e7d32';
+  if (level === 'Identity Verified' || level === 'Phone Verified') return '#1565c0';
+  if (level === 'Basic Verified')    return '#f57c00';
+  return '#757575';
+}
+
+function _renderVeriCenter(status, sess) {
+  const level = status?.level || 'Basic Verified';
+  const email = status?.email || { verified: !!sess?.email, address: sess?.email };
+  const phone = status?.phone || { verified: false };
+  const bio   = status?.biometric || { status: 'none' };
+  const c     = _vfyLvlColor(level);
+
+  const tick  = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#2e7d32" stroke-width="2.5"><polyline points="4,10 8,14 16,6"/></svg>`;
+  const cross = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#c62828" stroke-width="2.5"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>`;
+  const clock = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#f57c00" stroke-width="2"><circle cx="10" cy="10" r="8"/><polyline points="10,5 10,10 14,13"/></svg>`;
+  const bioIcon = bio.status === 'approved' ? tick : (bio.status === 'processing' || bio.status === 'review') ? clock : cross;
+
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Verification Submitted</h3>
+      <h3>Verification Centre</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:${c}18;border:1.5px solid ${c}44;border-radius:20px;padding:6px 16px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="${c}"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z"/></svg>
+          <span style="font-size:13px;font-weight:600;color:${c};">${level}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
+          <span style="display:flex;">${email.verified ? tick : cross}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">Email Address</div>
+            <div style="font-size:11.5px;color:var(--muted);">${email.address || sess?.email || ''}</div>
+          </div>
+          <span style="font-size:11px;color:${email.verified?'#2e7d32':'#c62828'};font-weight:600;">${email.verified?'Verified':'Unverified'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
+          <span style="display:flex;">${phone.verified ? tick : cross}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">WhatsApp Phone</div>
+            <div style="font-size:11.5px;color:var(--muted);">${phone.verified ? (phone.maskedNumber||'Verified') : 'Not verified'}</div>
+          </div>
+          ${phone.verified
+            ? `<span style="font-size:11px;color:#2e7d32;font-weight:600;">Verified</span>`
+            : `<button class="em-offer-submit" onclick="startPhoneVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Verify</button>`}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
+          <span style="display:flex;">${bioIcon}</span>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">Identity (Selfie + ID)</div>
+            <div style="font-size:11.5px;color:var(--muted);">${
+              bio.status === 'approved'   ? 'ID verified' :
+              bio.status === 'processing' ? 'Processing — check back soon' :
+              bio.status === 'review'     ? 'Manual review in progress' :
+              bio.status === 'rejected'   ? (bio.rejectionReason || 'Verification failed') :
+              'Not verified'}</div>
+          </div>
+          ${bio.status === 'approved'
+            ? `<span style="font-size:11px;color:#2e7d32;font-weight:600;">Verified</span>`
+            : (bio.status === 'processing' || bio.status === 'review')
+            ? `<span style="font-size:11px;color:#f57c00;font-weight:600;">Pending</span>`
+            : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Verify</button>`}
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Complete both verifications to earn a green badge on all your listings.</p>
+    </div>`;
+}
+
+/* ── WhatsApp Phone Verification ── */
+async function startPhoneVerification() {
+  if (!_vfyJwt) return;
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="openVerificationCenter()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Phone Verification</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;text-align:center;color:var(--muted);">Generating your code…</div>`;
+
+  let data;
+  try {
+    const r = await fetch('/api/verify/phone-start', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + _vfyJwt, 'Content-Type': 'application/json' }
+    });
+    data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Failed');
+  } catch(e) {
+    toast('Could not start verification: ' + e.message);
+    return openVerificationCenter();
+  }
+
+  const { sessionId, displayToken, waLink, expiresAt } = data;
+  const expStr = expiresAt ? new Date(expiresAt).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'}) : '';
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="openVerificationCenter()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Phone Verification</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:16px;">Scan the QR code or tap the button to send a WhatsApp message and verify your number.</p>
+      <div id="wa-qr-box" style="margin:0 auto 16px;width:180px;height:180px;display:flex;align-items:center;justify-content:center;"></div>
+      <div style="text-align:center;margin-bottom:8px;">
+        <a href="${waLink}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;border-radius:10px;padding:10px 20px;text-decoration:none;font-size:14px;font-weight:600;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-1-.3-.1-.5-.1-.7.1s-.8 1-.9 1.1c-.2.2-.3.2-.6.1-1.6-.8-2.6-1.4-3.7-3-.3-.4.3-.4.8-1.4.1-.2 0-.4-.1-.5-.1-.1-.7-1.7-1-2.4-.3-.6-.5-.6-.7-.6h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1 2.9 1.2 3.1c.1.1 2 3.1 4.9 4.3 1.8.8 2.5.8 3.4.7.5-.1 1.6-.6 1.9-1.3.2-.6.2-1.1.1-1.2-.1-.1-.3-.2-.6-.3z"/><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.4 5L2 22l5.2-1.4C8.8 21.5 10.4 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
+          Open WhatsApp
+        </a>
+      </div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <span style="font-size:11.5px;color:var(--muted);">Or send: <strong>VERIFY ${displayToken}</strong>${expStr ? ' (expires ' + expStr + ')' : ''}</span>
+      </div>
+      <div id="wa-status-box" style="text-align:center;padding:10px;background:var(--surf2);border-radius:8px;font-size:12.5px;color:var(--muted);">
+        <div style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f57c00;margin-right:6px;"></div>Waiting for WhatsApp message…
+      </div>
+    </div>`;
+
+  try {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(document.getElementById('wa-qr-box'), {
+        text: waLink, width: 160, height: 160,
+        colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  } catch(e) {}
+
+  if (_vfyRtChannel) { _sb.removeChannel(_vfyRtChannel); _vfyRtChannel = null; }
+  _vfyRtChannel = _sb.channel('wa-verify-' + sessionId)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'phone_verifications',
+      filter: 'session_id=eq.' + sessionId
+    }, payload => {
+      if (payload.new?.status === 'verified') {
+        const box = document.getElementById('wa-status-box');
+        if (box) box.innerHTML = '<div style="color:#2e7d32;font-weight:600;">✅ Phone verified! Refreshing…</div>';
+        if (_vfyRtChannel) { _sb.removeChannel(_vfyRtChannel); _vfyRtChannel = null; }
+        setTimeout(() => openVerificationCenter(), 1500);
+      } else if (payload.new?.status === 'failed') {
+        const box = document.getElementById('wa-status-box');
+        if (box) box.innerHTML = '<div style="color:#c62828;">❌ Verification failed. Please try again.</div>';
+      }
+    })
+    .subscribe();
+}
+
+/* ── Biometric Verification ── */
+async function openBiometricVerification() {
+  if (!_vfyJwt) return;
+  _bioChunks = [];
+  _bioStream = null;
+  _bioRecorder = null;
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="openVerificationCenter()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Identity Verification</h3>
+      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="text-align:center;font-size:36px;margin-bottom:10px;">🪪</div>
+      <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">ID + Selfie Verification</h3>
+      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:18px;">We'll ask you to photograph your SA ID or passport, then record a short selfie video. Your files are deleted immediately after processing.</p>
+      <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:20px;padding-left:18px;">
+        <li>Takes about 2 minutes</li>
+        <li>Camera access required</li>
+        <li>Files deleted after verification (POPIA compliant)</li>
+        <li>Your ID number is never stored by us</li>
+      </ul>
+      <button class="em-offer-submit" onclick="_bioStep1_ID()">Start Verification</button>
+    </div>`;
+}
+
+function _stopBioStream() {
+  if (_bioStream) { _bioStream.getTracks().forEach(t => t.stop()); _bioStream = null; }
+  if (_bioRecorder && _bioRecorder.state !== 'inactive') { try { _bioRecorder.stop(); } catch(e) {} }
+  _bioRecorder = null;
+  _bioChunks = [];
+}
+
+async function _bioStep1_ID() {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Step 1 of 2 — ID Photo</h3>
+      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;text-align:center;color:var(--muted);">Preparing…</div>`;
+
+  let challenge;
+  try {
+    const r = await fetch('/api/verify/biometric-challenge', { headers: { 'Authorization': 'Bearer ' + _vfyJwt } });
+    challenge = r.ok ? await r.json() : null;
+    if (!challenge?.nonce) throw new Error('No challenge');
+  } catch(e) {
+    toast('Could not load verification challenge. Try again.');
+    return openVerificationCenter();
+  }
+
+  window._bioChallengeData = challenge;
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Step 1 of 2 — ID Photo</h3>
+      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
+      <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-id-input').click()">
+        <div id="bio-id-preview" style="font-size:40px;margin-bottom:8px;">🪪</div>
+        <div style="font-size:13px;color:var(--muted);">Tap to select ID photo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+      </div>
+      <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="_bioPreviewID(this)">
+      <div id="bio-id-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" id="bio-id-next" onclick="_bioStep2_Selfie()" disabled style="opacity:0.4;">Next →</button>
+    </div>`;
+}
+
+function _bioPreviewID(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const err = document.getElementById('bio-id-err');
+  if (file.size > 8 * 1024 * 1024) { err.textContent = 'Image too large (max 8 MB).'; err.style.display = 'block'; return; }
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { err.textContent = 'Use a JPEG, PNG, or WebP image.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p = document.getElementById('bio-id-preview');
+    if (p) p.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:140px;border-radius:8px;object-fit:contain;">`;
+    const btn = document.getElementById('bio-id-next');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function _bioStep2_Selfie() {
+  const idInput = document.getElementById('bio-id-input');
+  if (!idInput?.files?.[0]) {
+    const err = document.getElementById('bio-id-err');
+    if (err) { err.textContent = 'Please select your ID photo first.'; err.style.display = 'block'; }
+    return;
+  }
+  window._bioIdFile = idInput.files[0];
+  const c = window._bioChallengeData || {};
+  const instrText = c.instruction === 'blink_twice' ? 'Blink twice slowly' :
+                    c.instruction === 'turn_head'   ? 'Turn your head left, then right' :
+                    'Blink once';
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <button onclick="_stopBioStream();_bioStep1_ID()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Step 2 of 2 — Selfie Video</h3>
+      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="background:#fff3e0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:#e65100;">
+        <strong>Challenge:</strong> ${instrText}
+      </div>
+      <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;aspect-ratio:4/3;">
+        <video id="bio-vid-preview" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;"></video>
+        <div id="bio-rec-indicator" style="position:absolute;top:8px;right:8px;display:none;align-items:center;gap:5px;background:rgba(0,0,0,0.6);border-radius:12px;padding:3px 8px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#f44336;animation:emPulse 1s infinite;"></div>
+          <span style="color:#fff;font-size:11px;font-weight:600;">REC</span>
+        </div>
+      </div>
+      <div id="bio-cam-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <div id="bio-rec-status" style="text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:12px;">Starting camera…</div>
+      <button class="em-offer-submit" id="bio-rec-btn" onclick="_bioStartRecord()" disabled style="opacity:0.4;">Record Selfie (5 sec)</button>
+    </div>`;
+
+  if (!document.getElementById('bio-pulse-style')) {
+    const s = document.createElement('style');
+    s.id = 'bio-pulse-style';
+    s.textContent = '@keyframes emPulse{0%,100%{opacity:1}50%{opacity:.3}}';
+    document.head.appendChild(s);
+  }
+
+  try {
+    _bioStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+    const vid = document.getElementById('bio-vid-preview');
+    if (vid) vid.srcObject = _bioStream;
+    const recBtn = document.getElementById('bio-rec-btn');
+    const recStatus = document.getElementById('bio-rec-status');
+    if (recBtn) { recBtn.disabled = false; recBtn.style.opacity = '1'; }
+    if (recStatus) recStatus.textContent = 'Camera ready. Press record when ready.';
+  } catch(e) {
+    const err = document.getElementById('bio-cam-err');
+    if (err) { err.textContent = 'Camera access denied. Please allow camera access and try again.'; err.style.display = 'block'; }
+  }
+}
+
+function _bioStartRecord() {
+  if (!_bioStream) return;
+  _bioChunks = [];
+  const recBtn = document.getElementById('bio-rec-btn');
+  const recStatus = document.getElementById('bio-rec-status');
+  const recInd = document.getElementById('bio-rec-indicator');
+
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' :
+               MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
+  _bioRecorder = new MediaRecorder(_bioStream, { mimeType: mime });
+  _bioRecorder.ondataavailable = e => { if (e.data.size > 0) _bioChunks.push(e.data); };
+  _bioRecorder.onstop = () => _bioSubmitVerification();
+  _bioRecorder.start();
+
+  if (recBtn) { recBtn.disabled = true; recBtn.style.opacity = '0.4'; recBtn.textContent = 'Recording…'; }
+  if (recInd) recInd.style.display = 'flex';
+
+  let secs = 5;
+  const tick = setInterval(() => {
+    secs--;
+    if (recStatus) recStatus.textContent = `Recording — perform the challenge now… ${secs}s`;
+    if (secs <= 0) {
+      clearInterval(tick);
+      if (_bioRecorder && _bioRecorder.state !== 'inactive') _bioRecorder.stop();
+      if (recStatus) recStatus.textContent = 'Processing…';
+      if (recInd) recInd.style.display = 'none';
+    }
+  }, 1000);
+}
+
+async function _bioSubmitVerification() {
+  _stopBioStream();
+
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Submitting…</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div style="padding:28px 20px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:12px;">✅</div>
-      <h3 style="color:var(--ink);margin-bottom:8px;">Request Received!</h3>
-      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your verification request has been submitted. We'll review it within 24 hours and you'll receive a notification when your account is verified.</p>
+      <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+      <p style="color:var(--muted);font-size:13px;">Uploading and submitting for verification…</p>
     </div>`;
+
+  const sess = _getSession();
+  const prefix = sess?.userId + '/' + Date.now();
+  let idPath, videoPath;
+
+  try {
+    const idExt = window._bioIdFile.type.includes('png') ? 'png' : window._bioIdFile.type.includes('webp') ? 'webp' : 'jpg';
+    idPath = prefix + '/id.' + idExt;
+    const { error: e1 } = await _sb.storage.from('biometric-temp').upload(idPath, window._bioIdFile, { contentType: window._bioIdFile.type });
+    if (e1) throw new Error('ID upload failed: ' + e1.message);
+
+    const videoBlob = new Blob(_bioChunks, { type: _bioChunks[0]?.type || 'video/webm' });
+    const videoExt = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+    videoPath = prefix + '/selfie.' + videoExt;
+    const { error: e2 } = await _sb.storage.from('biometric-temp').upload(videoPath, videoBlob, { contentType: videoBlob.type });
+    if (e2) throw new Error('Selfie upload failed: ' + e2.message);
+  } catch(e) {
+    toast('Upload failed: ' + e.message);
+    return openVerificationCenter();
+  }
+
+  const c = window._bioChallengeData || {};
+  let jobId;
+  try {
+    const r = await fetch('/api/verify/biometric-submit', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + _vfyJwt, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idStoragePath: idPath,
+        videoStoragePath: videoPath,
+        nonce: c.nonce,
+        challenge: c.challenge,
+        contractId: c.contractId || c.nonce
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Submission failed');
+    jobId = data.jobId;
+  } catch(e) {
+    toast('Submission failed: ' + e.message);
+    return openVerificationCenter();
+  }
+
+  _bioPollResult(jobId, 0);
+}
+
+async function _bioPollResult(jobId, attempt) {
+  if (attempt > 30) {
+    modalBox.innerHTML = `
+      <div class="em-modal-bar">
+        <h3>Verification Submitted</h3>
+        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div style="padding:28px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⏳</div>
+        <h3 style="color:var(--ink);margin-bottom:8px;">Under Review</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your verification is being processed. Check back in your Verification Centre in a few minutes.</p>
+        <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Go to Verification Centre</button>
+      </div>`;
+    return;
+  }
+
+  let result;
+  try {
+    const r = await fetch('/api/verify/biometric-poll?jobId=' + encodeURIComponent(jobId), {
+      headers: { 'Authorization': 'Bearer ' + _vfyJwt }
+    });
+    result = r.ok ? await r.json() : null;
+  } catch(e) { result = null; }
+
+  if (!result || result.status === 'processing') {
+    const pEl = modalBox.querySelector('p');
+    if (pEl) pEl.textContent = 'Analysing your selfie and ID' + '.'.repeat((attempt % 3) + 1);
+    setTimeout(() => _bioPollResult(jobId, attempt + 1), 4000);
+    return;
+  }
+
+  if (result.status === 'approved') {
+    modalBox.innerHTML = `
+      <div class="em-modal-bar">
+        <h3>Verification Complete</h3>
+        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div style="padding:28px 20px;text-align:center;">
+        <div style="font-size:56px;margin-bottom:12px;">✅</div>
+        <h3 style="color:#2e7d32;margin-bottom:8px;">Identity Verified!</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your identity has been confirmed. Your listings will now show a verified badge.</p>
+        <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Done</button>
+      </div>`;
+  } else if (result.status === 'review') {
+    modalBox.innerHTML = `
+      <div class="em-modal-bar">
+        <h3>Under Manual Review</h3>
+        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div style="padding:28px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+        <h3 style="color:#1565c0;margin-bottom:8px;">Manual Review Required</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Our team will review your submission within 24 hours. Check your Verification Centre for updates.</p>
+        <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">OK</button>
+      </div>`;
+  } else {
+    const reason = result.reason || 'Please try again in better lighting and ensure your face is clearly visible.';
+    modalBox.innerHTML = `
+      <div class="em-modal-bar">
+        <h3>Verification Failed</h3>
+        <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div style="padding:28px 20px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">❌</div>
+        <h3 style="color:#c62828;margin-bottom:8px;">Verification Failed</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">${reason}</p>
+        <button class="em-offer-submit" onclick="openBiometricVerification()" style="margin-top:16px;">Try Again</button>
+      </div>`;
+  }
 }
 
 /* ── Make Offer modal ── */
