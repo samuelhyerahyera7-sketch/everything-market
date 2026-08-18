@@ -463,23 +463,31 @@ window.addEventListener('popstate', function() {
 });
 
 /* ── Shops ── */
+function toggleShopsBar() {
+  const panel = document.getElementById('shops-panel');
+  const arrow = document.getElementById('shops-arrow');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
 function _buildShopsGrid() {
   const grid = document.getElementById('shops-grid');
   const bar  = document.getElementById('shops-bar');
   if (!grid || !bar) return;
 
-  /* Collect unique verified sellers */
+  /* Collect unique sellers (all sellers, not just verified) */
   const seen = new Set();
   const shops = [];
   LISTINGS.forEach(l => {
-    if (!l.verified || !l.seller) return;
+    if (!l.seller) return;
     const key = l.userId || l.seller;
     if (seen.has(key)) return;
     seen.add(key);
     const ads = LISTINGS.filter(x =>
       (l.userId && x.userId === l.userId) || (!l.userId && x.seller === l.seller)
     );
-    shops.push({ seller: l.seller, userId: l.userId || '', sellerType: l.sellerType || 'private', verified: true, count: ads.length, loc: l.loc });
+    shops.push({ seller: l.seller, userId: l.userId || '', sellerType: l.sellerType || 'private', verified: !!l.verified, count: ads.length, loc: l.loc });
   });
 
   if (!shops.length) { bar.style.display = 'none'; return; }
@@ -492,8 +500,8 @@ function _buildShopsGrid() {
     card.onclick = () => openShopPage(s.seller, s.userId, s.verified, s.sellerType);
     card.innerHTML = `
       <div class="shop-card-avatar">${initials}</div>
-      <div class="shop-card-name">${s.seller}</div>
-      <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
+      <div class="shop-card-name">${s.seller}${s.verified ? ' <span class="shop-vfy-dot" title="Verified">✓</span>' : ''}</div>
+      <div class="shop-card-count">${s.count} listing${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
     grid.appendChild(card);
   });
