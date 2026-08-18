@@ -507,17 +507,29 @@ function _buildShopsGrid() {
   });
 }
 
+let _shopAllAds = [];
+
 function openShopPage(sellerName, userId, verified, sellerType) {
   const page = document.getElementById('shop-page');
   if (!page) return;
 
-  const shopAds = LISTINGS.filter(l =>
+  _shopAllAds = LISTINGS.filter(l =>
     (userId && l.userId === userId) || (!userId && l.seller === sellerName)
   ).sort((a, b) => b.postedAt - a.postedAt);
 
   const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const oldest   = shopAds.length ? Math.min(...shopAds.map(l => l.postedAt)) : Date.now();
+  const oldest   = _shopAllAds.length ? Math.min(..._shopAllAds.map(l => l.postedAt)) : Date.now();
   const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+
+  /* Build category list from this seller's listings */
+  const catCounts = {};
+  _shopAllAds.forEach(l => { catCounts[l.cat] = (catCounts[l.cat] || 0) + 1; });
+  const sellerCats = Object.keys(catCounts).sort();
+
+  const catLabel = id => {
+    const found = CATS.find(c => c.id === id);
+    return found ? found.name : id.charAt(0).toUpperCase() + id.slice(1);
+  };
 
   document.getElementById('shop-page-title').textContent = sellerName;
 
@@ -527,62 +539,76 @@ function openShopPage(sellerName, userId, verified, sellerType) {
       <div class="shop-hdr-avatar">${initials}</div>
       <div class="shop-hdr-info">
         <div class="shop-hdr-name">${sellerName}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
           ${sellerType === 'dealer' ? '<span class="stype-badge stype-dealer">Dealership</span>' : '<span class="stype-badge stype-private">Private Seller</span>'}
           ${verified ? '<span class="vfy-badge vfy-yes">✓ Verified</span>' : ''}
         </div>
         <div class="shop-hdr-stats">
-          <span>${shopAds.length} product${shopAds.length !== 1 ? 's' : ''}</span>
+          <span>${_shopAllAds.length} listing${_shopAllAds.length !== 1 ? 's' : ''}</span>
           <span>·</span>
-          <span>Member since ${since}</span>
+          <span>${sellerCats.length} categor${sellerCats.length !== 1 ? 'ies' : 'y'}</span>
+          <span>·</span>
+          <span>Since ${since}</span>
         </div>
       </div>
     </div>
-    <div class="wrap" style="padding-top:8px;padding-bottom:32px;">
-      <div class="shop-products-hdr">All Products (${shopAds.length})</div>
-      <div class="bb-grid" id="shop-bb-grid"></div>
+    <div class="shop-cat-tabs" id="shop-cat-tabs">
+      <button class="shop-tab active" data-cat="all" onclick="filterShopCat('all',this)">All <span class="shop-tab-count">${_shopAllAds.length}</span></button>
+      ${sellerCats.map(c => `<button class="shop-tab" data-cat="${c}" onclick="filterShopCat('${c}',this)">${catLabel(c)} <span class="shop-tab-count">${catCounts[c]}</span></button>`).join('')}
+    </div>
+    <div class="shop-main wrap">
+      <div class="shop-ec-grid" id="shop-ec-grid"></div>
     </div>`;
 
-  /* Render product cards into the shop grid */
-  const shopGrid = content.querySelector('#shop-bb-grid');
-  if (shopGrid) {
-    if (!shopAds.length) {
-      shopGrid.innerHTML = '<div class="shop-empty">No products listed yet.</div>';
-    } else {
-      shopAds.forEach(l => {
-        const card = document.createElement('div');
-        card.className = 'bb-card';
-        card.onclick = () => openBuyNow(l);
-        card.innerHTML = `
-          <div class="bb-img" id="shp-img-${l.id}"></div>
-          <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save">${ICO.heart}</button>
-          <div class="bb-body">
-            <div class="bb-eyebrow">${l.cat}</div>
-            <div class="bb-price-tag">${fmtPrice(l, true)}</div>
-            <div class="bb-title">${l.title}</div>
-            ${l.cond !== 'N/A' ? `<div class="bb-cond" style="margin-top:3px">${l.cond}</div>` : ''}
-            <div class="bb-meta" style="margin-top:4px">
-              <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
-              <span>${ICO.time} ${fmtTime(l.postedAt)}</span>
-            </div>
-            <div class="bb-actions">
-              <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">View</button>
-              ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
-            </div>
-          </div>`;
-        shopGrid.appendChild(card);
-        setTimeout(() => {
-          const el = document.getElementById('shp-img-' + l.id);
-          if (el) _renderImg(el, l);
-        }, 0);
-      });
-    }
-  }
+  _renderShopGrid(_shopAllAds);
 
   page.style.display = 'flex';
   document.getElementById('shop-page-scroll').scrollTop = 0;
   _lockScroll();
   _navPush('shop');
+}
+
+function filterShopCat(cat, btn) {
+  document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const filtered = cat === 'all' ? _shopAllAds : _shopAllAds.filter(l => l.cat === cat);
+  _renderShopGrid(filtered);
+  document.getElementById('shop-page-scroll').scrollTop = 0;
+}
+
+function _renderShopGrid(ads) {
+  const grid = document.getElementById('shop-ec-grid');
+  if (!grid) return;
+  if (!ads.length) {
+    grid.innerHTML = '<div class="shop-empty">No products in this category yet.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  ads.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'shop-ec-card';
+    card.onclick = () => openBuyNow(l);
+    const catName = CATS.find(c => c.id === l.cat)?.name || l.cat;
+    card.innerHTML = `
+      <div class="shop-ec-img" id="shpec-${l.id}"></div>
+      <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save">${ICO.heart}</button>
+      <div class="shop-ec-body">
+        <div class="shop-ec-cat">${catName}</div>
+        <div class="shop-ec-title">${l.title}</div>
+        ${l.cond !== 'N/A' ? `<div class="shop-ec-cond">${l.cond}</div>` : ''}
+        <div class="shop-ec-price">${fmtPrice(l, true)}</div>
+        <div class="shop-ec-loc">${ICO.pin} ${_fmtLoc(l.loc)}</div>
+        <div class="shop-ec-actions">
+          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">View Item</button>
+          ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+    setTimeout(() => {
+      const el = document.getElementById('shpec-' + l.id);
+      if (el) _renderImg(el, l);
+    }, 0);
+  });
 }
 
 function closeShopPage() {
