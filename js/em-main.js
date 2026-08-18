@@ -447,12 +447,141 @@ window.addEventListener('popstate', function() {
     return;
   }
 
+  /* Shop page */
+  const shopPage = document.getElementById('shop-page');
+  if (shopPage && shopPage.style.display !== 'none') {
+    shopPage.style.display = 'none';
+    _unlockScroll();
+    return;
+  }
+
   /* Results / category page */
   const catPage = document.getElementById('cat-page');
   if (catPage && catPage.style.display !== 'none') {
     _closeCatPageUI();
   }
 });
+
+/* ── Shops ── */
+function _buildShopsGrid() {
+  const grid = document.getElementById('shops-grid');
+  const bar  = document.getElementById('shops-bar');
+  if (!grid || !bar) return;
+
+  /* Collect unique verified sellers */
+  const seen = new Set();
+  const shops = [];
+  LISTINGS.forEach(l => {
+    if (!l.verified || !l.seller) return;
+    const key = l.userId || l.seller;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const ads = LISTINGS.filter(x =>
+      (l.userId && x.userId === l.userId) || (!l.userId && x.seller === l.seller)
+    );
+    shops.push({ seller: l.seller, userId: l.userId || '', sellerType: l.sellerType || 'private', verified: true, count: ads.length, loc: l.loc });
+  });
+
+  if (!shops.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  grid.innerHTML = '';
+  shops.forEach(s => {
+    const initials = s.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const card = document.createElement('div');
+    card.className = 'shop-card';
+    card.onclick = () => openShopPage(s.seller, s.userId, s.verified, s.sellerType);
+    card.innerHTML = `
+      <div class="shop-card-avatar">${initials}</div>
+      <div class="shop-card-name">${s.seller}</div>
+      <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
+      ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
+    grid.appendChild(card);
+  });
+}
+
+function openShopPage(sellerName, userId, verified, sellerType) {
+  const page = document.getElementById('shop-page');
+  if (!page) return;
+
+  const shopAds = LISTINGS.filter(l =>
+    (userId && l.userId === userId) || (!userId && l.seller === sellerName)
+  ).sort((a, b) => b.postedAt - a.postedAt);
+
+  const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const oldest   = shopAds.length ? Math.min(...shopAds.map(l => l.postedAt)) : Date.now();
+  const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+
+  document.getElementById('shop-page-title').textContent = sellerName;
+
+  const content = document.getElementById('shop-page-content');
+  content.innerHTML = `
+    <div class="shop-hdr-banner">
+      <div class="shop-hdr-avatar">${initials}</div>
+      <div class="shop-hdr-info">
+        <div class="shop-hdr-name">${sellerName}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
+          ${sellerType === 'dealer' ? '<span class="stype-badge stype-dealer">Dealership</span>' : '<span class="stype-badge stype-private">Private Seller</span>'}
+          ${verified ? '<span class="vfy-badge vfy-yes">✓ Verified</span>' : ''}
+        </div>
+        <div class="shop-hdr-stats">
+          <span>${shopAds.length} product${shopAds.length !== 1 ? 's' : ''}</span>
+          <span>·</span>
+          <span>Member since ${since}</span>
+        </div>
+      </div>
+    </div>
+    <div class="wrap" style="padding-top:8px;padding-bottom:32px;">
+      <div class="shop-products-hdr">All Products (${shopAds.length})</div>
+      <div class="bb-grid" id="shop-bb-grid"></div>
+    </div>`;
+
+  /* Render product cards into the shop grid */
+  const shopGrid = content.querySelector('#shop-bb-grid');
+  if (shopGrid) {
+    if (!shopAds.length) {
+      shopGrid.innerHTML = '<div class="shop-empty">No products listed yet.</div>';
+    } else {
+      shopAds.forEach(l => {
+        const card = document.createElement('div');
+        card.className = 'bb-card';
+        card.onclick = () => openBuyNow(l);
+        card.innerHTML = `
+          <div class="bb-img" id="shp-img-${l.id}"></div>
+          <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save">${ICO.heart}</button>
+          <div class="bb-body">
+            <div class="bb-eyebrow">${l.cat}</div>
+            <div class="bb-price-tag">${fmtPrice(l, true)}</div>
+            <div class="bb-title">${l.title}</div>
+            ${l.cond !== 'N/A' ? `<div class="bb-cond" style="margin-top:3px">${l.cond}</div>` : ''}
+            <div class="bb-meta" style="margin-top:4px">
+              <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
+              <span>${ICO.time} ${fmtTime(l.postedAt)}</span>
+            </div>
+            <div class="bb-actions">
+              <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">View</button>
+              ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+            </div>
+          </div>`;
+        shopGrid.appendChild(card);
+        setTimeout(() => {
+          const el = document.getElementById('shp-img-' + l.id);
+          if (el) _renderImg(el, l);
+        }, 0);
+      });
+    }
+  }
+
+  page.style.display = 'flex';
+  document.getElementById('shop-page-scroll').scrollTop = 0;
+  _lockScroll();
+  _navPush('shop');
+}
+
+function closeShopPage() {
+  document.getElementById('shop-page').style.display = 'none';
+  _unlockScroll();
+  _navBack();
+}
 
 function toggleCatFilters() {
   const aside = document.querySelector('.cat-filters');
@@ -833,6 +962,7 @@ function renderAll(cat = 'all') {
   const data = cat === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === cat || l.cat.startsWith(cat.slice(0,3)));
   renderBB(data);
   renderGT(data);
+  _buildShopsGrid();
 }
 
 renderAll('all');
@@ -2193,6 +2323,11 @@ function openMobileUserMenu() {
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Messages <span id="menu-msg-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:9px;font-size:11px;padding:1px 6px;margin-left:4px;vertical-align:middle">New</span>
       </button>
+      ${_sbUser?.user_metadata?.verified ? `
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openMyStore,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        My Store
+      </button>` : ''}
       <button class="em-menu-item" onclick="closeModal();setTimeout(openPostAdModal,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Post an Ad
@@ -2203,6 +2338,19 @@ function openMobileUserMenu() {
       </button>
     </div>`;
   _openModal();
+}
+
+function openMyStore() {
+  const sess = _getSession();
+  if (!sess) return;
+  const verified = !!_sbUser?.user_metadata?.verified;
+  if (!verified) {
+    toast('Complete verification first to access your store.');
+    setTimeout(openVerificationCenter, 300);
+    return;
+  }
+  openShopPage(sess.name || sess.email, sess.userId, true,
+    LISTINGS.find(l => l.userId === sess.userId)?.sellerType || 'private');
 }
 
 /* ── Verification Centre state ── */
