@@ -471,36 +471,37 @@ function toggleShopsBar() {
   if (arrow) arrow.classList.toggle('open');
 }
 
+/* Approved stores loaded from /api/load-stores */
+let _approvedStores = [];
+
+async function _loadApprovedStores() {
+  try {
+    const r = await fetch('/api/load-stores');
+    if (r.ok) _approvedStores = await r.json();
+  } catch (_) {}
+  _buildShopsGrid();
+}
+
 function _buildShopsGrid() {
   const grid = document.getElementById('shops-grid');
   const bar  = document.getElementById('shops-bar');
   if (!grid || !bar) return;
 
-  /* Collect unique sellers (all sellers, not just verified) */
-  const seen = new Set();
-  const shops = [];
-  LISTINGS.forEach(l => {
-    if (!l.seller) return;
-    const key = l.userId || l.seller;
-    if (seen.has(key)) return;
-    seen.add(key);
-    const ads = LISTINGS.filter(x =>
-      (l.userId && x.userId === l.userId) || (!l.userId && x.seller === l.seller)
-    );
-    shops.push({ seller: l.seller, userId: l.userId || '', sellerType: l.sellerType || 'private', verified: !!l.verified, count: ads.length, loc: l.loc });
-  });
+  if (!_approvedStores.length) {
+    bar.style.display = 'none';
+    return;
+  }
 
-  if (!shops.length) { bar.style.display = 'none'; return; }
   bar.style.display = 'block';
   grid.innerHTML = '';
-  shops.forEach(s => {
-    const initials = s.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  _approvedStores.forEach(s => {
+    const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const card = document.createElement('div');
     card.className = 'shop-card';
-    card.onclick = () => openShopPage(s.seller, s.userId, s.verified, s.sellerType);
+    card.onclick = () => openShopPage(s.storeName, s.userId, true, s.storeType);
     card.innerHTML = `
       <div class="shop-card-avatar">${initials}</div>
-      <div class="shop-card-name">${s.seller}${s.verified ? ' <span class="shop-vfy-dot" title="Verified">✓</span>' : ''}</div>
+      <div class="shop-card-name">${s.storeName} <span class="shop-vfy-dot" title="Approved Store">✓</span></div>
       <div class="shop-card-count">${s.count} listing${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
     grid.appendChild(card);
@@ -996,11 +997,13 @@ function renderAll(cat = 'all') {
   const data = cat === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === cat || l.cat.startsWith(cat.slice(0,3)));
   renderBB(data);
   renderGT(data);
-  _buildShopsGrid();
+  /* Stores are loaded once from API; only rebuild grid on first call */
+  if (_approvedStores.length) _buildShopsGrid();
 }
 
 renderAll('all');
 _loadSupabaseAds();
+_loadApprovedStores();
 
 /* ── Province grid ── */
 const pg = document.getElementById('prov-grid');
@@ -2357,11 +2360,15 @@ function openMobileUserMenu() {
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Messages <span id="menu-msg-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:9px;font-size:11px;padding:1px 6px;margin-left:4px;vertical-align:middle">New</span>
       </button>
-      ${_sbUser?.user_metadata?.verified ? `
+      ${_sbUser?.user_metadata?.store_approved ? `
       <button class="em-menu-item" onclick="closeModal();setTimeout(openMyStore,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         My Store
-      </button>` : ''}
+      </button>` : `
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openApplyStoreModal,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Apply to be a Store
+      </button>`}
       <button class="em-menu-item" onclick="closeModal();setTimeout(openPostAdModal,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         Post an Ad
@@ -2377,14 +2384,71 @@ function openMobileUserMenu() {
 function openMyStore() {
   const sess = _getSession();
   if (!sess) return;
-  const verified = !!_sbUser?.user_metadata?.verified;
-  if (!verified) {
-    toast('Complete verification first to access your store.');
-    setTimeout(openVerificationCenter, 300);
+  if (!_sbUser?.user_metadata?.store_approved) {
+    toast('Your store has not been approved yet.');
     return;
   }
-  openShopPage(sess.name || sess.email, sess.userId, true,
-    LISTINGS.find(l => l.userId === sess.userId)?.sellerType || 'private');
+  const storeName = _sbUser.user_metadata.store_name || sess.name || sess.email;
+  openShopPage(storeName, sess.userId, true, _sbUser.user_metadata.store_type || 'retail');
+}
+
+function openApplyStoreModal() {
+  if (!_getSession()) { openSignInModal(); return; }
+  const meta = _sbUser?.user_metadata || {};
+  if (meta.store_approved) { toast('Your store is already approved!'); return; }
+  if (meta.store_applied) {
+    toast('Your application is pending review. We\'ll notify you once approved.');
+    return;
+  }
+  const html = `
+    <div style="padding:4px 0 8px;">
+      <h3 style="margin:0 0 6px;font-size:17px;font-weight:800;">Apply to be a Store</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.5;">Get your own storefront on Everything Market. We review all applications manually.</p>
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Store Name *</label>
+      <input id="apply-store-name" class="em-input" placeholder="e.g. Cape Town Auto Parts" style="width:100%;margin-bottom:12px;" maxlength="60">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">What do you sell?</label>
+      <textarea id="apply-store-desc" class="em-input" placeholder="Short description of your business and products…" style="width:100%;height:72px;resize:none;margin-bottom:12px;" maxlength="300"></textarea>
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Store Type</label>
+      <select id="apply-store-type" class="em-input" style="width:100%;margin-bottom:20px;">
+        <option value="retail">Retail Shop</option>
+        <option value="dealership">Vehicle Dealership</option>
+        <option value="services">Services / Contractor</option>
+        <option value="wholesale">Wholesale / Distributor</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn-primary" style="width:100%;" onclick="submitStoreApplication()">Submit Application</button>
+    </div>`;
+  _openModal(html);
+}
+
+async function submitStoreApplication() {
+  const name = document.getElementById('apply-store-name')?.value.trim();
+  const desc = document.getElementById('apply-store-desc')?.value.trim();
+  const type = document.getElementById('apply-store-type')?.value;
+  if (!name) { toast('Please enter a store name.'); return; }
+
+  const sess = _getSession();
+  if (!sess) return;
+
+  const btn = document.querySelector('.em-modal-box .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+
+  try {
+    const r = await fetch('/api/apply-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (_vfyJwt || (await _sb.auth.getSession()).data.session?.access_token) },
+      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type })
+    });
+    const json = await r.json();
+    if (!r.ok) { toast(json.error || 'Could not submit application'); if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; } return; }
+    /* Flag locally so we don't re-prompt */
+    await _sb.auth.updateUser({ data: { store_applied: true } });
+    closeModal();
+    toast('Application submitted! We\'ll review it and get back to you.');
+  } catch (e) {
+    toast('Network error. Please try again.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; }
+  }
 }
 
 /* ── Verification Centre state ── */
