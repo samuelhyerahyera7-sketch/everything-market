@@ -447,6 +447,14 @@ window.addEventListener('popstate', function() {
     return;
   }
 
+  /* Store dashboard */
+  const storeDash = document.getElementById('store-dashboard');
+  if (storeDash && storeDash.style.display !== 'none') {
+    storeDash.style.display = 'none';
+    _unlockScroll();
+    return;
+  }
+
   /* Shop page */
   const shopPage = document.getElementById('shop-page');
   if (shopPage && shopPage.style.display !== 'none') {
@@ -498,11 +506,11 @@ function _buildShopsGrid() {
     const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const card = document.createElement('div');
     card.className = 'shop-card';
-    card.onclick = () => openShopPage(s.storeName, s.userId, true, s.storeType);
+    card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
     card.innerHTML = `
       <div class="shop-card-avatar">${initials}</div>
       <div class="shop-card-name">${s.storeName} <span class="shop-vfy-dot" title="Approved Store">✓</span></div>
-      <div class="shop-card-count">${s.count} listing${s.count !== 1 ? 's' : ''}</div>
+      <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
     grid.appendChild(card);
   });
@@ -510,30 +518,73 @@ function _buildShopsGrid() {
 
 let _shopAllAds = [];
 
-function openShopPage(sellerName, userId, verified, sellerType) {
+async function openShopPage(sellerName, userId, storeId, verified, sellerType) {
   const page = document.getElementById('shop-page');
   if (!page) return;
 
+  /* Show page immediately with a loading state */
+  document.getElementById('shop-page-title').textContent = sellerName;
+  document.getElementById('shop-page-content').innerHTML =
+    '<div style="text-align:center;padding:60px 20px;color:var(--muted);">Loading store…</div>';
+  page.style.display = 'flex';
+  document.getElementById('shop-page-scroll').scrollTop = 0;
+  _lockScroll();
+  _navPush('shop');
+
+  /* Load products from store API if storeId provided, else fall back to LISTINGS */
+  if (storeId) {
+    try {
+      const [prodRes, catRes] = await Promise.all([
+        fetch('/api/store-products?store_id=' + storeId),
+        fetch('/api/store-categories?store_id=' + storeId)
+      ]);
+      _shopAllAds = prodRes.ok ? (await prodRes.json()).map(p => ({
+        id: p.id, title: p.title, desc: p.description, price: p.price,
+        neg: p.neg, cat: p.category_name || 'General', catId: p.category_id,
+        cond: p.condition, photos: p.photos || [], loc: p.loc,
+        seller: sellerName, userId, storeId, postedAt: new Date(p.created_at).getTime(),
+        stockQty: p.stock_qty
+      })) : [];
+      const cats = catRes.ok ? await catRes.json() : [];
+      _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, cats);
+      return;
+    } catch (_) {}
+  }
+
+  /* Fallback: filter from LISTINGS */
   _shopAllAds = LISTINGS.filter(l =>
     (userId && l.userId === userId) || (!userId && l.seller === sellerName)
   ).sort((a, b) => b.postedAt - a.postedAt);
+  _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, []);
+}
 
+function _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, ads, customCats) {
   const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const oldest   = _shopAllAds.length ? Math.min(..._shopAllAds.map(l => l.postedAt)) : Date.now();
+  const oldest   = ads.length ? Math.min(...ads.map(l => l.postedAt || Date.now())) : Date.now();
   const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
 
-  /* Build category list from this seller's listings */
-  const catCounts = {};
-  _shopAllAds.forEach(l => { catCounts[l.cat] = (catCounts[l.cat] || 0) + 1; });
-  const sellerCats = Object.keys(catCounts).sort();
+  /* Build category tabs — prefer custom categories from API, fall back to auto-detect */
+  let tabs = [];
+  if (customCats.length) {
+    const catCounts = {};
+    ads.forEach(l => { if (l.catId) catCounts[l.catId] = (catCounts[l.catId] || 0) + 1; });
+    tabs = customCats.map(c => ({ id: c.id, name: c.name, count: catCounts[c.id] || 0 }))
+      .filter(t => t.count > 0);
+  } else {
+    const catCounts = {};
+    ads.forEach(l => { catCounts[l.cat] = (catCounts[l.cat] || 0) + 1; });
+    const catLabel = id => { const f = CATS.find(c => c.id === id); return f ? f.name : id.charAt(0).toUpperCase() + id.slice(1); };
+    tabs = Object.keys(catCounts).sort().map(c => ({ id: c, name: catLabel(c), count: catCounts[c] }));
+  }
 
-  const catLabel = id => {
-    const found = CATS.find(c => c.id === id);
-    return found ? found.name : id.charAt(0).toUpperCase() + id.slice(1);
-  };
+  const typeLabel = sellerType === 'dealership' ? 'Dealership'
+    : sellerType === 'services' ? 'Services'
+    : sellerType === 'wholesale' ? 'Wholesale'
+    : sellerType === 'retail' ? 'Retail Store'
+    : sellerType === 'dealer' ? 'Dealership'
+    : 'Store';
 
   document.getElementById('shop-page-title').textContent = sellerName;
-
   const content = document.getElementById('shop-page-content');
   content.innerHTML = `
     <div class="shop-hdr-banner">
@@ -541,38 +592,33 @@ function openShopPage(sellerName, userId, verified, sellerType) {
       <div class="shop-hdr-info">
         <div class="shop-hdr-name">${sellerName}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-          ${sellerType === 'dealer' ? '<span class="stype-badge stype-dealer">Dealership</span>' : '<span class="stype-badge stype-private">Private Seller</span>'}
-          ${verified ? '<span class="vfy-badge vfy-yes">✓ Verified</span>' : ''}
+          <span class="vfy-badge vfy-yes" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);">✓ Approved Store</span>
+          <span style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${typeLabel}</span>
         </div>
         <div class="shop-hdr-stats">
-          <span>${_shopAllAds.length} listing${_shopAllAds.length !== 1 ? 's' : ''}</span>
+          <span>${ads.length} product${ads.length !== 1 ? 's' : ''}</span>
           <span>·</span>
-          <span>${sellerCats.length} categor${sellerCats.length !== 1 ? 'ies' : 'y'}</span>
+          <span>${tabs.length} categor${tabs.length !== 1 ? 'ies' : 'y'}</span>
           <span>·</span>
           <span>Since ${since}</span>
         </div>
       </div>
     </div>
     <div class="shop-cat-tabs" id="shop-cat-tabs">
-      <button class="shop-tab active" data-cat="all" onclick="filterShopCat('all',this)">All <span class="shop-tab-count">${_shopAllAds.length}</span></button>
-      ${sellerCats.map(c => `<button class="shop-tab" data-cat="${c}" onclick="filterShopCat('${c}',this)">${catLabel(c)} <span class="shop-tab-count">${catCounts[c]}</span></button>`).join('')}
+      <button class="shop-tab active" data-cat="all" onclick="filterShopCat('all',this)">All <span class="shop-tab-count">${ads.length}</span></button>
+      ${tabs.map(t => `<button class="shop-tab" data-cat="${t.id}" onclick="filterShopCat('${t.id}',this)">${t.name} <span class="shop-tab-count">${t.count}</span></button>`).join('')}
     </div>
     <div class="shop-main wrap">
       <div class="shop-ec-grid" id="shop-ec-grid"></div>
     </div>`;
 
-  _renderShopGrid(_shopAllAds);
-
-  page.style.display = 'flex';
-  document.getElementById('shop-page-scroll').scrollTop = 0;
-  _lockScroll();
-  _navPush('shop');
+  _renderShopGrid(ads);
 }
 
 function filterShopCat(cat, btn) {
   document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const filtered = cat === 'all' ? _shopAllAds : _shopAllAds.filter(l => l.cat === cat);
+  const filtered = cat === 'all' ? _shopAllAds : _shopAllAds.filter(l => l.catId === cat || l.cat === cat);
   _renderShopGrid(filtered);
   document.getElementById('shop-page-scroll').scrollTop = 0;
 }
@@ -2361,9 +2407,13 @@ function openMobileUserMenu() {
         Messages <span id="menu-msg-badge" style="display:none;background:#e53e3e;color:#fff;border-radius:9px;font-size:11px;padding:1px 6px;margin-left:4px;vertical-align:middle">New</span>
       </button>
       ${_sbUser?.user_metadata?.store_approved ? `
+      <button class="em-menu-item" onclick="closeModal();setTimeout(openStoreDashboard,250)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Store Dashboard
+      </button>
       <button class="em-menu-item" onclick="closeModal();setTimeout(openMyStore,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        My Store
+        View My Store
       </button>` : `
       <button class="em-menu-item" onclick="closeModal();setTimeout(openApplyStoreModal,250)">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -2389,7 +2439,8 @@ function openMyStore() {
     return;
   }
   const storeName = _sbUser.user_metadata.store_name || sess.name || sess.email;
-  openShopPage(storeName, sess.userId, true, _sbUser.user_metadata.store_type || 'retail');
+  const storeId   = _sbUser.user_metadata.store_id || null;
+  openShopPage(storeName, sess.userId, storeId, true, _sbUser.user_metadata.store_type || 'retail');
 }
 
 function openApplyStoreModal() {
@@ -2449,6 +2500,369 @@ async function submitStoreApplication() {
     toast('Network error. Please try again.');
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; }
   }
+}
+
+/* ── Store Dashboard ── */
+let _dashStoreId   = null;
+let _dashStoreName = null;
+let _dashProducts  = [];
+let _dashCats      = [];
+
+async function openStoreDashboard() {
+  const sess = _getSession();
+  if (!sess) { openSignInModal(); return; }
+  if (!_sbUser?.user_metadata?.store_approved) {
+    toast('Your store has not been approved yet.');
+    return;
+  }
+
+  _dashStoreId   = _sbUser.user_metadata.store_id || null;
+  _dashStoreName = _sbUser.user_metadata.store_name || sess.name || sess.email;
+
+  const el = document.getElementById('store-dashboard');
+  const titleEl = document.getElementById('store-dash-title');
+  if (!el) return;
+  if (titleEl) titleEl.textContent = _dashStoreName;
+
+  /* Reset tabs to Products */
+  document.querySelectorAll('.store-dash-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === 'products');
+  });
+
+  el.style.display = 'flex';
+  _lockScroll();
+  _navPush('store-dash');
+  _renderProductsTab();
+}
+
+function closeStoreDashboard() {
+  const el = document.getElementById('store-dashboard');
+  if (el) el.style.display = 'none';
+  _unlockScroll();
+  _navBack();
+}
+
+function switchDashTab(tab, btn) {
+  document.querySelectorAll('.store-dash-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('store-dash-scroll').scrollTop = 0;
+  if (tab === 'products')      _renderProductsTab();
+  else if (tab === 'categories') _renderCategoriesTab();
+  else if (tab === 'settings')   _renderSettingsTab();
+  else if (tab === 'subscription') _renderSubscriptionTab();
+}
+
+async function _renderProductsTab() {
+  const content = document.getElementById('store-dash-content');
+  content.innerHTML = '<div class="dash-loading">Loading products…</div>';
+
+  try {
+    const r = await fetch('/api/store-products?store_id=' + encodeURIComponent(_dashStoreId));
+    _dashProducts = r.ok ? await r.json() : [];
+  } catch (_) { _dashProducts = []; }
+
+  const catR = await fetch('/api/store-categories?store_id=' + encodeURIComponent(_dashStoreId)).catch(() => null);
+  _dashCats = catR?.ok ? await catR.json() : [];
+
+  const catMap = {};
+  _dashCats.forEach(c => { catMap[c.id] = c.name; });
+
+  content.innerHTML = `
+    <div class="dash-section-hdr">
+      <h3 class="dash-section-title">Products <span class="dash-count">${_dashProducts.length}</span></h3>
+      <button class="dash-add-btn" onclick="openAddProductModal()">+ Add Product</button>
+    </div>
+    ${_dashProducts.length === 0 ? `<div class="dash-empty">No products yet. Add your first product above.</div>` : ''}
+    <div class="dash-product-list" id="dash-product-list">
+      ${_dashProducts.map(p => `
+        <div class="dash-product-row" id="dashp-${p.id}">
+          <div class="dash-product-thumb" id="dashpt-${p.id}"></div>
+          <div class="dash-product-info">
+            <div class="dash-product-title">${p.title}</div>
+            <div class="dash-product-meta">
+              ${p.category_name ? `<span>${p.category_name}</span> · ` : ''}
+              <span>R ${Number(p.price).toLocaleString('en-ZA')}</span>
+              ${p.stock_qty != null ? ` · <span>Stock: ${p.stock_qty}</span>` : ''}
+            </div>
+          </div>
+          <div class="dash-product-actions">
+            <button class="dash-btn-edit" onclick="openEditProductModal('${p.id}')">Edit</button>
+            <button class="dash-btn-del" onclick="deleteStoreProduct('${p.id}')">Del</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+
+  /* Lazy-load thumbnails */
+  _dashProducts.forEach(p => {
+    const el = document.getElementById('dashpt-' + p.id);
+    if (!el) return;
+    const photos = Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : []);
+    if (photos[0]) {
+      el.style.backgroundImage = `url(${photos[0]})`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+    }
+  });
+}
+
+async function _renderCategoriesTab() {
+  const content = document.getElementById('store-dash-content');
+  content.innerHTML = '<div class="dash-loading">Loading categories…</div>';
+
+  try {
+    const r = await fetch('/api/store-categories?store_id=' + encodeURIComponent(_dashStoreId));
+    _dashCats = r.ok ? await r.json() : [];
+  } catch (_) { _dashCats = []; }
+
+  content.innerHTML = `
+    <div class="dash-section-hdr">
+      <h3 class="dash-section-title">Categories <span class="dash-count">${_dashCats.length}</span></h3>
+    </div>
+    <div class="dash-add-cat-row">
+      <input id="new-cat-name" class="em-input" placeholder="New category name…" maxlength="50" style="flex:1;">
+      <button class="dash-add-btn" onclick="addStoreCategory()">Add</button>
+    </div>
+    ${_dashCats.length === 0 ? `<div class="dash-empty">No categories yet. Add one above.</div>` : ''}
+    <div id="dash-cat-list">
+      ${_dashCats.map((c, i) => `
+        <div class="dash-cat-row" id="dashc-${c.id}">
+          <span class="dash-cat-order">${i + 1}</span>
+          <span class="dash-cat-name">${c.name}</span>
+          <button class="dash-btn-del" onclick="deleteStoreCategory('${c.id}','${c.name}')">Remove</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+function _renderSettingsTab() {
+  const meta = _sbUser?.user_metadata || {};
+  const content = document.getElementById('store-dash-content');
+  content.innerHTML = `
+    <div class="dash-section-hdr">
+      <h3 class="dash-section-title">Store Settings</h3>
+    </div>
+    <div class="dash-settings-card">
+      <div class="dash-field">
+        <label class="dash-label">Store Name</label>
+        <div class="dash-value">${meta.store_name || '—'}</div>
+      </div>
+      <div class="dash-field">
+        <label class="dash-label">Store Type</label>
+        <div class="dash-value">${(meta.store_type || 'retail').charAt(0).toUpperCase() + (meta.store_type || 'retail').slice(1)}</div>
+      </div>
+      <div class="dash-field">
+        <label class="dash-label">Store ID</label>
+        <div class="dash-value" style="font-family:monospace;font-size:11px;">${_dashStoreId || '—'}</div>
+      </div>
+      <div class="dash-field">
+        <label class="dash-label">Status</label>
+        <div class="dash-value"><span style="color:var(--leaf);font-weight:700;">✓ Approved</span></div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <button class="dash-add-btn" onclick="openMyStore()">Preview Your Store →</button>
+    </div>`;
+}
+
+async function _renderSubscriptionTab() {
+  const content = document.getElementById('store-dash-content');
+  content.innerHTML = '<div class="dash-loading">Loading subscription…</div>';
+
+  let sub = null;
+  try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token;
+    const r = await fetch('/api/store-products?store_id=' + encodeURIComponent(_dashStoreId) + '&meta=subscription', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    /* We don't have a dedicated sub endpoint — just show static info for now */
+  } catch (_) {}
+
+  const paidUntil = _sbUser?.user_metadata?.store_subscription_until
+    ? new Date(_sbUser.user_metadata.store_subscription_until).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
+  content.innerHTML = `
+    <div class="dash-section-hdr">
+      <h3 class="dash-section-title">Subscription</h3>
+    </div>
+    <div class="dash-sub-card">
+      <div class="dash-sub-plan">Basic Store Plan</div>
+      <div class="dash-sub-price">R 299 <span>/month</span></div>
+      <ul class="dash-sub-features">
+        <li>✓ Unlimited products</li>
+        <li>✓ Custom categories</li>
+        <li>✓ Full storefront page</li>
+        <li>✓ Listed in Shops section</li>
+        <li>✓ Customer messaging</li>
+      </ul>
+      ${paidUntil ? `<div class="dash-sub-until">Active until <strong>${paidUntil}</strong></div>` : ''}
+      <button class="dash-add-btn" style="width:100%;margin-top:16px;" onclick="toast('Payment coming soon — contact us to renew.')">Renew / Pay</button>
+    </div>
+    <p class="dash-sub-note">To pay or renew your subscription, please contact us at <a href="mailto:stores@everythingmarket.co.za" style="color:var(--leaf);">stores@everythingmarket.co.za</a></p>`;
+}
+
+function openAddProductModal(editProduct) {
+  const isEdit = !!editProduct;
+  const p = editProduct || {};
+  const catOptions = _dashCats.map(c =>
+    `<option value="${c.id}" data-name="${c.name}" ${p.category_id === c.id ? 'selected' : ''}>${c.name}</option>`
+  ).join('');
+
+  const existingPhotos = Array.isArray(p.photos) ? p.photos
+    : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : []);
+
+  const html = `
+    <div class="em-modal-bar">
+      <h3>${isEdit ? 'Edit Product' : 'Add Product'}</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="info-modal-body">
+      <div class="em-post-field">
+        <label class="em-post-label">Title *</label>
+        <input id="sp-title" class="em-post-input" placeholder="Product name" maxlength="120" value="${p.title || ''}">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label">Description</label>
+        <textarea id="sp-desc" class="em-post-input" rows="3" style="resize:vertical;" maxlength="1000" placeholder="Describe your product…">${p.description || ''}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="em-post-field">
+          <label class="em-post-label">Price (R) *</label>
+          <input id="sp-price" class="em-post-input" type="number" min="0" step="0.01" placeholder="0.00" value="${p.price || ''}">
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label">Stock Qty</label>
+          <input id="sp-stock" class="em-post-input" type="number" min="0" placeholder="Leave blank = unlimited" value="${p.stock_qty != null ? p.stock_qty : ''}">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="em-post-field">
+          <label class="em-post-label">Category</label>
+          <select id="sp-cat" class="em-post-input">
+            <option value="">— No category —</option>
+            ${catOptions}
+          </select>
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label">Condition</label>
+          <select id="sp-cond" class="em-post-input">
+            <option value="New" ${(p.condition||'New')==='New'?'selected':''}>New</option>
+            <option value="Like New" ${p.condition==='Like New'?'selected':''}>Like New</option>
+            <option value="Good" ${p.condition==='Good'?'selected':''}>Good</option>
+            <option value="Used" ${p.condition==='Used'?'selected':''}>Used</option>
+            <option value="N/A" ${p.condition==='N/A'?'selected':''}>N/A</option>
+          </select>
+        </div>
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label">Location</label>
+        <input id="sp-loc" class="em-post-input" placeholder="e.g. Cape Town" value="${p.loc || ''}">
+      </div>
+      <div class="em-post-field">
+        <label class="em-post-label">Photo URLs (one per line)</label>
+        <textarea id="sp-photos" class="em-post-input" rows="3" style="resize:vertical;font-size:11px;font-family:monospace;" placeholder="https://…">${existingPhotos.join('\n')}</textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Paste image URLs (Unsplash, Imgur, etc.) one per line.</div>
+      </div>
+      <div id="sp-err" class="em-post-error" style="display:none;"></div>
+      <button class="em-post-submit" onclick="submitStoreProduct(${isEdit ? `'${p.id}'` : 'null'})">${isEdit ? 'Save Changes' : 'Add Product'}</button>
+    </div>`;
+  _openModal(html);
+}
+
+function openEditProductModal(productId) {
+  const p = _dashProducts.find(x => String(x.id) === String(productId));
+  if (!p) { toast('Product not found.'); return; }
+  openAddProductModal(p);
+}
+
+async function submitStoreProduct(editId) {
+  const title  = (document.getElementById('sp-title')?.value || '').trim();
+  const desc   = (document.getElementById('sp-desc')?.value || '').trim();
+  const price  = parseFloat(document.getElementById('sp-price')?.value || '0');
+  const stock  = document.getElementById('sp-stock')?.value;
+  const catEl  = document.getElementById('sp-cat');
+  const catId  = catEl?.value || null;
+  const catName = catEl?.options[catEl.selectedIndex]?.dataset.name || catEl?.options[catEl.selectedIndex]?.text || '';
+  const cond   = document.getElementById('sp-cond')?.value || 'New';
+  const loc    = (document.getElementById('sp-loc')?.value || '').trim();
+  const photosTxt = (document.getElementById('sp-photos')?.value || '').trim();
+  const photos = photosTxt ? photosTxt.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+  const errEl = document.getElementById('sp-err');
+  if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = ''; return; }
+  if (isNaN(price) || price < 0) { errEl.textContent = 'Please enter a valid price.'; errEl.style.display = ''; return; }
+
+  const token = (await _sb.auth.getSession()).data.session?.access_token;
+  const body = {
+    store_id: _dashStoreId, title, description: desc, price,
+    category_id: catId || undefined, category_name: catName || undefined,
+    condition: cond, photos, loc,
+    stock_qty: stock !== '' && stock != null ? parseInt(stock) : null
+  };
+
+  const btn = document.querySelector('.em-modal-box .em-post-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  try {
+    const method = editId ? 'PATCH' : 'POST';
+    const payload = editId ? { id: editId, ...body } : body;
+    const r = await fetch('/api/store-products', {
+      method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+    const json = await r.json();
+    if (!r.ok) { errEl.textContent = json.error || 'Failed to save product.'; errEl.style.display = ''; if (btn) { btn.disabled = false; btn.textContent = editId ? 'Save Changes' : 'Add Product'; } return; }
+    closeModal();
+    toast(editId ? 'Product updated.' : 'Product added!');
+    _renderProductsTab();
+  } catch (e) {
+    errEl.textContent = 'Network error. Please try again.';
+    errEl.style.display = '';
+    if (btn) { btn.disabled = false; btn.textContent = editId ? 'Save Changes' : 'Add Product'; }
+  }
+}
+
+async function deleteStoreProduct(productId) {
+  if (!confirm('Delete this product?')) return;
+  const token = (await _sb.auth.getSession()).data.session?.access_token;
+  try {
+    await fetch('/api/store-products', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ id: productId })
+    });
+    toast('Product deleted.');
+    _renderProductsTab();
+  } catch (e) { toast('Could not delete product.'); }
+}
+
+async function addStoreCategory() {
+  const name = (document.getElementById('new-cat-name')?.value || '').trim();
+  if (!name) { toast('Please enter a category name.'); return; }
+  const token = (await _sb.auth.getSession()).data.session?.access_token;
+  try {
+    const r = await fetch('/api/store-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ store_id: _dashStoreId, name })
+    });
+    if (!r.ok) { const j = await r.json(); toast(j.error || 'Failed to add category.'); return; }
+    toast('Category added!');
+    _renderCategoriesTab();
+  } catch (e) { toast('Network error.'); }
+}
+
+async function deleteStoreCategory(catId, catName) {
+  if (!confirm(`Remove category "${catName}"? Products in this category will not be deleted.`)) return;
+  const token = (await _sb.auth.getSession()).data.session?.access_token;
+  try {
+    await fetch('/api/store-categories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ id: catId })
+    });
+    toast('Category removed.');
+    _renderCategoriesTab();
+  } catch (e) { toast('Could not remove category.'); }
 }
 
 /* ── Verification Centre state ── */

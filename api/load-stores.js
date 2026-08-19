@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   /* Fetch approved store applications */
   const { data: stores, error } = await sb
     .from('store_applications')
-    .select('user_id, store_name, store_description, store_type, approved_at')
+    .select('id, user_id, store_name, store_description, store_type, approved_at')
     .eq('status', 'approved')
     .order('approved_at', { ascending: false });
 
@@ -42,6 +42,7 @@ export default async function handler(req, res) {
   });
 
   return res.json(stores.map(s => ({
+    storeId:     s.id,
     userId:      s.user_id,
     storeName:   s.store_name,
     description: s.store_description || '',
