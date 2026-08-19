@@ -1,44 +1,44 @@
-/* GET /api/load-stores — returns approved stores with listing counts */
-import { createClient } from '@supabase/supabase-js';
+/* GET /api/load-stores — returns approved stores with product counts */
+const https = require('https');
 
-const _sb = () => createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const SB_HOST = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co')
+  .replace('https://', '').replace(/\/$/, '');
+const SVC  = process.env.SUPABASE_SERVICE_KEY;
+const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
+const KEY  = SVC || ANON;
 
-export default async function handler(req, res) {
+function sb(path) {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: SB_HOST, path, method: 'GET',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }
+    }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
-
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 
-  const sb = _sb();
+  /* Approved stores */
+  const storesRaw = await sb('/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at').catch(() => '[]');
+  const stores = JSON.parse(storesRaw || '[]');
+  if (!stores.length) return res.json([]);
 
-  /* Fetch approved store applications */
-  const { data: stores, error } = await sb
-    .from('store_applications')
-    .select('id, user_id, store_name, store_description, store_type, approved_at')
-    .eq('status', 'approved')
-    .order('approved_at', { ascending: false });
+  const storeIds = stores.map(s => 'store_id=eq.' + s.id).join(',');
 
-  if (error) {
-    console.error('[load-stores]', error);
-    return res.status(500).json({ error: 'Failed to load stores' });
-  }
-
-  if (!stores || !stores.length) return res.json([]);
-
-  /* Get listing counts per user */
-  const userIds = stores.map(s => s.user_id);
-  const { data: ads } = await sb
-    .from('ads')
-    .select('user_id, loc')
-    .in('user_id', userIds);
+  /* Product counts from store_products (not ads) */
+  const prodsRaw = await sb(`/rest/v1/store_products?available=eq.true&or=(${storeIds})&select=store_id,loc`).catch(() => '[]');
+  const prods = JSON.parse(prodsRaw || '[]');
 
   const countMap = {};
   const locMap   = {};
-  (ads || []).forEach(a => {
-    countMap[a.user_id] = (countMap[a.user_id] || 0) + 1;
-    if (a.loc && !locMap[a.user_id]) locMap[a.user_id] = a.loc;
+  prods.forEach(p => {
+    countMap[p.store_id] = (countMap[p.store_id] || 0) + 1;
+    if (p.loc && !locMap[p.store_id]) locMap[p.store_id] = p.loc;
   });
 
   return res.json(stores.map(s => ({
@@ -47,8 +47,8 @@ export default async function handler(req, res) {
     storeName:   s.store_name,
     description: s.store_description || '',
     storeType:   s.store_type || 'retail',
-    count:       countMap[s.user_id] || 0,
-    loc:         locMap[s.user_id]   || '',
+    count:       countMap[s.id] || 0,
+    loc:         locMap[s.id]   || '',
     approvedAt:  s.approved_at
   })));
-}
+};
