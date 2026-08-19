@@ -3453,17 +3453,24 @@ window._startSponsorPayment = _startSponsorPayment;
 window.openSponsorModal = openSponsorModal;
 
 window._deleteMyAd = async function(id) {
-  /* Remove from local state immediately */
+  if (!confirm('Delete this listing? This cannot be undone.')) return;
+
+  /* Remove from local state immediately for instant feedback */
   const idx = LISTINGS.findIndex(l => String(l.id) === String(id));
   if (idx !== -1) LISTINGS.splice(idx, 1);
   _saveUserAds();
   renderAll('all');
   openMyAds();
-  /* Delete from Supabase so it doesn't come back on refresh */
+
+  /* Delete from Supabase — pass user's auth token so the server can verify ownership */
   try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token;
     await fetch('/api/delete-ad', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {})
+      },
       body: JSON.stringify({ id })
     });
   } catch (_) {}
