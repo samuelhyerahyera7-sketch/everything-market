@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 64">
-  <rect width="200" height="64" rx="10" fill="#0A3D22"/>
-  <text x="100" y="26" font-family="Arial Black, Arial, sans-serif" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-0.5">Everything</text>
-  <text x="100" y="50" font-family="Arial Black, Arial, sans-serif" font-size="20" font-weight="900" fill="#E09A12" text-anchor="middle" letter-spacing="-0.5">Market</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80">
+  <rect width="240" height="80" rx="10" fill="#0A3D22"/>
+  <text x="120" y="34" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Everything</text>
+  <text x="120" y="64" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#E09A12" text-anchor="middle" letter-spacing="-1">Market</text>
 </svg>
