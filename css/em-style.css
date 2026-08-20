@@ -1506,3 +1506,20 @@ svg { display: block; }
   cursor: pointer;
   padding: 4px;
 }
+
+/* Manage Store button on own store card */
+.shop-card-manage-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 0;
+  background: var(--forest);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: .02em;
+}
+.shop-card-manage-btn:active { background: var(--mid); }

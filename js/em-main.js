@@ -518,6 +518,7 @@ function _buildShopsGrid() {
       ? `<img src="${s.logoUrl}" class="shop-card-logo" alt="${s.storeName}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         + `<div class="shop-card-avatar" style="display:none">${initials}</div>`
       : `<div class="shop-card-avatar">${initials}</div>`;
+    const isOwner = _sbUser?.user_metadata?.store_id === s.storeId;
     const card = document.createElement('div');
     card.className = 'shop-card';
     card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
@@ -525,7 +526,8 @@ function _buildShopsGrid() {
       ${avatarHtml}
       <div class="shop-card-name">${s.storeName} <span class="shop-vfy-text">Verified</span></div>
       <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
-      ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
+      ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}
+      ${isOwner ? `<button class="shop-card-manage-btn" onclick="event.stopPropagation();openStoreDashboard()">Manage Store</button>` : ''}`;
     grid.appendChild(card);
   });
 }
@@ -721,7 +723,8 @@ function openStoreCart(storeId, storeName) {
       <a href="https://wa.me/?text=${waMsg}" target="_blank" style="display:block;width:100%;padding:13px;background:#25D366;color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:8px;">📲 Send Order via WhatsApp</a>
       <button onclick="_clearCart()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border);color:var(--muted);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Clear Cart</button>`}
     </div>`;
-  _openModal(html);
+  modalBox.innerHTML = html;
+  _openModal();
 }
 
 function _cartQty(itemId, delta) {
@@ -2587,7 +2590,8 @@ function openApplyStoreModal() {
       </select>
       <button class="btn-primary" style="width:100%;" onclick="submitStoreApplication()">Submit Application</button>
     </div>`;
-  _openModal(html);
+  modalBox.innerHTML = html;
+  _openModal();
 }
 
 async function submitStoreApplication() {
