@@ -501,6 +501,17 @@ function _buildShopsGrid() {
   }
 
   grid.innerHTML = '';
+
+  /* "Add Your Store" card — always first */
+  const addCard = document.createElement('div');
+  addCard.className = 'shop-card shop-card-add';
+  addCard.onclick = openApplyStoreModal;
+  addCard.innerHTML = `
+    <div class="shop-card-add-icon">+</div>
+    <div class="shop-card-name">Add Your Store</div>
+    <div class="shop-card-count">Open your shop</div>`;
+  grid.appendChild(addCard);
+
   _approvedStores.forEach(s => {
     const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const avatarHtml = s.logoUrl
