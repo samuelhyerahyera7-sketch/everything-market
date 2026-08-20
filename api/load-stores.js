@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 
   /* Approved stores */
-  const storesRaw = await sb('/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at').catch(() => '[]');
+  const storesRaw = await sb('/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at,logo_url').catch(() => '[]');
   const stores = JSON.parse(storesRaw || '[]');
   if (!stores.length) return res.json([]);
 
@@ -49,6 +49,7 @@ module.exports = async function handler(req, res) {
     storeType:   s.store_type || 'retail',
     count:       countMap[s.id] || 0,
     loc:         locMap[s.id]   || '',
-    approvedAt:  s.approved_at
+    approvedAt:  s.approved_at,
+    logoUrl:     s.logo_url     || null
   })));
 };

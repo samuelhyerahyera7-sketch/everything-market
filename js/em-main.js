@@ -504,11 +504,15 @@ function _buildShopsGrid() {
   grid.innerHTML = '';
   _approvedStores.forEach(s => {
     const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const avatarHtml = s.logoUrl
+      ? `<img src="${s.logoUrl}" class="shop-card-logo" alt="${s.storeName}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<div class="shop-card-avatar" style="display:none">${initials}</div>`
+      : `<div class="shop-card-avatar">${initials}</div>`;
     const card = document.createElement('div');
     card.className = 'shop-card';
     card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
     card.innerHTML = `
-      <div class="shop-card-avatar">${initials}</div>
+      ${avatarHtml}
       <div class="shop-card-name">${s.storeName} <span class="shop-vfy-dot" title="Approved Store">✓</span></div>
       <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
