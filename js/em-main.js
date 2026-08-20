@@ -523,7 +523,7 @@ function _buildShopsGrid() {
     card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
     card.innerHTML = `
       ${avatarHtml}
-      <div class="shop-card-name">${s.storeName} <span class="shop-vfy-dot" title="Approved Store">✓</span></div>
+      <div class="shop-card-name">${s.storeName} <span class="shop-vfy-text">Verified</span></div>
       <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
     grid.appendChild(card);
@@ -605,9 +605,13 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
       <div class="shop-hdr-avatar">${initials}</div>
       <div class="shop-hdr-info">
         <div class="shop-hdr-name">${sellerName}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-          <span class="vfy-badge vfy-yes" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);">✓ Approved Store</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+          <span class="vfy-badge vfy-yes" style="background:rgba(26,122,66,.35);color:#7EF0A8;border:1px solid rgba(126,240,168,.4);font-weight:700;">Verified</span>
           <span style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${typeLabel}</span>
+          <button id="shop-cart-btn" class="shop-cart-btn" onclick="openStoreCart('${storeId}','${sellerName.replace(/'/g,"\\'")}')" style="margin-left:auto;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/></svg>
+            <span id="shop-cart-badge" class="shop-cart-badge" style="display:none;">0</span>
+          </button>
         </div>
         <div class="shop-hdr-stats">
           <span>${ads.length} product${ads.length !== 1 ? 's' : ''}</span>
@@ -637,6 +641,106 @@ function filterShopCat(cat, btn) {
   document.getElementById('shop-page-scroll').scrollTop = 0;
 }
 
+/* ── Store Cart ── */
+const _cart = {};  // storeId → [{id, title, price, qty, photo}]
+let _cartStoreId = null, _cartStoreName = null;
+
+function _cartKey(storeId) { return 'em_cart_' + storeId; }
+
+function _loadCart(storeId) {
+  try { return JSON.parse(localStorage.getItem(_cartKey(storeId)) || '[]'); } catch { return []; }
+}
+
+function _saveCart(storeId, items) {
+  localStorage.setItem(_cartKey(storeId), JSON.stringify(items));
+}
+
+function _cartCount(storeId) {
+  return _loadCart(storeId).reduce((s, i) => s + i.qty, 0);
+}
+
+function _updateCartBadge(storeId) {
+  const badge = document.getElementById('shop-cart-badge');
+  const btn   = document.getElementById('shop-cart-btn');
+  if (!badge || !btn) return;
+  const n = _cartCount(storeId);
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'flex' : 'none';
+  btn.style.display = 'flex';
+}
+
+function addToCart(listing) {
+  const storeId = listing.storeId;
+  const items = _loadCart(storeId);
+  const existing = items.find(i => String(i.id) === String(listing.id));
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    items.push({ id: listing.id, title: listing.title, price: listing.price, qty: 1, photo: (listing.photos||[])[0]||'' });
+  }
+  _saveCart(storeId, items);
+  _updateCartBadge(storeId);
+  toast(`${listing.title} added to cart`);
+  openStoreCart(storeId, listing.seller || _cartStoreName);
+}
+
+function openStoreCart(storeId, storeName) {
+  _cartStoreId = storeId;
+  _cartStoreName = storeName;
+  const items = _loadCart(storeId);
+  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const waMsg = encodeURIComponent(
+    `Hi! I'd like to order from ${storeName}:\n` +
+    items.map(i => `• ${i.title} x${i.qty} — R${(i.price*i.qty).toLocaleString('en-ZA')}`).join('\n') +
+    `\n\nTotal: R${total.toLocaleString('en-ZA')}`
+  );
+
+  const html = `
+    <div style="padding:4px 0 8px;">
+      <h3 style="margin:0 0 14px;font-size:17px;font-weight:800;">Your Cart — ${storeName}</h3>
+      ${items.length === 0 ? `<p style="color:var(--muted);text-align:center;padding:20px 0;">Your cart is empty.</p>` : `
+      <div id="cart-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        ${items.map(i => `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surf2);border-radius:10px;">
+            ${i.photo ? `<img src="${i.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;line-height:1.3;">${i.title}</div>
+              <div style="font-size:12px;color:var(--forest);font-weight:800;margin-top:2px;">R${(i.price*i.qty).toLocaleString('en-ZA')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button onclick="_cartQty('${i.id}',-1)" style="width:26px;height:26px;border-radius:50%;background:var(--surf3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+              <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;">${i.qty}</span>
+              <button onclick="_cartQty('${i.id}',1)" style="width:26px;height:26px;border-radius:50%;background:var(--surf3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border-lt);margin-bottom:14px;">
+        <span style="font-size:14px;font-weight:700;">Total</span>
+        <span style="font-size:18px;font-weight:900;color:var(--forest);">R${total.toLocaleString('en-ZA')}</span>
+      </div>
+      <a href="https://wa.me/?text=${waMsg}" target="_blank" style="display:block;width:100%;padding:13px;background:#25D366;color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:8px;">📲 Send Order via WhatsApp</a>
+      <button onclick="_clearCart()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border);color:var(--muted);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Clear Cart</button>`}
+    </div>`;
+  _openModal(html);
+}
+
+function _cartQty(itemId, delta) {
+  const items = _loadCart(_cartStoreId);
+  const idx = items.findIndex(i => String(i.id) === String(itemId));
+  if (idx === -1) return;
+  items[idx].qty = Math.max(0, items[idx].qty + delta);
+  if (items[idx].qty === 0) items.splice(idx, 1);
+  _saveCart(_cartStoreId, items);
+  _updateCartBadge(_cartStoreId);
+  openStoreCart(_cartStoreId, _cartStoreName);
+}
+
+function _clearCart() {
+  _saveCart(_cartStoreId, []);
+  _updateCartBadge(_cartStoreId);
+  closeModal();
+}
+
 function _renderShopGrid(ads) {
   const grid = document.getElementById('shop-ec-grid');
   if (!grid) return;
@@ -660,7 +764,7 @@ function _renderShopGrid(ads) {
         <div class="shop-ec-price">${fmtPrice(l, true)}</div>
         <div class="shop-ec-loc">${ICO.pin} ${_fmtLoc(l.loc)}</div>
         <div class="shop-ec-actions">
-          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">View Item</button>
+          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();addToCart(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">Buy Item</button>
           ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
