@@ -650,8 +650,8 @@ function _renderShopGrid(ads) {
         <div class="shop-ec-price">${fmtPrice(l, true)}</div>
         <div class="shop-ec-loc">${ICO.pin} ${_fmtLoc(l.loc)}</div>
         <div class="shop-ec-actions">
-          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">View Item</button>
-          ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">View Item</button>
+          ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
     grid.appendChild(card);
