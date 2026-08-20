@@ -146,6 +146,7 @@ svg { display: block; }
 .shop-card { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 12px 6px; background: var(--surf); border: 1.5px solid var(--border-lt); border-radius: 14px; cursor: pointer; text-align: center; transition: box-shadow .15s, transform .15s; min-width: 0; }
 .shop-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.12); transform: translateY(-2px); }
 .shop-card-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--forest); color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.shop-card-logo { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-lt); flex-shrink: 0; background: var(--surf3); }
 .shop-card-name { font-size: 12px; font-weight: 700; color: var(--ink); line-height: 1.3; word-break: break-word; }
 .shop-card-count { font-size: 10.5px; color: var(--muted); }
 .shop-card-loc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -181,7 +182,7 @@ svg { display: block; }
 /* E-commerce product card */
 .shop-ec-card { position: relative; background: var(--surf); border: 1.5px solid var(--border-lt); border-radius: 14px; overflow: hidden; cursor: pointer; transition: box-shadow .15s, transform .15s; display: flex; flex-direction: column; }
 .shop-ec-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.11); transform: translateY(-2px); }
-.shop-ec-img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: var(--surf2); flex-shrink: 0; }
+.shop-ec-img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surf2); flex-shrink: 0; }
 .shop-ec-body { padding: 10px 12px 14px; display: flex; flex-direction: column; flex: 1; }
 .shop-ec-cat { font-size: 10px; font-weight: 700; color: var(--forest); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
 .shop-ec-title { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.35; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -189,7 +190,7 @@ svg { display: block; }
 .shop-ec-price { font-size: 16px; font-weight: 800; color: var(--forest); margin-bottom: 4px; }
 .shop-ec-loc { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 3px; margin-bottom: 10px; }
 .shop-ec-loc svg { flex-shrink: 0; }
-.shop-ec-actions { display: flex; gap: 6px; margin-top: auto; }
+.shop-ec-actions { display: flex; gap: 6px; margin-top: 8px; }
 .shop-ec-btn-primary { flex: 1; padding: 8px 4px; background: var(--forest); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
 .shop-ec-btn-primary:hover { opacity: .88; }
 .shop-ec-btn-secondary { padding: 8px 10px; background: none; color: var(--forest); border: 1.5px solid var(--forest); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s; }

@@ -33,12 +33,11 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
   try {
-    /* Fetch approved stores */
+    /* Fetch approved stores including logo_url */
     const storesResp = await sbGet(
-      '/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at'
+      '/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at,logo_url'
     );
 
-    /* If Supabase returned a non-200, surface the error for debugging */
     if (storesResp.status !== 200) {
       console.error('[load-stores] store_applications query failed:', storesResp.status, storesResp.body);
       return res.status(200).json([]);
@@ -74,7 +73,8 @@ module.exports = async function handler(req, res) {
       storeType:   s.store_type || 'retail',
       count:       countMap[s.id] || 0,
       loc:         locMap[s.id]   || '',
-      approvedAt:  s.approved_at
+      approvedAt:  s.approved_at,
+      logoUrl:     s.logo_url     || null
     })));
   } catch (e) {
     console.error('[load-stores] error:', e);

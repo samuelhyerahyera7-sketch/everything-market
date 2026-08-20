@@ -503,11 +503,15 @@ function _buildShopsGrid() {
   grid.innerHTML = '';
   _approvedStores.forEach(s => {
     const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const avatarHtml = s.logoUrl
+      ? `<img src="${s.logoUrl}" class="shop-card-logo" alt="${s.storeName}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<div class="shop-card-avatar" style="display:none">${initials}</div>`
+      : `<div class="shop-card-avatar">${initials}</div>`;
     const card = document.createElement('div');
     card.className = 'shop-card';
     card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
     card.innerHTML = `
-      <div class="shop-card-avatar">${initials}</div>
+      ${avatarHtml}
       <div class="shop-card-name">${s.storeName} <span class="shop-vfy-dot" title="Approved Store">✓</span></div>
       <div class="shop-card-count">${s.count} product${s.count !== 1 ? 's' : ''}</div>
       ${s.loc ? `<div class="shop-card-loc">${_fmtLoc(s.loc)}</div>` : ''}`;
@@ -645,8 +649,8 @@ function _renderShopGrid(ads) {
         <div class="shop-ec-price">${fmtPrice(l, true)}</div>
         <div class="shop-ec-loc">${ICO.pin} ${_fmtLoc(l.loc)}</div>
         <div class="shop-ec-actions">
-          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">View Item</button>
-          ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+          <button class="shop-ec-btn-primary" onclick="event.stopPropagation();openBuyNow(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">View Item</button>
+          ${l.neg ? `<button class="shop-ec-btn-secondary" onclick="event.stopPropagation();openMakeOffer(_shopAllAds.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
     grid.appendChild(card);
