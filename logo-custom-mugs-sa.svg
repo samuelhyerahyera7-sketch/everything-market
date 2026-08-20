@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" width="160" height="48">
   <rect width="160" height="48" rx="10" fill="#0F1623"/>
-  <g transform="translate(10, 12) scale(1.0)">
-    <rect x="3" y="5" width="15" height="14" rx="3" fill="none" stroke="#C9A84C" stroke-width="1.8"/>
-    <path d="M18 9h2.5a2.5 2.5 0 010 5H18" stroke="#C9A84C" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-  </g>
-  <text x="44" y="21" font-family="Georgia, serif" font-size="13" fill="#C9A84C" font-weight="bold" letter-spacing="0.4">Custom</text>
-  <text x="44" y="38" font-family="Georgia, serif" font-size="13" fill="#C9A84C" font-weight="bold" letter-spacing="0.4">Mugs SA</text>
+  <text x="80" y="21" font-family="Georgia, serif" font-size="13" fill="#C9A84C" text-anchor="middle" font-weight="bold" letter-spacing="0.5">Custom</text>
+  <text x="80" y="38" font-family="Georgia, serif" font-size="13" fill="#C9A84C" text-anchor="middle" font-weight="bold" letter-spacing="0.5">Mugs</text>
 </svg>
