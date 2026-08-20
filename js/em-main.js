@@ -496,11 +496,10 @@ function _buildShopsGrid() {
   if (!grid || !bar) return;
 
   if (!_approvedStores.length) {
-    bar.style.display = 'none';
+    grid.innerHTML = '<div style="padding:12px 4px;color:var(--muted);font-size:13px;">No stores available yet.</div>';
     return;
   }
 
-  bar.style.display = 'block';
   grid.innerHTML = '';
   _approvedStores.forEach(s => {
     const initials = s.storeName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();

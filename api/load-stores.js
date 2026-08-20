@@ -11,8 +11,17 @@ function sbGet(path) {
   return new Promise((resolve, reject) => {
     const req = https.request({
       hostname: SB_HOST, path, method: 'GET',
-      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, Accept: 'application/json' }
-    }, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); });
+      headers: {
+        apikey: KEY,
+        Authorization: 'Bearer ' + KEY,
+        Accept: 'application/json',
+        'Accept-Profile': 'public'
+      }
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => resolve({ status: res.statusCode, body: d }));
+    });
     req.on('error', reject);
     req.end();
   });
@@ -21,18 +30,34 @@ function sbGet(path) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
   try {
-    /* Approved stores */
-    const storesRaw = await sbGet('/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at');
-    const stores = JSON.parse(storesRaw || '[]');
-    if (!stores.length) return res.json([]);
+    /* Fetch approved stores */
+    const storesResp = await sbGet(
+      '/rest/v1/store_applications?status=eq.approved&order=approved_at.desc&select=id,user_id,store_name,store_description,store_type,approved_at'
+    );
 
-    /* Product counts — one query using IN filter */
+    /* If Supabase returned a non-200, surface the error for debugging */
+    if (storesResp.status !== 200) {
+      console.error('[load-stores] store_applications query failed:', storesResp.status, storesResp.body);
+      return res.status(200).json([]);
+    }
+
+    let stores;
+    try { stores = JSON.parse(storesResp.body); } catch (_) { stores = []; }
+    if (!Array.isArray(stores) || !stores.length) return res.json([]);
+
+    /* Product counts per store */
     const idList = stores.map(s => s.id).join(',');
-    const prodsRaw = await sbGet(`/rest/v1/store_products?store_id=in.(${idList})&available=eq.true&select=store_id,loc`);
-    const prods = JSON.parse(prodsRaw || '[]');
+    const prodsResp = await sbGet(
+      `/rest/v1/store_products?store_id=in.(${idList})&available=eq.true&select=store_id,loc`
+    );
+    let prods = [];
+    if (prodsResp.status === 200) {
+      try { prods = JSON.parse(prodsResp.body) || []; } catch (_) {}
+    }
+    if (!Array.isArray(prods)) prods = [];
 
     const countMap = {};
     const locMap   = {};
@@ -52,7 +77,7 @@ module.exports = async function handler(req, res) {
       approvedAt:  s.approved_at
     })));
   } catch (e) {
-    console.error('[load-stores]', e);
-    return res.status(500).json({ error: 'Failed to load stores' });
+    console.error('[load-stores] error:', e);
+    return res.status(500).json({ error: String(e) });
   }
 };
