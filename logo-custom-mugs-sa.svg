@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="10" fill="#1C0A03"/>
+  <!-- mug body -->
+  <rect x="10" y="14" width="20" height="20" rx="4" fill="#C9A84C"/>
+  <!-- mug handle -->
+  <path d="M30 19 h4 a5 5 0 0 1 0 10 h-4" stroke="#C9A84C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- steam lines -->
+  <path d="M15 11 Q16 8 15 6" stroke="#C9A84C" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M20 11 Q21 8 20 6" stroke="#C9A84C" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M25 11 Q26 8 25 6" stroke="#C9A84C" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+</svg>
