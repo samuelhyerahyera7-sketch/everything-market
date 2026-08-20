@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="10" fill="#0A3D22"/>
-  <text x="8" y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="28" fill="#ffffff">E</text>
-  <text x="28" y="42" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="28" fill="#E09A12">M</text>
+  <rect width="64" height="64" rx="12" fill="#0A3D22"/>
+  <!-- Shopping bag icon -->
+  <path d="M20 28 L44 28 L41 48 L23 48 Z" fill="none" stroke="#E09A12" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M26 28 C26 22 38 22 38 28" fill="none" stroke="#E09A12" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Market stall top bar -->
+  <rect x="16" y="24" width="32" height="4" rx="2" fill="#E09A12"/>
 </svg>
