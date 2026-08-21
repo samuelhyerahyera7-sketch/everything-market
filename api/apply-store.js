@@ -60,5 +60,30 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Could not submit application' });
   }
 
+  /* Email admin */
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: 'noreply@everythingmarket.co.za',
+          to: 'admin@everythingmarket.co.za',
+          subject: `New Store Application: ${store_name.trim()}`,
+          html: `<h2>New Store Application</h2>
+            <p><strong>Store Name:</strong> ${store_name.trim()}</p>
+            <p><strong>Applicant Email:</strong> ${user.email}</p>
+            <p><strong>Store Type:</strong> ${store_type || 'retail'}</p>
+            <p><strong>Description:</strong> ${(store_description || '').trim() || '(none)'}</p>
+            <hr>
+            <p>Review this application in the <a href="https://everythingmarket.co.za/admin">admin panel</a>.</p>`
+        })
+      });
+    } catch (e) {
+      console.error('[apply-store] email error', e);
+    }
+  }
+
   return res.status(200).json({ ok: true });
 }

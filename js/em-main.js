@@ -507,9 +507,11 @@ function _buildShopsGrid() {
   addCard.className = 'shop-card shop-card-add';
   addCard.onclick = openApplyStoreModal;
   addCard.innerHTML = `
-    <div class="shop-card-add-icon">+</div>
-    <div class="shop-card-name">Add Your Store</div>
-    <div class="shop-card-count">Open your shop</div>`;
+    <div class="shop-card-add-icon">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="shop-card-name" style="font-size:13px;">Add Your Store</div>
+    <div class="shop-card-count" style="color:var(--leaf);font-weight:600;">List your products free</div>`;
   grid.appendChild(addCard);
 
   _approvedStores.forEach(s => {
@@ -521,7 +523,7 @@ function _buildShopsGrid() {
     const isOwner = _sbUser?.user_metadata?.store_id === s.storeId;
     const card = document.createElement('div');
     card.className = 'shop-card';
-    card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType);
+    card.onclick = () => openShopPage(s.storeName, s.userId, s.storeId, true, s.storeType, s.logoUrl || null);
     card.innerHTML = `
       ${avatarHtml}
       <div class="shop-card-name">${s.storeName} <span class="shop-vfy-text">Verified</span></div>
@@ -534,7 +536,7 @@ function _buildShopsGrid() {
 
 let _shopAllAds = [];
 
-async function openShopPage(sellerName, userId, storeId, verified, sellerType) {
+async function openShopPage(sellerName, userId, storeId, verified, sellerType, logoUrl) {
   const page = document.getElementById('shop-page');
   if (!page) return;
 
@@ -562,7 +564,7 @@ async function openShopPage(sellerName, userId, storeId, verified, sellerType) {
         stockQty: p.stock_qty
       })) : [];
       const cats = catRes.ok ? await catRes.json() : [];
-      _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, cats);
+      _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, cats, logoUrl);
       return;
     } catch (_) {}
   }
@@ -571,10 +573,10 @@ async function openShopPage(sellerName, userId, storeId, verified, sellerType) {
   _shopAllAds = LISTINGS.filter(l =>
     (userId && l.userId === userId) || (!userId && l.seller === sellerName)
   ).sort((a, b) => b.postedAt - a.postedAt);
-  _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, []);
+  _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, _shopAllAds, [], logoUrl);
 }
 
-function _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, ads, customCats) {
+function _renderShopPageContent(sellerName, userId, storeId, verified, sellerType, ads, customCats, logoUrl) {
   const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const oldest   = ads.length ? Math.min(...ads.map(l => l.postedAt || Date.now())) : Date.now();
   const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
@@ -602,9 +604,12 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
 
   document.getElementById('shop-page-title').textContent = sellerName;
   const content = document.getElementById('shop-page-content');
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" class="shop-hdr-logo" alt="${sellerName}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="shop-hdr-avatar" style="display:none">${initials}</div>`
+    : `<div class="shop-hdr-avatar">${initials}</div>`;
   content.innerHTML = `
     <div class="shop-hdr-banner">
-      <div class="shop-hdr-avatar">${initials}</div>
+      ${logoHtml}
       <div class="shop-hdr-info">
         <div class="shop-hdr-name">${sellerName}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
@@ -699,29 +704,47 @@ function openStoreCart(storeId, storeName) {
 
   const html = `
     <div style="padding:4px 0 8px;">
-      <h3 style="margin:0 0 14px;font-size:17px;font-weight:800;">Your Cart — ${storeName}</h3>
-      ${items.length === 0 ? `<p style="color:var(--muted);text-align:center;padding:20px 0;">Your cart is empty.</p>` : `
-      <div id="cart-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-        ${items.map(i => `
-          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surf2);border-radius:10px;">
-            ${i.photo ? `<img src="${i.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13px;font-weight:700;line-height:1.3;">${i.title}</div>
-              <div style="font-size:12px;color:var(--forest);font-weight:800;margin-top:2px;">R${(i.price*i.qty).toLocaleString('en-ZA')}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-              <button onclick="_cartQty('${i.id}',-1)" style="width:26px;height:26px;border-radius:50%;background:var(--surf3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
-              <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;">${i.qty}</span>
-              <button onclick="_cartQty('${i.id}',1)" style="width:26px;height:26px;border-radius:50%;background:var(--surf3);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-            </div>
-          </div>`).join('')}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">${storeName}</div>
+          <div style="font-size:18px;font-weight:900;color:var(--ink);">Your Cart</div>
+        </div>
+        ${items.length > 0 ? `<div style="font-size:13px;font-weight:600;color:var(--muted);">${items.reduce((s,i)=>s+i.qty,0)} item${items.reduce((s,i)=>s+i.qty,0)!==1?'s':''}</div>` : ''}
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border-lt);margin-bottom:14px;">
-        <span style="font-size:14px;font-weight:700;">Total</span>
-        <span style="font-size:18px;font-weight:900;color:var(--forest);">R${total.toLocaleString('en-ZA')}</span>
-      </div>
-      <a href="https://wa.me/?text=${waMsg}" target="_blank" style="display:block;width:100%;padding:13px;background:#25D366;color:#fff;border-radius:10px;font-size:14px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:8px;">📲 Send Order via WhatsApp</a>
-      <button onclick="_clearCart()" style="width:100%;padding:10px;background:none;border:1.5px solid var(--border);color:var(--muted);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Clear Cart</button>`}
+      ${items.length === 0
+        ? `<div style="text-align:center;padding:32px 0 24px;">
+             <div style="font-size:36px;margin-bottom:12px;">🛒</div>
+             <div style="font-size:14px;font-weight:600;color:var(--ink);">Your cart is empty</div>
+             <div style="font-size:12px;color:var(--muted);margin-top:4px;">Add items from the store to get started</div>
+           </div>`
+        : `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+             ${items.map(i => `
+               <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surf2);border-radius:12px;border:1px solid var(--border-lt);">
+                 ${i.photo ? `<img src="${i.photo}" style="width:56px;height:56px;object-fit:cover;border-radius:9px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:9px;background:var(--surf3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">🛒</div>`}
+                 <div style="flex:1;min-width:0;">
+                   <div style="font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i.title}</div>
+                   <div style="font-size:12px;color:var(--muted);margin-top:1px;">R${i.price.toLocaleString('en-ZA')} each</div>
+                   <div style="font-size:13px;font-weight:800;color:var(--forest);margin-top:3px;">R${(i.price*i.qty).toLocaleString('en-ZA')}</div>
+                 </div>
+                 <div style="display:flex;align-items:center;gap:0;flex-shrink:0;background:var(--surf3);border-radius:20px;padding:2px;">
+                   <button onclick="_cartQty('${i.id}',-1)" style="width:30px;height:30px;border-radius:50%;background:none;border:none;font-size:18px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink2);">−</button>
+                   <span style="font-size:14px;font-weight:800;min-width:22px;text-align:center;color:var(--ink);">${i.qty}</span>
+                   <button onclick="_cartQty('${i.id}',1)" style="width:30px;height:30px;border-radius:50%;background:var(--forest);border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;">+</button>
+                 </div>
+               </div>`).join('')}
+           </div>
+           <div style="background:var(--surf2);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+               <span style="font-size:12px;color:var(--muted);">Subtotal (${items.reduce((s,i)=>s+i.qty,0)} items)</span>
+               <span style="font-size:13px;font-weight:700;">R${total.toLocaleString('en-ZA')}</span>
+             </div>
+             <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-lt);padding-top:8px;margin-top:4px;">
+               <span style="font-size:14px;font-weight:800;color:var(--ink);">Total</span>
+               <span style="font-size:20px;font-weight:900;color:var(--forest);">R${total.toLocaleString('en-ZA')}</span>
+             </div>
+           </div>
+           <button onclick="_clearCart()" style="width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;">Clear Cart</button>`
+      }
     </div>`;
   modalBox.innerHTML = html;
   _openModal();
@@ -755,7 +778,6 @@ function _renderShopGrid(ads) {
   ads.forEach(l => {
     const card = document.createElement('div');
     card.className = 'shop-ec-card';
-    card.onclick = () => openBuyNow(l);
     const catName = CATS.find(c => c.id === l.cat)?.name || l.cat;
     card.innerHTML = `
       <div class="shop-ec-img" id="shpec-${l.id}"></div>
