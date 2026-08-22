@@ -105,7 +105,7 @@ function mintBioJwt(userId) {
   const hdr = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const pl  = Buffer.from(JSON.stringify({
     sub: userId.replace(/-/g, '').slice(0, 64),
-    iss: 'biometrical',
+    iss: 'everything-market',
     aud: 'biometrical-verify',
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600

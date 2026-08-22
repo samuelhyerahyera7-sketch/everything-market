@@ -67,10 +67,11 @@ function sbRequest(method, path, body) {
 function fetchStorageFile(storagePath) {
   /* storagePath is relative to the bucket, e.g. "{userId}/{sessionId}/id.jpg" */
   const safePath = storagePath.replace(/\.\./g, '').replace(/^\//, '');
+  const encodedPath = safePath.split('/').map(encodeURIComponent).join('/');
   return new Promise((resolve, reject) => {
     const req = https.request({
       hostname: SB_HOST,
-      path:     `/storage/v1/object/biometric-temp/${encodeURIComponent(safePath)}`,
+      path:     `/storage/v1/object/biometric-temp/${encodedPath}`,
       method:   'GET',
       headers:  { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
     }, res => {
@@ -92,8 +93,9 @@ function fetchStorageFile(storagePath) {
 
 function deleteStorageFile(storagePath) {
   const safePath = storagePath.replace(/\.\./g, '').replace(/^\//, '');
+  const encodedPath = safePath.split('/').map(encodeURIComponent).join('/');
   return sbRequest('DELETE',
-    `/storage/v1/object/biometric-temp/${encodeURIComponent(safePath)}`,
+    `/storage/v1/object/biometric-temp/${encodedPath}`,
     null
   ).catch(() => {});
 }

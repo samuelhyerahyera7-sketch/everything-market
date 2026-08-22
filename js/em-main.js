@@ -3388,7 +3388,8 @@ function _bioStartRecord() {
 }
 
 async function _bioSubmitVerification() {
-  _stopBioStream();
+  if (_bioStream) { _bioStream.getTracks().forEach(t => t.stop()); _bioStream = null; }
+  _bioRecorder = null;
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -3410,6 +3411,7 @@ async function _bioSubmitVerification() {
     const { error: e1 } = await _sb.storage.from('biometric-temp').upload(idPath, window._bioIdFile, { contentType: window._bioIdFile.type });
     if (e1) throw new Error('ID upload failed: ' + e1.message);
 
+    if (!_bioChunks.length) throw new Error('Selfie recording was empty. Please record again.');
     const videoBlob = new Blob(_bioChunks, { type: _bioChunks[0]?.type || 'video/webm' });
     const videoExt = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
     videoPath = prefix + '/selfie.' + videoExt;
