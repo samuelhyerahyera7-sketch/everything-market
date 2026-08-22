@@ -3821,7 +3821,10 @@ function openSignInModal(hint) {
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Sign In</button>
-      <p class="em-auth-switch" style="margin-top:10px;"><button type="button" onclick="openForgotPasswordModal()">Forgot password?</button></p>
+      <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;">
+        <button type="button" onclick="openForgotPasswordModal()" style="border:1px solid var(--border-lt);background:var(--surf2);color:var(--forest);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;">Forgot password?</button>
+        <button type="button" onclick="submitMagicSignInLink()" style="border:1px solid var(--border-lt);background:#fff;color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;">Email me a sign-in link</button>
+      </div>
       <p class="em-auth-switch">No account yet? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
   _openModal();
@@ -3860,7 +3863,7 @@ async function submitSignIn(e) {
     } else if (msg.includes('network') || msg.includes('fetch')) {
       showErr('Could not reach the sign-in service. Please check your connection and try again.');
     } else {
-      showErr('Incorrect email or password. Check your details and try again.');
+      showErr('Incorrect email or password. Use Forgot password or Email me a sign-in link below to get back in.');
     }
     return;
   }
@@ -3870,6 +3873,40 @@ async function submitSignIn(e) {
   const name = data.user.user_metadata?.name || email.split('@')[0];
   if (window.emTrack) emTrack('login');
   toast('Welcome back, ' + name.split(' ')[0] + '!');
+}
+
+async function submitMagicSignInLink() {
+  const email = (document.getElementById('si-email')?.value || '').trim().toLowerCase();
+  const errEl = document.getElementById('auth-error');
+  if (!email.includes('@')) {
+    if (errEl) { errEl.textContent = 'Enter your email address first, then tap Email me a sign-in link.'; errEl.style.display = ''; }
+    return;
+  }
+  const buttons = [...document.querySelectorAll('.em-post-form button')];
+  buttons.forEach(b => b.disabled = true);
+  let error = null;
+  try {
+    const result = await _sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin + '/?signin=1' }
+    });
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    buttons.forEach(b => b.disabled = false);
+  }
+  if (error) {
+    if (errEl) { errEl.textContent = error.message || 'Could not send sign-in link. Try Forgot password instead.'; errEl.style.display = ''; }
+    return;
+  }
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">Sign-In Link Sent</div>
+      <div class="em-confirm-sub">Check ${email}. Open the link in the email and you will be signed in automatically.</div>
+      <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
+    </div>`;
 }
 
 function openForgotPasswordModal() {
