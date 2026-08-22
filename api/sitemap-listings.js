@@ -38,7 +38,7 @@ function sbGet(path) {
 }
 
 function lastmod(row) {
-  const raw = row.updated_at || row.created_at || row.posted_at;
+  const raw = row.created_at;
   const date = raw ? new Date(raw) : new Date();
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const response = await sbGet('/rest/v1/ads?select=id,created_at,updated_at,posted_at&order=created_at.desc&limit=5000');
+    const response = await sbGet('/rest/v1/ads?select=id,created_at&order=created_at.desc&limit=5000');
     const rows = response.status === 200 ? JSON.parse(response.body || '[]') : [];
     const ads = Array.isArray(rows) ? rows.filter(row => row && row.id) : [];
 
