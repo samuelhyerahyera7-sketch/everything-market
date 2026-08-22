@@ -1790,7 +1790,7 @@ function submitPostAd(e) {
     desc: enrichedDesc,
     seller: name,
     sellerType,
-    verified: false,
+    verified: !!_sbUser?.user_metadata?.verified,
     photos: [...(window._paPhotos || [])],
     isUserAd: true,
     userId: sess ? sess.userId : null,

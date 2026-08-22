@@ -90,7 +90,7 @@
       photos:        photoUrls,
       phone:         listing.phone || '',
       contact_email: listing.contactEmail || '',
-      verified:      false
+      verified:      !!listing.verified
     };
     if (!payload.id) delete payload.id;
     if (listing.userId) payload.user_id = listing.userId;
@@ -99,9 +99,13 @@
     async function _doInsertViaAPI(p) {
       try {
         console.log('[EM] _doInsertViaAPI: posting to /api/store-ad...');
+        const token = (await supabase.auth.getSession()).data?.session?.access_token || '';
         const r = await fetch('/api/store-ad', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
           body: JSON.stringify(p)
         });
         const json = await r.json();

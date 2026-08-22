@@ -6,7 +6,7 @@ const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.su
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
 const SB_KEY     = process.env.SUPABASE_SERVICE_KEY;
 
-function sbReq(method, path, body) {
+function sbReq(method, path, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : null;
     const req = https.request({
@@ -17,6 +17,7 @@ function sbReq(method, path, body) {
         'apikey': SB_KEY,
         'Authorization': 'Bearer ' + SB_KEY,
         'Content-Type': 'application/json',
+        ...extraHeaders,
         ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
       }
     }, res => {
@@ -39,15 +40,48 @@ module.exports = async function handler(req, res) {
   if (!requireAdmin(req, res)) return;
   if (!SB_KEY) return res.status(500).json({ error: 'SUPABASE_SERVICE_KEY not set' });
 
-  const { userId, verified } = req.body || {};
+  const { userId, verified, email, adminNote } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
+    const now = new Date().toISOString();
+    const existing = await sbReq('GET', `/auth/v1/admin/users/${userId}`);
+    let existingMeta = {};
+    if (existing.status === 200) {
+      try { existingMeta = JSON.parse(existing.body).user_metadata || {}; } catch {}
+    }
     const r = await sbReq('PUT', `/auth/v1/admin/users/${userId}`, {
-      user_metadata: { verified: !!verified }
+      user_metadata: {
+        ...existingMeta,
+        verified: !!verified,
+        manual_verified: !!verified,
+        verified_by_admin_at: verified ? now : null,
+      }
     });
     if (r.status !== 200) return res.status(502).json({ error: 'Auth API error ' + r.status, detail: r.body });
-    return res.status(200).json({ ok: true });
+
+    const bioPatch = {
+      user_id: userId,
+      status: verified ? 'approved' : 'review',
+      admin_decision: verified ? 'approved' : 'rejected',
+      admin_notes: String(adminNote || (verified ? 'Manual admin approval' : 'Manual admin removal')).slice(0, 500),
+      admin_reviewed_by: 'Everything Market Admin',
+      admin_reviewed_at: now,
+      updated_at: now,
+      ...(verified ? { verified_at: now } : {}),
+    };
+    await sbReq('POST', '/rest/v1/biometric_verifications?on_conflict=user_id', bioPatch, {
+      Prefer: 'resolution=merge-duplicates,return=minimal'
+    }).catch(() => {});
+
+    const adUpdates = [];
+    adUpdates.push(sbReq('PATCH', `/rest/v1/ads?user_id=eq.${encodeURIComponent(userId)}`, { verified: !!verified }).catch(e => ({ error: String(e) })));
+    if (email) {
+      adUpdates.push(sbReq('PATCH', `/rest/v1/ads?contact_email=eq.${encodeURIComponent(String(email).toLowerCase())}`, { verified: !!verified }).catch(e => ({ error: String(e) })));
+    }
+    await Promise.all(adUpdates);
+
+    return res.status(200).json({ ok: true, syncedListings: true });
   } catch(e) {
     return res.status(500).json({ error: String(e) });
   }

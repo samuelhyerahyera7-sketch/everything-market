@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin – Everything Market</title>
-<link rel="icon" type="image/png" href="/logo.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f8; color: #111; min-height: 100vh; }
@@ -102,6 +105,19 @@
   .btn-vfy.unvfy { background: #7B4800; }
   .btn-vfy.unvfy:hover { background: #5a3400; }
   .btn-vfy:disabled { background: #ccc; cursor: default; }
+  .btn-info { background: #eef4ef; color: #0A3D22; border: 1px solid #cfe0d5; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; margin-right: 4px; }
+  .btn-info:hover { background: #dcebe2; }
+  .verify-mini { display: block; margin-top: 4px; color: #5f6b63; font-size: 11px; line-height: 1.35; }
+  .admin-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 18px; }
+  .admin-modal { width: min(520px, 100%); background: #fff; border-radius: 12px; box-shadow: 0 18px 60px rgba(0,0,0,.22); overflow: hidden; }
+  .admin-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #0A3D22; color: #fff; }
+  .admin-modal-head h3 { font-size: 16px; }
+  .admin-modal-close { background: rgba(255,255,255,.14); color: #fff; border: none; border-radius: 7px; width: 32px; height: 32px; cursor: pointer; font-size: 17px; }
+  .admin-modal-body { padding: 16px; }
+  .verify-row { display: flex; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid #edf1ee; font-size: 13px; }
+  .verify-row:last-child { border-bottom: none; }
+  .verify-row strong { color: #0A3D22; }
+  .verify-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
   .empty { text-align: center; padding: 40px; color: #999; }
   .loading { text-align: center; padding: 40px; color: #666; }
 
@@ -697,18 +713,25 @@
       const rawPhone = u.phone || userAd?.phone || '';
       const phone  = rawPhone ? `<a href="tel:${rawPhone}" style="color:#1565C0;text-decoration:none;">${rawPhone}</a>` : '–';
       const email  = u.email ? `<a href="mailto:${u.email}" style="color:#1565C0;text-decoration:none;">${u.email}</a>` : '–';
+      const v = u.verification || {};
+      const level = v.level || (u.verified ? 'Manually Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'));
       const typeBadge = u.auth_user === false
         ? '<span class="badge badge-biz">Listing Seller</span>'
         : '<span class="badge badge-priv">Registered</span>';
+      const veriBadge = u.verified
+        ? '<span class="badge badge-conf">✅ Verified Seller</span>'
+        : confBadge;
+      const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Phone ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
       const actions = u.auth_user === false
         ? '<span style="font-size:11px;color:#777;">Contact seller from listing</span>'
-        : `<button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+        : `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
+          <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
           <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>`;
       return `<tr id="urow-${u.id}">
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div></div></td>
         <td>${email}</td>
         <td>${phone}</td>
-        <td>${typeBadge} ${confBadge}</td>
+        <td>${typeBadge} ${veriBadge}${veriMini}</td>
         <td>${u.ad_count || 0}</td>
         <td>${joined}</td>
         <td>${lastSeen}</td>
@@ -722,25 +745,84 @@
       </table>`;
   }
 
+  function showUserVerification(userId) {
+    const u = ALL_USERS.find(x => String(x.id) === String(userId));
+    if (!u) return;
+    const v = u.verification || {};
+    const ads = ALL_ADS.filter(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
+    const level = v.level || (u.verified ? 'Manually Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'));
+    const latestAd = ads
+      .slice()
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0];
+    const backdrop = document.createElement('div');
+    backdrop.className = 'admin-modal-backdrop';
+    backdrop.id = 'verify-modal';
+    backdrop.onclick = e => { if (e.target === backdrop) closeVerifyModal(); };
+    backdrop.innerHTML = `
+      <div class="admin-modal">
+        <div class="admin-modal-head">
+          <h3>Seller Verification</h3>
+          <button class="admin-modal-close" onclick="closeVerifyModal()">×</button>
+        </div>
+        <div class="admin-modal-body">
+          <div class="verify-row"><span>Name</span><strong>${escHtml(u.name || 'No name')}</strong></div>
+          <div class="verify-row"><span>Email</span><strong>${escHtml(u.email || 'No email')}</strong></div>
+          <div class="verify-row"><span>Phone</span><strong>${escHtml(v.phone_masked || u.phone || 'Not verified')}</strong></div>
+          <div class="verify-row"><span>Current level</span><strong>${escHtml(level)}</strong></div>
+          <div class="verify-row"><span>Email check</span><strong>${v.email_verified || u.confirmed ? 'Verified' : 'Not verified'}</strong></div>
+          <div class="verify-row"><span>Phone check</span><strong>${v.phone_verified ? 'Verified' : 'Not verified'}</strong></div>
+          <div class="verify-row"><span>ID/selfie check</span><strong>${escHtml(v.identity_status || 'none')}</strong></div>
+          <div class="verify-row"><span>Listings</span><strong>${fmtNum(u.ad_count || ads.length)}</strong></div>
+          <div class="verify-row"><span>Latest listing</span><strong>${escHtml(latestAd?.title || 'No listings')}</strong></div>
+          ${v.rejection_reason ? `<div class="verify-row"><span>Issue</span><strong>${escHtml(v.rejection_reason)}</strong></div>` : ''}
+          <div class="verify-actions">
+            <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this,true)">${u.verified ? 'Remove Verification' : 'Approve Seller'}</button>
+            <button class="btn-info" onclick="closeVerifyModal()">Close</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+  }
+
+  function closeVerifyModal() {
+    document.getElementById('verify-modal')?.remove();
+  }
+
   async function toggleVerify(userId, newVerified, btn) {
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch('/api/verify-user', { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ userId, verified: newVerified }) });
+      const u = ALL_USERS.find(x => String(x.id) === String(userId));
+      const r = await fetch('/api/verify-user', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          userId,
+          verified: newVerified,
+          email: u?.email || '',
+          adminNote: newVerified ? 'Approved from admin users tab' : 'Verification removed from admin users tab'
+        })
+      });
       const j = await r.json();
       if (j.ok) {
         const u = ALL_USERS.find(x => x.id === userId);
-        if (u) u.verified = newVerified;
+        if (u) {
+          u.verified = newVerified;
+          u.verification = {
+            ...(u.verification || {}),
+            level: newVerified ? 'Admin Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'),
+            identity_status: newVerified ? 'approved' : 'rejected',
+          };
+        }
+        ALL_ADS.forEach(a => {
+          if ((a.user_id && String(a.user_id) === String(userId)) || (u?.email && a.contact_email === u.email)) a.verified = newVerified;
+        });
         btn.textContent = newVerified ? 'Unverify' : 'Verify';
         btn.classList.toggle('unvfy', newVerified);
         btn.onclick = () => toggleVerify(userId, !newVerified, btn);
-        /* Update status badge in same row */
-        const row = btn.closest('tr');
-        if (row) {
-          const statusCell = row.querySelector('td:nth-child(4)');
-          if (statusCell) statusCell.innerHTML = newVerified
-            ? '<span class="badge badge-conf">✅ Verified Seller</span>'
-            : '<span class="badge badge-pend">Email OK</span>';
-        }
+        closeVerifyModal();
+        renderUsersTable();
+        renderAdsTable();
+        updateStats();
       } else {
         btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify';
         alert('Failed: ' + (j.error || 'unknown'));

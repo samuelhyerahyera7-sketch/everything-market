@@ -74,6 +74,39 @@ module.exports = async function handler(req, res) {
       }
     });
     const authEmails = new Set(users.map(u => String(u.email || '').toLowerCase()).filter(Boolean));
+    const userIds = users.map(u => u.id).filter(Boolean);
+    let phoneByUser = {};
+    let bioByUser = {};
+
+    if (userIds.length) {
+      const idList = userIds.map(id => encodeURIComponent(id)).join(',');
+      const [rPhones, rBio] = await Promise.all([
+        sbReq('GET', `/rest/v1/phone_verifications?user_id=in.(${idList})&status=eq.verified&select=user_id,phone_number,verified_at&order=verified_at.desc`),
+        sbReq('GET', `/rest/v1/biometric_verifications?user_id=in.(${idList})&select=user_id,status,admin_decision,rejection_reason,verified_at,updated_at&order=updated_at.desc`)
+      ]);
+      const phones = rPhones.status === 200 ? JSON.parse(rPhones.body) : [];
+      const bios = rBio.status === 200 ? JSON.parse(rBio.body) : [];
+      phones.forEach(p => {
+        if (!phoneByUser[p.user_id]) phoneByUser[p.user_id] = p;
+      });
+      bios.forEach(b => {
+        if (!bioByUser[b.user_id]) bioByUser[b.user_id] = b;
+      });
+    }
+
+    function verificationLevel(u) {
+      const phone = !!phoneByUser[u.id];
+      const bio = bioByUser[u.id];
+      const bioStatus = bio?.admin_decision === 'approved' ? 'approved' :
+                        bio?.admin_decision === 'rejected' ? 'rejected' :
+                        (bio?.status || 'none');
+      const email = !!u.confirmed_at;
+      if (email && phone && bioStatus === 'approved') return 'Fully Verified';
+      if (email && bioStatus === 'approved') return 'Identity Verified';
+      if (email && phone) return 'Phone Verified';
+      if (email) return 'Basic Verified';
+      return 'Unverified';
+    }
 
     const out = users.map(u => ({
       id:         u.id,
@@ -88,6 +121,17 @@ module.exports = async function handler(req, res) {
       source:     'registered',
       ad_count:   adCountsByUserId[u.id] || adCountsByEmail[String(u.email || '').toLowerCase()] || 0,
       last_ad_at: sellerProfiles[String(u.email || '').toLowerCase()]?.last_ad_at || null,
+      verification: {
+        level: verificationLevel(u),
+        email_verified: !!u.confirmed_at,
+        phone_verified: !!phoneByUser[u.id],
+        phone_masked: phoneByUser[u.id]?.phone_number
+          ? '+' + String(phoneByUser[u.id].phone_number).replace(/\D/g, '').slice(0, 4) + ' *** ' + String(phoneByUser[u.id].phone_number).replace(/\D/g, '').slice(-4)
+          : null,
+        identity_status: bioByUser[u.id]?.admin_decision || bioByUser[u.id]?.status || 'none',
+        rejection_reason: bioByUser[u.id]?.rejection_reason || null,
+        verified_at: bioByUser[u.id]?.verified_at || phoneByUser[u.id]?.verified_at || null,
+      },
     }));
 
     Object.values(sellerProfiles).forEach(s => {
