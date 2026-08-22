@@ -130,6 +130,7 @@ module.exports = async function handler(req, res) {
   .bar a { color: #fff; text-decoration: none; font-weight: 800; font-size: 17px; }
   .bar a span { color: #E09A12; }
   .bar small { color: rgba(255,255,255,.65); font-size: 12px; margin-left: auto; }
+  .signin { color: #0A3D22 !important; background: #E09A12; border-radius: 8px; padding: 7px 12px; font-size: 12px !important; white-space: nowrap; }
   .card { max-width: 680px; margin: 28px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 16px rgba(0,0,0,.08); overflow: hidden; }
   .photo { width: 100%; max-height: 380px; object-fit: cover; display: block; background: #eee; }
   .body { padding: 22px 24px; }
@@ -149,6 +150,7 @@ module.exports = async function handler(req, res) {
 <div class="bar">
   <a href="/">Everything<span>Market</span></a>
   <small>South Africa's Free Marketplace</small>
+  <a class="signin" href="/?signin=1&ad=${esc(id)}">Sign In</a>
 </div>
 <a class="back" href="/">← Back to all ads</a>
 <div class="card">

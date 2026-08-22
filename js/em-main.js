@@ -3747,6 +3747,12 @@ async function _initAuth() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _updateAuthUI();
+  if (params.get('signin') === '1' && !_sbUser) {
+    setTimeout(() => openSignInModal('Sign in to continue on Everything Market.'), 250);
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('signin');
+    history.replaceState(null, '', clean.pathname + clean.search + clean.hash);
+  }
   _sb.auth.onAuthStateChange((_event, session) => {
     _sbUser = session?.user || null;
     _updateAuthUI();
@@ -3820,14 +3826,34 @@ async function submitSignIn(e) {
   const pass  = (document.getElementById('si-pass')?.value || '');
   const errEl = document.getElementById('auth-error');
   const btn   = e.target.querySelector('[type=submit]');
+  const showErr = msg => {
+    if (!errEl) return;
+    errEl.textContent = msg;
+    errEl.style.display = '';
+  };
   if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
   if (!pass) { errEl.textContent = 'Please enter your password.'; errEl.style.display = ''; return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
-  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-  btn.disabled = false; btn.textContent = 'Sign In';
-  if (error) {
-    errEl.textContent = 'Incorrect email or password. Check your details and try again.';
-    errEl.style.display = '';
+  let data, error;
+  try {
+    const result = await _sb.auth.signInWithPassword({ email, password: pass });
+    data = result.data;
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+  if (error || !data?.user) {
+    const msg = String(error?.message || '').toLowerCase();
+    if (msg.includes('email not confirmed')) {
+      showErr('Please confirm your email address first, then sign in again.');
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      showErr('Could not reach the sign-in service. Please check your connection and try again.');
+    } else {
+      showErr('Incorrect email or password. Check your details and try again.');
+    }
     return;
   }
   _sbUser = data.user;
