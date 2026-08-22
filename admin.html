@@ -693,22 +693,26 @@
       const confBadge = u.verified
         ? '<span class="badge badge-conf">✅ Verified Seller</span>'
         : (u.confirmed ? '<span class="badge badge-pend">Email OK</span>' : '<span class="badge badge-pend">Unverified</span>');
-      /* Pull phone from any ad belonging to this user */
       const userAd = ALL_ADS.find(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
-      const phone  = userAd?.phone ? `<a href="tel:${userAd.phone}" style="color:#1565C0;text-decoration:none;">${userAd.phone}</a>` : '–';
+      const rawPhone = u.phone || userAd?.phone || '';
+      const phone  = rawPhone ? `<a href="tel:${rawPhone}" style="color:#1565C0;text-decoration:none;">${rawPhone}</a>` : '–';
       const email  = u.email ? `<a href="mailto:${u.email}" style="color:#1565C0;text-decoration:none;">${u.email}</a>` : '–';
+      const typeBadge = u.auth_user === false
+        ? '<span class="badge badge-biz">Listing Seller</span>'
+        : '<span class="badge badge-priv">Registered</span>';
+      const actions = u.auth_user === false
+        ? '<span style="font-size:11px;color:#777;">Contact seller from listing</span>'
+        : `<button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+          <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>`;
       return `<tr id="urow-${u.id}">
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div></div></td>
         <td>${email}</td>
         <td>${phone}</td>
-        <td>${confBadge}</td>
+        <td>${typeBadge} ${confBadge}</td>
         <td>${u.ad_count || 0}</td>
         <td>${joined}</td>
         <td>${lastSeen}</td>
-        <td>
-          <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
-          <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>
-        </td>
+        <td>${actions}</td>
       </tr>`;
     }).join('');
     document.getElementById('users-wrap').innerHTML = `
