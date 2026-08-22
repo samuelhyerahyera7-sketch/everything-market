@@ -173,7 +173,7 @@ Best setup:
 ## First 30 Days
 
 - Deploy SEO pages and sitemap.
-- Submit sitemap in Google Search Console.
+- Submit the static sitemap and live listing sitemap in Google Search Console.
 - Add 100+ high-intent pages.
 - Recruit 100 sellers.
 - Push sellers to share individual listing links first.

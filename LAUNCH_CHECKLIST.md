@@ -13,12 +13,13 @@ Use this after every production push.
 
 2. Google Search Console
    - Verify `everythingmarket.co.za` as a domain property.
-   - Submit `https://everythingmarket.co.za/sitemap.xml`.
+   - Submit `https://www.everythingmarket.co.za/sitemap.xml`.
+   - Submit `https://www.everythingmarket.co.za/sitemap-listings.xml`.
    - Inspect and request indexing for:
-     - `https://everythingmarket.co.za/`
-     - `https://everythingmarket.co.za/post-free-ad-south-africa`
-     - `https://everythingmarket.co.za/marketplace-south-africa`
-     - `https://everythingmarket.co.za/city/johannesburg`
+     - `https://www.everythingmarket.co.za/`
+     - `https://www.everythingmarket.co.za/post-free-ad-south-africa`
+     - `https://www.everythingmarket.co.za/marketplace-south-africa`
+     - `https://www.everythingmarket.co.za/city/johannesburg`
 
 3. Domain checks
    - `everythingmarket.co.za` loads the main site.
@@ -35,8 +36,9 @@ Use this after every production push.
 
 ## Important URLs
 
-- Seller recruitment: `https://everythingmarket.co.za/post-free-ad-south-africa`
-- Seller kit: `https://everythingmarket.co.za/seller-growth-kit`
-- Main SEO landing page: `https://everythingmarket.co.za/marketplace-south-africa`
-- Listing pages: `https://everythingmarket.co.za/ad/:id`
-- Sitemap: `https://everythingmarket.co.za/sitemap.xml`
+- Seller recruitment: `https://www.everythingmarket.co.za/post-free-ad-south-africa`
+- Seller kit: `https://www.everythingmarket.co.za/seller-growth-kit`
+- Main SEO landing page: `https://www.everythingmarket.co.za/marketplace-south-africa`
+- Listing pages: `https://www.everythingmarket.co.za/ad/:id`
+- Static sitemap: `https://www.everythingmarket.co.za/sitemap.xml`
+- Live listing sitemap: `https://www.everythingmarket.co.za/sitemap-listings.xml`
