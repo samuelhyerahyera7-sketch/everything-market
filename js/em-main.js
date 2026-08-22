@@ -3521,7 +3521,7 @@ async function _bioPollResult(jobId, attempt) {
         <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">OK</button>
       </div>`;
   } else {
-    const reason = result.reason || 'Please try again in better lighting and ensure your face is clearly visible.';
+    const reason = _bioPublicFailureReason(result.reason);
     modalBox.innerHTML = `
       <div class="em-modal-bar">
         <h3>Verification Failed</h3>
@@ -3534,6 +3534,18 @@ async function _bioPollResult(jobId, attempt) {
         <button class="em-offer-submit" onclick="openBiometricVerification()" style="margin-top:16px;">Try Again</button>
       </div>`;
   }
+}
+
+function _bioPublicFailureReason(reason) {
+  const fallback = 'Please try again in better lighting and ensure your face and ID photo are clearly visible.';
+  const raw = String(reason || '').trim();
+  if (!raw) return fallback;
+  const technical = /opencv|traceback|detectmultiscale|cascade|assertion|\/io\/|\.py\b|exception|error:/i;
+  if (technical.test(raw)) return fallback;
+  if (/no[_\s-]?face|face.*not.*detect|id quality unacceptable/i.test(raw)) {
+    return 'We could not detect your face clearly. Please retake the ID photo and selfie in good lighting.';
+  }
+  return raw.length > 180 ? fallback : raw;
 }
 
 /* ── Make Offer modal ── */
