@@ -3230,11 +3230,11 @@ async function openBiometricVerification() {
     <div style="padding:20px;">
       <div style="text-align:center;font-size:36px;margin-bottom:10px;">🪪</div>
       <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">ID + Selfie Verification</h3>
-      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:18px;">We'll ask you to photograph your SA ID or passport, then record a short selfie video. Your files are deleted immediately after processing.</p>
+      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:18px;">Take a live photo of your SA ID or passport, then take a live selfie photo. Our admin team will review and approve genuine sellers manually.</p>
       <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:20px;padding-left:18px;">
         <li>Takes about 2 minutes</li>
         <li>Camera access required</li>
-        <li>Files deleted after verification (POPIA compliant)</li>
+        <li>Photos are private and visible only to admins</li>
         <li>Your ID number is never stored by us</li>
       </ul>
       <button class="em-offer-submit" onclick="_bioStep1_ID()">Start Verification</button>
@@ -3255,44 +3255,14 @@ async function _bioStep1_ID() {
       <h3>Step 1 of 2 — ID Photo</h3>
       <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
     </div>
-    <div style="padding:20px;text-align:center;color:var(--muted);">Preparing…</div>`;
-
-  let challenge;
-  try {
-    const token = await _getVfyAccessToken();
-    if (!token) throw new Error('Please sign in again before starting identity verification.');
-    const r = await fetch('/api/verify/biometric-challenge', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await r.json().catch(() => null);
-    if (!r.ok) throw new Error(data?.error || 'Could not load challenge');
-    challenge = data;
-    if (!challenge?.nonce) throw new Error('No challenge');
-  } catch(e) {
-    toast(e.message.includes('sign in')
-      ? e.message
-      : e.message.includes('configured')
-      ? 'ID/selfie verification is not configured yet. Please contact Everything Market support.'
-      : e.message.includes('unavailable') || e.message.includes('reach')
-      ? 'Identity verification is temporarily unavailable. Please try again shortly.'
-      : 'Could not load verification challenge. Try again.');
-    return openVerificationCenter();
-  }
-
-  window._bioChallengeData = challenge;
-
-  modalBox.innerHTML = `
-    <div class="em-modal-bar">
-      <button onclick="openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Step 1 of 2 — ID Photo</h3>
-      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
-    </div>
     <div style="padding:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
       <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-id-input').click()">
         <div id="bio-id-preview" style="font-size:40px;margin-bottom:8px;">🪪</div>
         <div style="font-size:13px;color:var(--muted);">Tap to select ID photo</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
       </div>
-      <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="_bioPreviewID(this)">
+      <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;" onchange="_bioPreviewID(this)">
       <div id="bio-id-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
       <button class="em-offer-submit" id="bio-id-next" onclick="_bioStep2_Selfie()" disabled style="opacity:0.4;">Next →</button>
     </div>`;
@@ -3323,88 +3293,48 @@ async function _bioStep2_Selfie() {
     return;
   }
   window._bioIdFile = idInput.files[0];
-  const c = window._bioChallengeData || {};
-  const instrText = c.instruction === 'blink_twice' ? 'Blink twice slowly' :
-                    c.instruction === 'turn_head'   ? 'Turn your head left, then right' :
-                    'Blink once';
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <button onclick="_stopBioStream();_bioStep1_ID()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Step 2 of 2 — Selfie Video</h3>
-      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
+      <button onclick="_bioStep1_ID()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <h3>Step 2 of 2 — Live Selfie</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
-      <div style="background:#fff3e0;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:#e65100;">
-        <strong>Challenge:</strong> ${instrText}
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live selfie. Use good lighting, no sunglasses, and keep your face inside the frame.</p>
+      <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-selfie-input').click()">
+        <div id="bio-selfie-preview" style="font-size:40px;margin-bottom:8px;">📷</div>
+        <div style="font-size:13px;color:var(--muted);">Tap to take selfie photo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
       </div>
-      <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;aspect-ratio:4/3;">
-        <video id="bio-vid-preview" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;"></video>
-        <div id="bio-rec-indicator" style="position:absolute;top:8px;right:8px;display:none;align-items:center;gap:5px;background:rgba(0,0,0,0.6);border-radius:12px;padding:3px 8px;">
-          <div style="width:7px;height:7px;border-radius:50%;background:#f44336;animation:emPulse 1s infinite;"></div>
-          <span style="color:#fff;font-size:11px;font-weight:600;">REC</span>
-        </div>
-      </div>
-      <div id="bio-cam-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
-      <div id="bio-rec-status" style="text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:12px;">Starting camera…</div>
-      <button class="em-offer-submit" id="bio-rec-btn" onclick="_bioStartRecord()" disabled style="opacity:0.4;">Record Selfie (5 sec)</button>
+      <input type="file" id="bio-selfie-input" accept="image/jpeg,image/png,image/webp" capture="user" style="display:none;" onchange="_bioPreviewSelfie(this)">
+      <div id="bio-selfie-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" id="bio-submit-btn" onclick="_bioSubmitVerification()" disabled style="opacity:0.4;">Submit for Manual Review</button>
     </div>`;
-
-  if (!document.getElementById('bio-pulse-style')) {
-    const s = document.createElement('style');
-    s.id = 'bio-pulse-style';
-    s.textContent = '@keyframes emPulse{0%,100%{opacity:1}50%{opacity:.3}}';
-    document.head.appendChild(s);
-  }
-
-  try {
-    _bioStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
-    const vid = document.getElementById('bio-vid-preview');
-    if (vid) vid.srcObject = _bioStream;
-    const recBtn = document.getElementById('bio-rec-btn');
-    const recStatus = document.getElementById('bio-rec-status');
-    if (recBtn) { recBtn.disabled = false; recBtn.style.opacity = '1'; }
-    if (recStatus) recStatus.textContent = 'Camera ready. Press record when ready.';
-  } catch(e) {
-    const err = document.getElementById('bio-cam-err');
-    if (err) { err.textContent = 'Camera access denied. Please allow camera access and try again.'; err.style.display = 'block'; }
-  }
 }
 
-function _bioStartRecord() {
-  if (!_bioStream) return;
-  _bioChunks = [];
-  const recBtn = document.getElementById('bio-rec-btn');
-  const recStatus = document.getElementById('bio-rec-status');
-  const recInd = document.getElementById('bio-rec-indicator');
-
-  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' :
-               MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4';
-  _bioRecorder = new MediaRecorder(_bioStream, { mimeType: mime });
-  _bioRecorder.ondataavailable = e => { if (e.data.size > 0) _bioChunks.push(e.data); };
-  _bioRecorder.onstop = () => _bioSubmitVerification();
-  _bioRecorder.start();
-
-  if (recBtn) { recBtn.disabled = true; recBtn.style.opacity = '0.4'; recBtn.textContent = 'Recording…'; }
-  if (recInd) recInd.style.display = 'flex';
-
-  let secs = 5;
-  const tick = setInterval(() => {
-    secs--;
-    if (recStatus) recStatus.textContent = `Recording — perform the challenge now… ${secs}s`;
-    if (secs <= 0) {
-      clearInterval(tick);
-      if (_bioRecorder && _bioRecorder.state !== 'inactive') _bioRecorder.stop();
-      if (recStatus) recStatus.textContent = 'Processing…';
-      if (recInd) recInd.style.display = 'none';
+function _bioPreviewSelfie(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const err = document.getElementById('bio-selfie-err');
+  if (file.size > 8 * 1024 * 1024) { err.textContent = 'Image too large (max 8 MB).'; err.style.display = 'block'; return; }
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { err.textContent = 'Use a JPEG, PNG, or WebP image.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  window._bioSelfieFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p = document.getElementById('bio-selfie-preview');
+    if (p) p.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;">`;
+    const btn = document.getElementById('bio-submit-btn');
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
     }
-  }, 1000);
+  };
+  reader.readAsDataURL(file);
 }
 
 async function _bioSubmitVerification() {
-  if (_bioStream) { _bioStream.getTracks().forEach(t => t.stop()); _bioStream = null; }
-  _bioRecorder = null;
-
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <h3>Submitting…</h3>
@@ -3417,27 +3347,24 @@ async function _bioSubmitVerification() {
 
   const sess = _getSession();
   const prefix = sess?.userId + '/' + Date.now();
-  let idPath, videoPath;
+  let idPath, selfiePath;
 
   try {
+    if (!window._bioIdFile || !window._bioSelfieFile) throw new Error('Please take both photos first.');
     const idExt = window._bioIdFile.type.includes('png') ? 'png' : window._bioIdFile.type.includes('webp') ? 'webp' : 'jpg';
     idPath = prefix + '/id.' + idExt;
     const { error: e1 } = await _sb.storage.from('biometric-temp').upload(idPath, window._bioIdFile, { contentType: window._bioIdFile.type });
     if (e1) throw new Error('ID upload failed: ' + e1.message);
 
-    if (!_bioChunks.length) throw new Error('Selfie recording was empty. Please record again.');
-    const videoBlob = new Blob(_bioChunks, { type: _bioChunks[0]?.type || 'video/webm' });
-    const videoExt = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
-    videoPath = prefix + '/selfie.' + videoExt;
-    const { error: e2 } = await _sb.storage.from('biometric-temp').upload(videoPath, videoBlob, { contentType: videoBlob.type });
+    const selfieExt = window._bioSelfieFile.type.includes('png') ? 'png' : window._bioSelfieFile.type.includes('webp') ? 'webp' : 'jpg';
+    selfiePath = prefix + '/selfie.' + selfieExt;
+    const { error: e2 } = await _sb.storage.from('biometric-temp').upload(selfiePath, window._bioSelfieFile, { contentType: window._bioSelfieFile.type });
     if (e2) throw new Error('Selfie upload failed: ' + e2.message);
   } catch(e) {
     toast('Upload failed: ' + e.message);
     return openVerificationCenter();
   }
 
-  const c = window._bioChallengeData || {};
-  let jobId;
   try {
     const token = await _getVfyAccessToken();
     if (!token) throw new Error('Please sign in again before submitting identity verification.');
@@ -3446,21 +3373,29 @@ async function _bioSubmitVerification() {
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idStoragePath: idPath,
-        videoStoragePath: videoPath,
-        nonce: c.nonce,
-        challenge: c.challenge,
-        contractId: c.contractId || c.nonce
+        selfieStoragePath: selfiePath
       })
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Submission failed');
-    jobId = data.jobId;
   } catch(e) {
     toast('Submission failed: ' + e.message);
     return openVerificationCenter();
   }
 
-  _bioPollResult(jobId, 0);
+  window._bioIdFile = null;
+  window._bioSelfieFile = null;
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Under Manual Review</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:28px 20px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+      <h3 style="color:#1565c0;margin-bottom:8px;">Submitted for Review</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your ID photo and selfie have been submitted. Everything Market admin will review them and update your seller verification.</p>
+      <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Go to Verification Centre</button>
+    </div>`;
 }
 
 async function _bioPollResult(jobId, attempt) {

@@ -82,7 +82,7 @@ module.exports = async function handler(req, res) {
       const idList = userIds.map(id => encodeURIComponent(id)).join(',');
       const [rPhones, rBio] = await Promise.all([
         sbReq('GET', `/rest/v1/phone_verifications?user_id=in.(${idList})&status=eq.verified&select=user_id,phone_number,verified_at&order=verified_at.desc`),
-        sbReq('GET', `/rest/v1/biometric_verifications?user_id=in.(${idList})&select=user_id,status,admin_decision,rejection_reason,verified_at,updated_at&order=updated_at.desc`)
+        sbReq('GET', `/rest/v1/biometric_verifications?user_id=in.(${idList})&select=user_id,status,admin_decision,rejection_reason,verified_at,updated_at,verification_provider,verification_reference,receipt,admin_notes,admin_reviewed_at&order=updated_at.desc`)
       ]);
       const phones = rPhones.status === 200 ? JSON.parse(rPhones.body) : [];
       const bios = rBio.status === 200 ? JSON.parse(rBio.body) : [];
@@ -128,6 +128,11 @@ module.exports = async function handler(req, res) {
           : null,
         identity_status: bioByUser[u.id]?.admin_decision || bioByUser[u.id]?.status || 'none',
         rejection_reason: bioByUser[u.id]?.rejection_reason || null,
+        provider: bioByUser[u.id]?.verification_provider || null,
+        reference: bioByUser[u.id]?.verification_reference || null,
+        admin_notes: bioByUser[u.id]?.admin_notes || null,
+        admin_reviewed_at: bioByUser[u.id]?.admin_reviewed_at || null,
+        manual_files: bioByUser[u.id]?.receipt?.files || null,
         verified_at: bioByUser[u.id]?.verified_at || phoneByUser[u.id]?.verified_at || null,
       },
     }));

@@ -754,6 +754,14 @@
     const u = ALL_USERS.find(x => String(x.id) === String(userId));
     if (!u) return;
     const v = u.verification || {};
+    const manualFiles = v.manual_files || {};
+    const idPhotoPath = manualFiles.id_photo?.path || '';
+    const selfiePhotoPath = manualFiles.selfie_photo?.path || '';
+    const reviewFiles = (idPhotoPath || selfiePhotoPath) ? `
+          <div class="verify-row"><span>Review photos</span><strong>
+            ${idPhotoPath ? `<button class="btn-info" onclick="openVerificationFile('${escJs(idPhotoPath)}')">Open ID Photo</button>` : ''}
+            ${selfiePhotoPath ? `<button class="btn-info" onclick="openVerificationFile('${escJs(selfiePhotoPath)}')">Open Selfie</button>` : ''}
+          </strong></div>` : '';
     const ads = ALL_ADS.filter(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
     const level = v.level || (u.verified ? 'Verified Seller' : 'Not Verified');
     const latestAd = ads
@@ -777,8 +785,10 @@
           <div class="verify-row"><span>Email check</span><strong>${v.email_verified || u.confirmed ? 'Verified' : 'Not verified'}</strong></div>
           <div class="verify-row"><span>Phone check</span><strong>${v.phone_verified ? 'Verified' : 'Not verified'}</strong></div>
           <div class="verify-row"><span>ID/selfie check</span><strong>${escHtml(v.identity_status || 'none')}</strong></div>
+          ${reviewFiles}
           <div class="verify-row"><span>Listings</span><strong>${fmtNum(u.ad_count || ads.length)}</strong></div>
           <div class="verify-row"><span>Latest listing</span><strong>${escHtml(latestAd?.title || 'No listings')}</strong></div>
+          ${v.admin_notes ? `<div class="verify-row"><span>Admin notes</span><strong>${escHtml(v.admin_notes)}</strong></div>` : ''}
           ${v.rejection_reason ? `<div class="verify-row"><span>Issue</span><strong>${escHtml(v.rejection_reason)}</strong></div>` : ''}
           <div class="verify-actions">
             <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this,true)">${u.verified ? 'Remove Verification' : 'Approve Seller'}</button>
@@ -787,6 +797,23 @@
         </div>
       </div>`;
     document.body.appendChild(backdrop);
+  }
+
+  function escJs(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+  }
+
+  async function openVerificationFile(path) {
+    try {
+      const r = await fetch('/api/admin-verification-file?path=' + encodeURIComponent(path), { headers: adminHeaders() });
+      if (!r.ok) throw new Error('Could not open file');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch(e) {
+      alert(e.message || 'Could not open verification file');
+    }
   }
 
   function closeVerifyModal() {
@@ -820,7 +847,7 @@
       const nextRows = (data.nextSteps || []).map(s => `<li>${escHtml(s)}</li>`).join('');
       backdrop.querySelector('.admin-modal-body').innerHTML = `
         <div style="font-size:13px;color:#4f5d55;line-height:1.55;margin-bottom:12px;">
-          Verified Seller requires email, mobile number, and ID/selfie checks, unless you approve the seller manually.
+          Verified Seller requires email, mobile number, and manual ID/selfie review, unless you approve the seller directly.
         </div>
         <h4 style="color:#0A3D22;margin:10px 0 6px;">Environment</h4>
         ${envRows || '<div class="empty">No environment data.</div>'}

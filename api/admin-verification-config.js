@@ -4,13 +4,11 @@
 */
 'use strict';
 const https = require('https');
-const http = require('http');
 const { requireAdmin } = require('./_admin-auth');
 
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST = SB_URL_RAW.replace('https://', '');
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
-const BIO_URL = (process.env.BIOMETRIC_API_URL || '').replace(/\/$/, '');
 
 function sbReq(method, path) {
   return new Promise(resolve => {
@@ -33,28 +31,6 @@ function sbReq(method, path) {
   });
 }
 
-function pingBio(path) {
-  if (!BIO_URL) return Promise.resolve({ status: 0 });
-  return new Promise(resolve => {
-    let parsed;
-    try { parsed = new URL(BIO_URL); } catch { return resolve({ status: 0 }); }
-    const lib = parsed.protocol === 'https:' ? https : http;
-    const req = lib.request({
-      hostname: parsed.hostname,
-      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
-      path,
-      method: 'GET',
-      timeout: 5000,
-    }, res => {
-      res.resume();
-      res.on('end', () => resolve({ status: res.statusCode }));
-    });
-    req.on('timeout', () => { req.destroy(); resolve({ status: 0 }); });
-    req.on('error', () => resolve({ status: 0 }));
-    req.end();
-  });
-}
-
 function envStatus(name, testValue) {
   return { name, configured: !!testValue };
 }
@@ -72,17 +48,13 @@ module.exports = async function handler(req, res) {
     envStatus('META_WHATSAPP_BUSINESS_NUMBER', process.env.META_WHATSAPP_BUSINESS_NUMBER),
     envStatus('META_WEBHOOK_VERIFY_TOKEN', process.env.META_WEBHOOK_VERIFY_TOKEN),
     envStatus('META_APP_SECRET', process.env.META_APP_SECRET),
-    envStatus('BIOMETRIC_API_URL', process.env.BIOMETRIC_API_URL),
-    envStatus('BIOMETRIC_JWT_SECRET', process.env.BIOMETRIC_JWT_SECRET),
   ];
 
-  const [phoneTable, bioTable, attemptsTable, bucket, health, ready] = await Promise.all([
+  const [phoneTable, bioTable, attemptsTable, bucket] = await Promise.all([
     SB_KEY ? sbReq('GET', '/rest/v1/phone_verifications?select=id&limit=1') : Promise.resolve({ status: 0 }),
     SB_KEY ? sbReq('GET', '/rest/v1/biometric_verifications?select=id&limit=1') : Promise.resolve({ status: 0 }),
     SB_KEY ? sbReq('GET', '/rest/v1/verification_attempts?select=id&limit=1') : Promise.resolve({ status: 0 }),
     SB_KEY ? sbReq('GET', '/storage/v1/bucket/biometric-temp') : Promise.resolve({ status: 0 }),
-    pingBio('/healthz'),
-    pingBio('/readyz'),
   ]);
 
   const checks = [
@@ -90,15 +62,10 @@ module.exports = async function handler(req, res) {
     { name: 'biometric_verifications table', ok: bioTable.status === 200 },
     { name: 'verification_attempts table', ok: attemptsTable.status === 200 },
     { name: 'biometric-temp storage bucket', ok: bucket.status === 200 },
-    { name: 'biometric service healthz', ok: health.status === 200, status: health.status || 'unreachable' },
-    { name: 'biometric service readyz', ok: ready.status === 200, status: ready.status || 'unreachable' },
   ];
 
-  const ok = env.every(e => e.configured) && checks.every(c => c.ok);
+  const ok = !!process.env.SUPABASE_SERVICE_KEY && checks.every(c => c.ok);
   const nextSteps = [];
-  if (!process.env.BIOMETRIC_API_URL || !process.env.BIOMETRIC_JWT_SECRET) {
-    nextSteps.push('Deploy the biometrical-verify GitHub service to a Docker host, then set BIOMETRIC_API_URL and BIOMETRIC_JWT_SECRET in Vercel.');
-  }
   if (!process.env.META_WHATSAPP_BUSINESS_NUMBER || !process.env.META_WEBHOOK_VERIFY_TOKEN || !process.env.META_APP_SECRET) {
     nextSteps.push('Create/connect a Meta WhatsApp Business app, set the webhook to https://www.everythingmarket.co.za/api/whatsapp-webhook, then add the WhatsApp number, verify token, and app secret in Vercel.');
   }
