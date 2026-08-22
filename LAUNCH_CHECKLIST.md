@@ -29,7 +29,7 @@ Use this after every production push.
 - Recruit 25 private sellers.
 - Recruit 10 small businesses.
 - Add 100 real listings.
-- Ask 20 sellers to share listing or store links.
+- Ask 20 sellers to share individual listing links.
 - Review Search Console queries.
 - Add pages for promising searches.
 
@@ -38,4 +38,5 @@ Use this after every production push.
 - Seller recruitment: `https://everythingmarket.co.za/post-free-ad-south-africa`
 - Seller kit: `https://everythingmarket.co.za/seller-growth-kit`
 - Main SEO landing page: `https://everythingmarket.co.za/marketplace-south-africa`
+- Listing pages: `https://everythingmarket.co.za/ad/:id`
 - Sitemap: `https://everythingmarket.co.za/sitemap.xml`

@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
     const safeProducts = Array.isArray(products) ? products : [];
 
     const storeName = store.store_name || 'Everything Market Store';
-    const description = store.store_description || `Browse products from ${storeName} on Everything Market.`;
+    const description = store.store_description || `Browse active listings from ${storeName} on Everything Market.`;
     const pageUrl = `${SITE_URL}/store/${storeId}`;
     const logo = store.logo_url || `${SITE_URL}/logo.png`;
     const loc = safeProducts.find(p => p.loc)?.loc || 'South Africa';
@@ -129,7 +129,7 @@ module.exports = async function handler(req, res) {
         </div>
       </div>
       <div class="desc">${esc(description)}</div>
-      <a class="cta" href="/?store=${esc(storeId)}">View store on Everything Market</a>
+      <a class="cta" href="/?store=${esc(storeId)}">View active listings</a>
       ${safeProducts.length ? `<div class="grid">${productCards}</div>` : '<p class="desc">This store is approved and will be adding products soon.</p>'}
     </div>
   </div>

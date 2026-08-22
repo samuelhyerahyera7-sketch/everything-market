@@ -580,9 +580,6 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
   const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const oldest   = ads.length ? Math.min(...ads.map(l => l.postedAt || Date.now())) : Date.now();
   const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
-  const storeUrl = storeId ? 'https://www.everythingmarket.co.za/store/' + storeId : 'https://www.everythingmarket.co.za/';
-  const storeShareText = encodeURIComponent('View ' + sellerName + ' on Everything Market: ' + storeUrl);
-
   /* Build category tabs — prefer custom categories from API, fall back to auto-detect */
   let tabs = [];
   if (customCats.length) {
@@ -629,10 +626,6 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
           <span>·</span>
           <span>Since ${since}</span>
         </div>
-        ${storeId ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <a href="https://wa.me/?text=${storeShareText}" target="_blank" style="background:#25D366;color:#fff;text-decoration:none;border-radius:8px;padding:8px 11px;font-size:12px;font-weight:800;">Share Store</a>
-          <button onclick="navigator.clipboard.writeText('${storeUrl}').then(()=>toast('Store link copied!'))" style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer;">Copy Store Link</button>
-        </div>` : ''}
       </div>
     </div>
     <div class="shop-cat-tabs" id="shop-cat-tabs">

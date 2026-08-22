@@ -176,10 +176,10 @@ Best setup:
 - Submit sitemap in Google Search Console.
 - Add 100+ high-intent pages.
 - Recruit 100 sellers.
-- Push sellers to share listings.
+- Push sellers to share individual listing links first.
 - Add social share buttons.
 - Start weekly seller outreach.
-- Give approved businesses their `/store/:id` page to share on WhatsApp, Facebook and printed QR codes.
+- Use `/store/:id` as a secondary trust page for approved businesses; make `/ad/:id` the main sharing and SEO target.
 
 ## First 90 Days
 
