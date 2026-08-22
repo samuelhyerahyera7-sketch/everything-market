@@ -1379,7 +1379,7 @@ function openPostAdModal() {
           <input class="em-post-input" id="pa-name" type="text" placeholder="e.g. Sipho M." maxlength="50" value="${(_getSession()||{}).name||''}">
         </div>
         <div class="em-post-field">
-          <label class="em-post-label" for="pa-phone">WhatsApp / Phone <span>(required)</span></label>
+          <label class="em-post-label" for="pa-phone">Phone Number <span>(required)</span></label>
           <input class="em-post-input" id="pa-phone" type="tel" placeholder="e.g. 082 123 4567" maxlength="20">
         </div>
       </div>
@@ -1456,6 +1456,16 @@ function _paSaveDraft() {
     city:       get('pa-city')?.value  || '',
     prov:       get('pa-prov')?.value  || '',
     desc:       get('pa-desc')?.value  || '',
+    carMake:    get('pa-car-make')?.value || '',
+    carModel:   get('pa-car-model')?.value || '',
+    carBody:    get('pa-car-body')?.value || '',
+    carYear:    get('pa-car-year')?.value || '',
+    carKm:      get('pa-car-km')?.value || '',
+    carDrive:   get('pa-car-drive')?.value || '',
+    carTrans:   get('pa-car-trans')?.value || '',
+    carFuel:    get('pa-car-fuel')?.value || '',
+    carColour:  get('pa-car-colour')?.value || '',
+    carVariant: get('pa-car-variant')?.value || '',
     photos:     [],
     ts:         Date.now(),
   };
@@ -1489,6 +1499,20 @@ function _paRestoreDraft() {
   if (draft.city)   { const el = get('pa-city');    if (el) el.value = draft.city; }
   if (draft.prov)   { const el = get('pa-prov');    if (el) el.value = draft.prov; }
   if (draft.desc)   { const el = get('pa-desc');    if (el) el.value = draft.desc; }
+  [
+    ['pa-car-make', 'carMake'],
+    ['pa-car-model', 'carModel'],
+    ['pa-car-body', 'carBody'],
+    ['pa-car-year', 'carYear'],
+    ['pa-car-km', 'carKm'],
+    ['pa-car-drive', 'carDrive'],
+    ['pa-car-trans', 'carTrans'],
+    ['pa-car-fuel', 'carFuel'],
+    ['pa-car-colour', 'carColour'],
+    ['pa-car-variant', 'carVariant']
+  ].forEach(([id, key]) => {
+    if (draft[key]) { const el = get(id); if (el) el.value = draft[key]; }
+  });
   if (draft.sellerType) {
     document.querySelectorAll('#pa-stype .em-post-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.val === draft.sellerType);
@@ -1539,6 +1563,10 @@ window._paCatChange = function() {
   ];
   const JOB_TYPES = ['Full-time','Part-time','Contract','Freelance / Gig','Internship','Learnership'];
   const PROP_TYPES = ['House','Apartment / Flat','Room','Townhouse','Commercial / Office','Land / Plot','Farm'];
+  const CAR_BODY_TYPES = ['Hatchback','Sedan','SUV','Bakkie','Single Cab','Double Cab','Coupe','Convertible','Minibus','Panel Van','Truck','Motorcycle','Other'];
+  const CAR_DRIVE_TYPES = ['4x2','4x4','AWD','FWD','RWD','Other'];
+  const CAR_TRANSMISSIONS = ['Manual','Automatic','Semi-Automatic','CVT'];
+  const CAR_FUEL_TYPES = ['Petrol','Diesel','Hybrid','Electric','LPG','Other'];
 
   extra.style.display = 'none';
   extra.innerHTML = '';
@@ -1624,8 +1652,60 @@ window._paCatChange = function() {
           <input class="em-post-input" id="pa-car-make" type="text" placeholder="e.g. Toyota" maxlength="40">
         </div>
         <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-model">Model <span>(required)</span></label>
+          <input class="em-post-input" id="pa-car-model" type="text" placeholder="e.g. Hilux" maxlength="50">
+        </div>
+      </div>
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-body">Body Type</label>
+          <select class="em-post-select" id="pa-car-body">
+            <option value="">— Select body type —</option>
+            ${CAR_BODY_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="em-post-field">
           <label class="em-post-label" for="pa-car-year">Year</label>
           <input class="em-post-input" id="pa-car-year" type="number" placeholder="e.g. 2019" min="1970" max="2026">
+        </div>
+      </div>
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-km">Kilometres</label>
+          <input class="em-post-input" id="pa-car-km" type="number" placeholder="e.g. 123000" min="0" max="2000000">
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-drive">Drive Type</label>
+          <select class="em-post-select" id="pa-car-drive">
+            <option value="">— Select drive type —</option>
+            ${CAR_DRIVE_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-trans">Transmission</label>
+          <select class="em-post-select" id="pa-car-trans">
+            <option value="">— Select transmission —</option>
+            ${CAR_TRANSMISSIONS.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-fuel">Fuel Type</label>
+          <select class="em-post-select" id="pa-car-fuel">
+            <option value="">— Select fuel type —</option>
+            ${CAR_FUEL_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="em-post-row">
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-colour">Colour</label>
+          <input class="em-post-input" id="pa-car-colour" type="text" placeholder="e.g. Silver" maxlength="30">
+        </div>
+        <div class="em-post-field">
+          <label class="em-post-label" for="pa-car-variant">Variant / Engine</label>
+          <input class="em-post-input" id="pa-car-variant" type="text" placeholder="e.g. 2.8 GD-6" maxlength="50">
         </div>
       </div>`;
     document.getElementById('pa-title').placeholder = 'e.g. Toyota Hilux 2.8 GD-6 4×4 – Manual';
@@ -1726,7 +1806,15 @@ function submitPostAd(e) {
   const propType  = document.getElementById('pa-prop-type')  ? document.getElementById('pa-prop-type').value  : '';
   const propList  = document.getElementById('pa-prop-listing')? document.getElementById('pa-prop-listing').value: '';
   const carMake   = document.getElementById('pa-car-make')   ? document.getElementById('pa-car-make').value.trim() : '';
+  const carModel  = document.getElementById('pa-car-model')  ? document.getElementById('pa-car-model').value.trim() : '';
+  const carBody   = document.getElementById('pa-car-body')   ? document.getElementById('pa-car-body').value : '';
   const carYear   = document.getElementById('pa-car-year')   ? document.getElementById('pa-car-year').value   : '';
+  const carKm     = document.getElementById('pa-car-km')     ? document.getElementById('pa-car-km').value     : '';
+  const carDrive  = document.getElementById('pa-car-drive')  ? document.getElementById('pa-car-drive').value  : '';
+  const carTrans  = document.getElementById('pa-car-trans')  ? document.getElementById('pa-car-trans').value  : '';
+  const carFuel   = document.getElementById('pa-car-fuel')   ? document.getElementById('pa-car-fuel').value   : '';
+  const carColour = document.getElementById('pa-car-colour') ? document.getElementById('pa-car-colour').value.trim() : '';
+  const carVariant= document.getElementById('pa-car-variant')? document.getElementById('pa-car-variant').value.trim() : '';
 
   /* Build the cond chip from the extra field when applicable */
   let cond = document.getElementById('pa-cond').value;
@@ -1738,7 +1826,31 @@ function submitPostAd(e) {
   let enrichedDesc = desc;
   if (cat === 'serv' && servAvail)  enrichedDesc = 'Availability: ' + servAvail + '\n\n' + desc;
   if (cat === 'jobs' && jobExp)     enrichedDesc = 'Experience required: ' + jobExp + '\n\n' + desc;
-  if (cat === 'cars' && (carMake || carYear)) enrichedDesc = (carMake ? 'Make: ' + carMake + '\n' : '') + (carYear ? 'Year: ' + carYear + '\n' : '') + '\n' + desc;
+  const vehicleDetails = cat === 'cars' ? {
+    make: carMake,
+    model: carModel,
+    bodyType: carBody,
+    year: carYear,
+    kilometres: carKm,
+    driveType: carDrive,
+    transmission: carTrans,
+    fuelType: carFuel,
+    colour: carColour,
+    variant: carVariant
+  } : null;
+  const vehicleLines = vehicleDetails ? [
+    ['Make', vehicleDetails.make],
+    ['Model', vehicleDetails.model],
+    ['Body Type', vehicleDetails.bodyType],
+    ['Year', vehicleDetails.year],
+    ['Kilometres', vehicleDetails.kilometres],
+    ['Drive Type', vehicleDetails.driveType],
+    ['Transmission', vehicleDetails.transmission],
+    ['Fuel Type', vehicleDetails.fuelType],
+    ['Colour', vehicleDetails.colour],
+    ['Variant', vehicleDetails.variant]
+  ].filter(([, value]) => value).map(([label, value]) => label + ': ' + value) : [];
+  if (cat === 'cars' && vehicleLines.length) enrichedDesc = 'Vehicle Details:\n' + vehicleLines.join('\n') + '\n\n' + desc;
 
   const errEl = document.getElementById('pa-error');
   const errors = [];
@@ -1747,6 +1859,8 @@ function submitPostAd(e) {
   if (cat === 'serv' && !servType) errors.push('Please select a service type.');
   if (cat === 'jobs' && !jobType)  errors.push('Please select a job type.');
   if (cat === 'prop' && !propType) errors.push('Please select a property type.');
+  if (cat === 'cars' && !carMake)  errors.push('Please enter the vehicle make.');
+  if (cat === 'cars' && !carModel) errors.push('Please enter the vehicle model.');
   if (!name)               errors.push('Your name is required.');
   if (!phone)              errors.push('Phone number is required.');
   if (!email || !email.includes('@')) errors.push('A valid contact email is required.');
@@ -1792,6 +1906,7 @@ function submitPostAd(e) {
     sellerType,
     verified: !!_sbUser?.user_metadata?.verified,
     photos: [...(window._paPhotos || [])],
+    vehicleDetails,
     isUserAd: true,
     userId: sess ? sess.userId : null,
     phone,
@@ -2044,6 +2159,50 @@ function _lbKey(e) {
   });
 })();
 
+function _emVehicleInfo(listing) {
+  const details = {
+    make: '', model: '', bodyType: '', year: '', kilometres: '',
+    driveType: '', transmission: '', fuelType: '', colour: '', variant: ''
+  };
+  const map = {
+    'make': 'make',
+    'model': 'model',
+    'body type': 'bodyType',
+    'year': 'year',
+    'kilometres': 'kilometres',
+    'kilometers': 'kilometres',
+    'drive type': 'driveType',
+    'transmission': 'transmission',
+    'fuel type': 'fuelType',
+    'colour': 'colour',
+    'color': 'colour',
+    'variant': 'variant'
+  };
+  Object.assign(details, listing.vehicleDetails || {});
+
+  let cleanDesc = String(listing.desc || '');
+  const match = cleanDesc.match(/^Vehicle Details:\s*\n([\s\S]*?)(?:\n{2,}([\s\S]*)|$)/i);
+  if (match) {
+    match[1].split('\n').forEach(line => {
+      const parts = line.split(':');
+      const label = (parts.shift() || '').trim().toLowerCase();
+      const value = parts.join(':').trim();
+      const key = map[label];
+      if (key && value) details[key] = value;
+    });
+    cleanDesc = (match[2] || '').trim();
+  }
+  return { details, cleanDesc };
+}
+
+function _emFmtVehicleKm(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const digits = raw.replace(/[^\d]/g, '');
+  if (!digits) return raw;
+  return Number(digits).toLocaleString('en-ZA');
+}
+
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
@@ -2065,6 +2224,30 @@ function openBuyNow(listing) {
   const shareText = 'Check out this listing on Everything Market!\n\n' + listing.title + '\n' + price + '\n' + _fmtLoc(listing.loc) + '\n\n' + adUrl;
   const shareUrl = encodeURIComponent(adUrl);
   const encodedShareText = encodeURIComponent(shareText);
+  const vehicleInfo = _emVehicleInfo(listing);
+  const detailRows = [
+    ['Location', _fmtLoc(listing.loc), true],
+    ['For Sale By', listing.sellerType === 'dealer' ? 'Dealership' : 'Owner', false],
+    ['Make', vehicleInfo.details.make, true],
+    ['Model', vehicleInfo.details.model, true],
+    ['Body Type', vehicleInfo.details.bodyType, false],
+    ['Year', vehicleInfo.details.year, false],
+    ['Kilometres', _emFmtVehicleKm(vehicleInfo.details.kilometres), false],
+    ['Drive Type', vehicleInfo.details.driveType, false],
+    ['Transmission', vehicleInfo.details.transmission, false],
+    ['Fuel Type', vehicleInfo.details.fuelType, false],
+    ['Colour', vehicleInfo.details.colour, false],
+    ['Variant', vehicleInfo.details.variant, false]
+  ].filter(([, value]) => value);
+  const vehicleDetailsHTML = listing.cat === 'cars' && detailRows.length ? `
+    <div class="em-vehicle-details">
+      <div class="em-vehicle-details-title">Vehicle Details</div>
+      ${detailRows.map(([label, value, accent]) => `
+        <div class="em-vehicle-row">
+          <span>${label}:</span>
+          <strong class="${accent ? 'accent' : ''}">${_spEsc(value)}</strong>
+        </div>`).join('')}
+    </div>` : '';
 
   const related = LISTINGS.filter(l => l.cat === listing.cat && String(l.id) !== String(listing.id)).slice(0, 4);
   const relatedHTML = related.length ? `
@@ -2113,7 +2296,8 @@ function openBuyNow(listing) {
         <span class="gt-chip">${fmtTime(listing.postedAt)}</span>
         <span class="gt-chip em-view-count" id="modal-view-count"></span>
       </div>
-      ${listing.desc ? `<div class="em-ad-detail-desc">${listing.desc}</div>` : ''}
+      ${vehicleDetailsHTML}
+      ${vehicleInfo.cleanDesc ? `<div class="em-ad-detail-desc">${_spEsc(vehicleInfo.cleanDesc)}</div>` : ''}
       <div class="em-modal-seller" style="margin:0 0 4px;">
         <div class="em-modal-avatar">${initials}</div>
         <div style="flex:1;min-width:0;">

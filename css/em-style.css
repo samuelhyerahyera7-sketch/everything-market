@@ -443,6 +443,12 @@ svg { display: block; }
 .em-ad-detail-title { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.35; margin-bottom: 10px; }
 .em-ad-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .em-ad-detail-desc { font-size: 13px; color: var(--ink2); line-height: 1.6; margin-bottom: 16px; }
+.em-vehicle-details { border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; margin: 4px 0 16px; background: var(--white); }
+.em-vehicle-details-title { font-size: 18px; font-weight: 900; color: var(--ink); margin-bottom: 12px; }
+.em-vehicle-row { display: grid; grid-template-columns: 112px 1fr; gap: 8px; align-items: baseline; padding: 7px 0; font-size: 14px; line-height: 1.35; }
+.em-vehicle-row span { color: var(--muted); }
+.em-vehicle-row strong { color: var(--ink); font-size: 16px; }
+.em-vehicle-row strong.accent { color: var(--leaf); }
 .em-modal-seller { display: flex; align-items: center; gap: 10px; padding: 0 20px 14px; }
 .em-modal-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--leaf); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .em-modal-seller-name { font-size: 13px; font-weight: 700; color: var(--ink); }
