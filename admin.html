@@ -1007,8 +1007,10 @@
       const desc = a.store_description ? escHtml(a.store_description) : '<span style="color:#999;">No description</span>';
       const actions = (a.status || 'pending') === 'pending'
         ? `<button class="btn-vfy" onclick="reviewStoreApplication('${escJs(a.id)}','approve',this)">Approve</button>
-           <button class="btn-del" onclick="reviewStoreApplication('${escJs(a.id)}','reject',this)">Reject</button>`
-        : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>`;
+           <button class="btn-del" onclick="reviewStoreApplication('${escJs(a.id)}','reject',this)">Reject</button>
+           <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:4px;">Delete</button>`
+        : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>
+           <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:8px;">Delete Store</button>`;
       return `<tr id="store-row-${escHtml(a.id)}">
         <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}</div></td>
         <td>${a.user_email ? `<a href="mailto:${escHtml(a.user_email)}" style="color:#1565C0;text-decoration:none;">${escHtml(a.user_email)}</a>` : '–'}</td>
@@ -1054,6 +1056,31 @@
       btn.disabled = false;
       btn.textContent = action === 'approve' ? 'Approve' : 'Reject';
       alert(e.message || 'Store review failed');
+    }
+  }
+
+  async function deleteStore(storeId, btn) {
+    const app = ALL_STORE_APPS.find(a => String(a.id) === String(storeId));
+    if (!app) return;
+    const name = app.store_name || 'this store';
+    if (!confirm(`Delete ${name}?\n\nThis removes the store, its products, categories and subscription data. This cannot be undone.`)) return;
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+    try {
+      const r = await fetch('/api/admin-store-action', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ action: 'delete_store', store_id: storeId })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.error) throw new Error(data.error || 'Could not delete store');
+      ALL_STORE_APPS = ALL_STORE_APPS.filter(a => String(a.id) !== String(storeId));
+      renderStoreApplications();
+      updateStats();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Delete Store';
+      alert(e.message || 'Could not delete store');
     }
   }
 

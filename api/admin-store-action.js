@@ -112,6 +112,69 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  /* ── Delete store ── */
+  if (action === 'delete_store') {
+    if (!store_id) return res.status(400).json({ error: 'Missing store_id' });
+    const appRes = await sb('GET', `/rest/v1/store_applications?id=eq.${encodeURIComponent(store_id)}&select=*`, null, KEY);
+    const apps = JSON.parse(appRes.b || '[]');
+    if (!apps.length) return res.status(404).json({ error: 'Store not found' });
+    const app = apps[0];
+
+    await sb('DELETE', `/rest/v1/store_products?store_id=eq.${encodeURIComponent(store_id)}`, null, KEY);
+    await sb('DELETE', `/rest/v1/store_subscriptions?store_id=eq.${encodeURIComponent(store_id)}`, null, KEY);
+    await sb('DELETE', `/rest/v1/store_categories?store_id=eq.${encodeURIComponent(store_id)}`, null, KEY);
+    const delApp = await sb('DELETE', `/rest/v1/store_applications?id=eq.${encodeURIComponent(store_id)}`, null, KEY);
+    if (delApp.s < 200 || delApp.s >= 300) {
+      return res.status(500).json({ error: 'Could not delete store' });
+    }
+
+    if (app.user_id) {
+      await new Promise(resolve => {
+        const getReq = https.request({
+          hostname: SB_HOST,
+          path: `/auth/v1/admin/users/${encodeURIComponent(app.user_id)}`,
+          method: 'GET',
+          headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }
+        }, getRes => {
+          let raw = '';
+          getRes.on('data', d => raw += d);
+          getRes.on('end', () => {
+            let existingMeta = {};
+            try { existingMeta = JSON.parse(raw).user_metadata || {}; } catch {}
+            const payload = JSON.stringify({
+              user_metadata: {
+                ...existingMeta,
+                store_approved: false,
+                store_applied: false,
+                store_name: null,
+                store_id: null,
+                store_type: null,
+                store_subscription_until: null
+              }
+            });
+            const req2 = https.request({
+              hostname: SB_HOST,
+              path: `/auth/v1/admin/users/${encodeURIComponent(app.user_id)}`,
+              method: 'PUT',
+              headers: {
+                apikey: KEY, Authorization: 'Bearer ' + KEY,
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+              }
+            }, r => { r.resume(); r.on('end', resolve); });
+            req2.on('error', resolve);
+            req2.write(payload);
+            req2.end();
+          });
+        });
+        getReq.on('error', resolve);
+        getReq.end();
+      });
+    }
+
+    return res.status(200).json({ ok: true });
+  }
+
   /* ── Extend subscription ── */
   if (action === 'extend_subscription') {
     if (!store_id) return res.status(400).json({ error: 'Missing store_id' });

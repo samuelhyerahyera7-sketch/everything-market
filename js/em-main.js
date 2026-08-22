@@ -2836,8 +2836,22 @@ async function _renderCategoriesTab() {
     </div>`;
 }
 
-function _renderSettingsTab() {
-  const meta = _sbUser?.user_metadata || {};
+async function _renderSettingsTab() {
+  let meta = _sbUser?.user_metadata || {};
+  try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token;
+    const r = await fetch('/api/store-settings', { headers: { Authorization: 'Bearer ' + token } });
+    if (r.ok) {
+      const store = await r.json();
+      meta = {
+        ...meta,
+        store_name: store.store_name,
+        store_description: store.store_description,
+        store_type: store.store_type,
+        logo_url: store.logo_url
+      };
+    }
+  } catch (_) {}
   const content = document.getElementById('store-dash-content');
   content.innerHTML = `
     <div class="dash-section-hdr">
@@ -2846,11 +2860,22 @@ function _renderSettingsTab() {
     <div class="dash-settings-card">
       <div class="dash-field">
         <label class="dash-label">Store Name</label>
-        <div class="dash-value">${meta.store_name || '—'}</div>
+        <input id="store-set-name" class="em-post-input" maxlength="80" value="${_spEsc(meta.store_name || _dashStoreName || '')}">
+      </div>
+      <div class="dash-field">
+        <label class="dash-label">Store Description</label>
+        <textarea id="store-set-desc" class="em-post-input" rows="4" maxlength="500" style="resize:vertical;" placeholder="Tell buyers what your store sells…">${_spEsc(meta.store_description || '')}</textarea>
+      </div>
+      <div class="dash-field">
+        <label class="dash-label">Logo URL</label>
+        <input id="store-set-logo" class="em-post-input" maxlength="1000" placeholder="https://…" value="${_spEsc(meta.logo_url || '')}">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Paste a public image URL for now.</div>
       </div>
       <div class="dash-field">
         <label class="dash-label">Store Type</label>
-        <div class="dash-value">${(meta.store_type || 'retail').charAt(0).toUpperCase() + (meta.store_type || 'retail').slice(1)}</div>
+        <select id="store-set-type" class="em-post-input">
+          ${['retail','dealership','services','wholesale','other'].map(t => `<option value="${t}" ${(meta.store_type || 'retail') === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+        </select>
       </div>
       <div class="dash-field">
         <label class="dash-label">Store ID</label>
@@ -2862,8 +2887,41 @@ function _renderSettingsTab() {
       </div>
     </div>
     <div style="margin-top:20px;">
+      <button class="dash-add-btn" onclick="saveStoreSettings()">Save Store Settings</button>
       <button class="dash-add-btn" onclick="openMyStore()">Preview Your Store →</button>
     </div>`;
+}
+
+async function saveStoreSettings() {
+  const storeName = (document.getElementById('store-set-name')?.value || '').trim();
+  const storeDescription = (document.getElementById('store-set-desc')?.value || '').trim();
+  const logoUrl = (document.getElementById('store-set-logo')?.value || '').trim();
+  const storeType = document.getElementById('store-set-type')?.value || 'retail';
+  if (!storeName) { toast('Store name is required.'); return; }
+  const token = (await _sb.auth.getSession()).data.session?.access_token;
+  try {
+    const r = await fetch('/api/store-settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ store_name: storeName, store_description: storeDescription, logo_url: logoUrl, store_type: storeType })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || 'Could not save store settings');
+    _dashStoreName = data.store_name || storeName;
+    if (_sbUser) {
+      _sbUser.user_metadata = {
+        ...(_sbUser.user_metadata || {}),
+        store_name: _dashStoreName,
+        store_type: data.store_type || storeType,
+        store_description: data.store_description || storeDescription,
+        logo_url: data.logo_url || logoUrl
+      };
+    }
+    document.getElementById('store-dash-title').textContent = _dashStoreName;
+    toast('Store settings saved.');
+  } catch (e) {
+    toast(e.message || 'Could not save store settings.');
+  }
 }
 
 async function _renderSubscriptionTab() {
@@ -2903,6 +2961,15 @@ async function _renderSubscriptionTab() {
     <p class="dash-sub-note">To pay or renew your subscription, please contact us at <a href="mailto:stores@everythingmarket.co.za" style="color:var(--leaf);">stores@everythingmarket.co.za</a></p>`;
 }
 
+window._spExistingPhotos = [];
+window._spNewPhotos = [];
+
+function _spEsc(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 function openAddProductModal(editProduct) {
   const isEdit = !!editProduct;
   const p = editProduct || {};
@@ -2912,6 +2979,8 @@ function openAddProductModal(editProduct) {
 
   const existingPhotos = Array.isArray(p.photos) ? p.photos
     : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : []);
+  window._spExistingPhotos = existingPhotos.filter(Boolean).slice(0, 10);
+  window._spNewPhotos = [];
 
   const html = `
     <div class="em-modal-bar">
@@ -2921,11 +2990,11 @@ function openAddProductModal(editProduct) {
     <div class="info-modal-body">
       <div class="em-post-field">
         <label class="em-post-label">Title *</label>
-        <input id="sp-title" class="em-post-input" placeholder="Product name" maxlength="120" value="${p.title || ''}">
+        <input id="sp-title" class="em-post-input" placeholder="Product name" maxlength="120" value="${_spEsc(p.title || '')}">
       </div>
       <div class="em-post-field">
         <label class="em-post-label">Description</label>
-        <textarea id="sp-desc" class="em-post-input" rows="3" style="resize:vertical;" maxlength="1000" placeholder="Describe your product…">${p.description || ''}</textarea>
+        <textarea id="sp-desc" class="em-post-input" rows="3" style="resize:vertical;" maxlength="1000" placeholder="Describe your product…">${_spEsc(p.description || '')}</textarea>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="em-post-field">
@@ -2958,23 +3027,103 @@ function openAddProductModal(editProduct) {
       </div>
       <div class="em-post-field">
         <label class="em-post-label">Location</label>
-        <input id="sp-loc" class="em-post-input" placeholder="e.g. Cape Town" value="${p.loc || ''}">
+        <input id="sp-loc" class="em-post-input" placeholder="e.g. Cape Town" value="${_spEsc(p.loc || '')}">
       </div>
       <div class="em-post-field">
-        <label class="em-post-label">Photo URLs (one per line)</label>
-        <textarea id="sp-photos" class="em-post-input" rows="3" style="resize:vertical;font-size:11px;font-family:monospace;" placeholder="https://…">${existingPhotos.join('\n')}</textarea>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Paste image URLs (Unsplash, Imgur, etc.) one per line.</div>
+        <label class="em-post-label">Pictures <span id="sp-photo-count-lbl">(${window._spExistingPhotos.length} / 10)</span></label>
+        <div class="em-photo-previews" id="sp-photo-previews"></div>
+        <div class="em-photo-zone" id="sp-dropzone" style="margin-top:8px;" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="_spDrop(event)">
+          <input type="file" accept="image/*" multiple id="sp-photo-files" onchange="_spAddPhotos(this.files);this.value=''">
+          <div class="em-photo-zone-txt"><strong>📷 Add product pictures</strong><br><span style="font-size:11px;color:var(--muted)">Up to 10 pictures. First picture is the cover.</span></div>
+        </div>
       </div>
       <div id="sp-err" class="em-post-error" style="display:none;"></div>
       <button class="em-post-submit" onclick="submitStoreProduct(${isEdit ? `'${p.id}'` : 'null'})">${isEdit ? 'Save Changes' : 'Add Product'}</button>
     </div>`;
-  _openModal(html);
+  modalBox.innerHTML = html;
+  _openModal();
+  _spRenderPhotos();
 }
 
 function openEditProductModal(productId) {
   const p = _dashProducts.find(x => String(x.id) === String(productId));
   if (!p) { toast('Product not found.'); return; }
   openAddProductModal(p);
+}
+
+function _spRenderPhotos() {
+  const container = document.getElementById('sp-photo-previews');
+  const allPhotos = [...window._spExistingPhotos, ...window._spNewPhotos];
+  if (container) {
+    container.innerHTML = allPhotos.map((url, i) => `
+      <div class="em-photo-thumb-wrap">
+        <img class="em-photo-thumb" src="${url}" alt="Product photo ${i + 1}">
+        ${i === 0 ? '<span class="em-photo-main-lbl">Cover</span>' : ''}
+        <button type="button" class="em-photo-rm" onclick="_spRemovePhoto(${i})" title="Remove">&#x2715;</button>
+      </div>`).join('');
+  }
+  const lbl = document.getElementById('sp-photo-count-lbl');
+  if (lbl) lbl.textContent = `(${allPhotos.length} / 10)`;
+  const zone = document.getElementById('sp-dropzone');
+  if (zone) zone.style.display = allPhotos.length >= 10 ? 'none' : '';
+}
+
+window._spRemovePhoto = function(idx) {
+  if (idx < window._spExistingPhotos.length) window._spExistingPhotos.splice(idx, 1);
+  else window._spNewPhotos.splice(idx - window._spExistingPhotos.length, 1);
+  _spRenderPhotos();
+};
+
+window._spAddPhotos = function(files) {
+  const remaining = 10 - window._spExistingPhotos.length - window._spNewPhotos.length;
+  Array.from(files).slice(0, remaining).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        window._spNewPhotos.push(canvas.toDataURL('image/jpeg', 0.82));
+        _spRenderPhotos();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+window._spDrop = function(e) {
+  e.preventDefault();
+  document.getElementById('sp-dropzone')?.classList.remove('drag');
+  _spAddPhotos(e.dataTransfer.files);
+};
+
+async function _spUploadNewPhotos(productKey) {
+  const uploaded = [];
+  for (let i = 0; i < window._spNewPhotos.length; i++) {
+    const r = await fetch('/api/upload-photo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adId: 'store-' + productKey,
+        index: Date.now() + '-' + i,
+        dataUrl: window._spNewPhotos[i]
+      })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.url) throw new Error(data.error || 'Could not upload product picture');
+    uploaded.push(data.url);
+  }
+  return uploaded;
 }
 
 async function submitStoreProduct(editId) {
@@ -2987,8 +3136,6 @@ async function submitStoreProduct(editId) {
   const catName = catEl?.options[catEl.selectedIndex]?.dataset.name || catEl?.options[catEl.selectedIndex]?.text || '';
   const cond   = document.getElementById('sp-cond')?.value || 'New';
   const loc    = (document.getElementById('sp-loc')?.value || '').trim();
-  const photosTxt = (document.getElementById('sp-photos')?.value || '').trim();
-  const photos = photosTxt ? photosTxt.split('\n').map(s => s.trim()).filter(Boolean) : [];
 
   const errEl = document.getElementById('sp-err');
   if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = ''; return; }
@@ -2998,7 +3145,7 @@ async function submitStoreProduct(editId) {
   const body = {
     store_id: _dashStoreId, title, description: desc, price,
     category_id: catId || undefined, category_name: catName || undefined,
-    condition: cond, photos, loc,
+    condition: cond, loc,
     stock_qty: stock !== '' && stock != null ? parseInt(stock) : null
   };
 
@@ -3006,8 +3153,12 @@ async function submitStoreProduct(editId) {
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
   try {
+    const productKey = editId || ('new-' + Date.now());
+    const uploadedPhotos = await _spUploadNewPhotos(productKey);
+    const photos = [...window._spExistingPhotos, ...uploadedPhotos].slice(0, 10);
     const method = editId ? 'PATCH' : 'POST';
     const payload = editId ? { id: editId, ...body } : body;
+    payload.photos = photos;
     const r = await fetch('/api/store-products', {
       method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify(payload)
@@ -3018,7 +3169,7 @@ async function submitStoreProduct(editId) {
     toast(editId ? 'Product updated.' : 'Product added!');
     _renderProductsTab();
   } catch (e) {
-    errEl.textContent = 'Network error. Please try again.';
+    errEl.textContent = e.message || 'Network error. Please try again.';
     errEl.style.display = '';
     if (btn) { btn.disabled = false; btn.textContent = editId ? 'Save Changes' : 'Add Product'; }
   }
