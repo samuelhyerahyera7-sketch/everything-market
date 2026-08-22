@@ -97,6 +97,7 @@
   .badge-spons { background: #fff8e1; color: #f57f17; }
   .badge-conf  { background: #e8f5e9; color: #2e7d32; }
   .badge-pend  { background: #fff3e0; color: #e65100; }
+  .badge-rej   { background: #ffebee; color: #c62828; }
   .btn-del { background: #c0392b; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .btn-del:hover { background: #922b21; }
   .btn-del:disabled { background: #ccc; cursor: default; }
@@ -184,6 +185,7 @@
     <div class="stat-card blue" data-stat="users" onclick="showStatDetail('users')"><div class="num" id="stat-users">–</div><div class="lbl">Registered Users</div></div>
     <div class="stat-card blue" data-stat="users-today" onclick="showStatDetail('users-today')"><div class="num" id="stat-users-today">–</div><div class="lbl">New Users Today</div></div>
     <div class="stat-card orange" data-stat="msgs" onclick="showStatDetail('msgs')"><div class="num" id="stat-msgs">–</div><div class="lbl">Messages Sent</div></div>
+    <div class="stat-card green" data-stat="store-requests" onclick="showStatDetail('store-requests')"><div class="num" id="stat-store-requests">–</div><div class="lbl">Store Requests</div></div>
     <div class="stat-card orange" data-stat="boosted" onclick="showStatDetail('boosted')"><div class="num" id="stat-boosted">–</div><div class="lbl">Boosted Ads</div></div>
     <div class="stat-card green" data-stat="views" onclick="showStatDetail('views')"><div class="num" id="stat-views">–</div><div class="lbl">Views 30 Days</div></div>
   </div>
@@ -196,6 +198,7 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('ads')">📋 Ads</div>
     <div class="tab" onclick="switchTab('users')">👥 Users</div>
+    <div class="tab" onclick="switchTab('stores')">🏪 Store Requests</div>
     <div class="tab" onclick="switchTab('chats')">💬 Chats</div>
     <div class="tab" onclick="switchTab('growth')">📈 Growth</div>
   </div>
@@ -248,6 +251,23 @@
     </div>
   </div>
 
+  <!-- ── STORE REQUESTS TAB ── -->
+  <div class="tab-content" id="tab-stores">
+    <div class="filter-bar">
+      <input type="text" id="store-srch" placeholder="Search store name, email or type…" oninput="renderStoreApplications()">
+      <select id="store-status-filter" onchange="renderStoreApplications()">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <button class="btn-info" onclick="loadStoreApplications()">Refresh</button>
+    </div>
+    <div class="tbl-wrap">
+      <div id="stores-wrap"><div class="loading">Loading store requests…</div></div>
+    </div>
+  </div>
+
   <!-- ── CHATS TAB ── -->
   <div class="tab-content" id="tab-chats">
     <div class="filter-bar">
@@ -273,6 +293,7 @@
   let ALL_ADS   = [];
   let ALL_USERS = [];
   let ALL_CHATS = [];
+  let ALL_STORE_APPS = [];
   let ALL_GROWTH = null;
   let CURRENT_STAT = 'total';
   let ADMIN_TOKEN = sessionStorage.getItem('em_admin_token') || '';
@@ -323,9 +344,10 @@
 
   /* ── Tab switching ── */
   function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','chats','growth'][i] === name));
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','stores','chats','growth'][i] === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'stores') renderStoreApplications();
     if (name === 'growth') renderGrowthPanels();
   }
 
@@ -333,6 +355,7 @@
   async function loadAll() {
     loadAds();
     loadUsers();
+    loadStoreApplications();
     loadChats();
     loadGrowth();
   }
@@ -357,6 +380,7 @@
     document.getElementById('stat-sellers').textContent = new Set(ALL_ADS.map(a => a.seller)).size;
     document.getElementById('stat-boosted').textContent = ALL_ADS.filter(a => a.sponsored).length;
     document.getElementById('stat-views').textContent   = fmtNum(ALL_GROWTH?.totals?.pageViews30d || 0);
+    document.getElementById('stat-store-requests').textContent = ALL_STORE_APPS.filter(a => (a.status || 'pending') === 'pending').length;
     showStatDetail(CURRENT_STAT);
   }
 
@@ -415,6 +439,9 @@
     const boosted = ALL_ADS.filter(a => a.sponsored);
     const usersToday = ALL_USERS.filter(u => (u.created_at || '').startsWith(new Date().toISOString().slice(0, 10)));
     const messages = ALL_CHATS.reduce((sum, c) => sum + (c.messages?.length || 0), 0);
+    const pendingStores = ALL_STORE_APPS.filter(a => (a.status || 'pending') === 'pending');
+    const approvedStores = ALL_STORE_APPS.filter(a => a.status === 'approved');
+    const rejectedStores = ALL_STORE_APPS.filter(a => a.status === 'rejected');
     const growth = ALL_GROWTH?.totals || {};
     const topAds = (ALL_GROWTH?.topAds || []).slice(0, 6);
     const topSearches = (ALL_GROWTH?.topSearches || []).slice(0, 6);
@@ -490,6 +517,16 @@
           statCard('Messages 30 days', fmtNum(growth.messages30d || 0), 'Event tracking'),
         ],
         list: listItems(ALL_CHATS.slice(0, 8).map(c => `<b>${escHtml(c.ad_title || 'Unknown ad')}</b> · ${fmtNum(c.messages?.length || 0)} messages · ${escHtml(c.sender_name || c.sender_email)}`), 'No chats yet.'),
+      },
+      'store-requests': {
+        title: 'Store Requests',
+        intro: 'These are storefront applications waiting for admin review. Approve good stores quickly so they can build supply on Everything Market.',
+        cards: [
+          statCard('Pending review', fmtNum(pendingStores.length), 'Needs admin action'),
+          statCard('Approved stores', fmtNum(approvedStores.length), 'Live storefront supply'),
+          statCard('Rejected requests', fmtNum(rejectedStores.length), 'Quality control'),
+        ],
+        list: listItems(pendingStores.slice(0, 8).map(a => `<b>${escHtml(a.store_name)}</b> · ${escHtml(a.user_email || 'No email')} · ${escHtml(a.store_type || 'retail')}`), 'No pending store requests.'),
       },
       boosted: {
         title: 'Boosted Ads',
@@ -921,6 +958,103 @@
         updateStats();
       } else { btn.disabled = false; btn.textContent = 'Delete'; alert('Delete failed: ' + (j.error || 'unknown')); }
     } catch(e) { btn.disabled = false; btn.textContent = 'Delete'; alert('Error: ' + e.message); }
+  }
+
+  /* ── STORE REQUESTS ── */
+  async function loadStoreApplications() {
+    const wrap = document.getElementById('stores-wrap');
+    try {
+      if (wrap) wrap.innerHTML = '<div class="loading">Loading store requests…</div>';
+      const r = await fetch('/api/admin-store-action', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ action: 'list_applications' })
+      });
+      const data = await r.json().catch(() => []);
+      if (!r.ok) throw new Error(data.error || 'Status ' + r.status);
+      ALL_STORE_APPS = Array.isArray(data) ? data : [];
+      updateStats();
+      renderStoreApplications();
+    } catch(e) {
+      if (wrap) wrap.innerHTML = '<div class="empty">Failed to load store requests: ' + escHtml(e.message) + '</div>';
+    }
+  }
+
+  function storeStatusBadge(status) {
+    const s = status || 'pending';
+    if (s === 'approved') return '<span class="badge badge-conf">Approved</span>';
+    if (s === 'rejected') return '<span class="badge badge-rej">Rejected</span>';
+    return '<span class="badge badge-pend">Pending</span>';
+  }
+
+  function renderStoreApplications() {
+    const wrap = document.getElementById('stores-wrap');
+    if (!wrap) return;
+    const q = (document.getElementById('store-srch')?.value || '').trim().toLowerCase();
+    const status = document.getElementById('store-status-filter')?.value || '';
+    let apps = ALL_STORE_APPS.filter(a => {
+      const hay = [a.store_name, a.user_email, a.store_type, a.status].join(' ').toLowerCase();
+      return (!q || hay.includes(q)) && (!status || (a.status || 'pending') === status);
+    });
+    apps.sort((a, b) => new Date(b.applied_at || b.created_at || 0) - new Date(a.applied_at || a.created_at || 0));
+    if (!apps.length) {
+      wrap.innerHTML = '<div class="empty">No store requests found.</div>';
+      return;
+    }
+    const rows = apps.map(a => {
+      const applied = a.applied_at ? new Date(a.applied_at).toLocaleString('en-ZA') : '–';
+      const reviewed = a.reviewed_at ? new Date(a.reviewed_at).toLocaleString('en-ZA') : '–';
+      const desc = a.store_description ? escHtml(a.store_description) : '<span style="color:#999;">No description</span>';
+      const actions = (a.status || 'pending') === 'pending'
+        ? `<button class="btn-vfy" onclick="reviewStoreApplication('${escJs(a.id)}','approve',this)">Approve</button>
+           <button class="btn-del" onclick="reviewStoreApplication('${escJs(a.id)}','reject',this)">Reject</button>`
+        : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>`;
+      return `<tr id="store-row-${escHtml(a.id)}">
+        <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}</div></td>
+        <td>${a.user_email ? `<a href="mailto:${escHtml(a.user_email)}" style="color:#1565C0;text-decoration:none;">${escHtml(a.user_email)}</a>` : '–'}</td>
+        <td style="max-width:280px;line-height:1.45;">${desc}</td>
+        <td>${storeStatusBadge(a.status)}</td>
+        <td>${applied}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Store</th><th>Applicant</th><th>Description</th><th>Status</th><th>Applied</th><th>Action</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  async function reviewStoreApplication(storeId, action, btn) {
+    const app = ALL_STORE_APPS.find(a => String(a.id) === String(storeId));
+    if (!app) return;
+    let rejectionReason = '';
+    if (action === 'reject') {
+      rejectionReason = prompt('Reason for rejecting this store request:', 'Does not meet Everything Market store requirements') || '';
+      if (!rejectionReason.trim()) return;
+    } else if (!confirm(`Approve ${app.store_name || 'this store'}?`)) {
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '…';
+    try {
+      const r = await fetch('/api/admin-store-action', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          action,
+          store_id: storeId,
+          rejection_reason: rejectionReason
+        })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.error) throw new Error(data.error || 'Store review failed');
+      await loadStoreApplications();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = action === 'approve' ? 'Approve' : 'Reject';
+      alert(e.message || 'Store review failed');
+    }
   }
 
   /* ── CHATS ── */
