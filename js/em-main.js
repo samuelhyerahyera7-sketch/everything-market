@@ -3056,14 +3056,13 @@ async function openVerificationCenter() {
 }
 
 function _vfyLvlColor(level) {
-  if (level === 'Fully Verified')    return '#2e7d32';
-  if (level === 'Identity Verified' || level === 'Phone Verified') return '#1565c0';
-  if (level === 'Basic Verified')    return '#f57c00';
+  if (level === 'Verified Seller') return '#2e7d32';
+  if (level === 'Verification Pending') return '#f57c00';
   return '#757575';
 }
 
 function _renderVeriCenter(status, sess) {
-  const level = status?.level || 'Basic Verified';
+  const level = status?.level || 'Not Verified';
   const email = status?.email || { verified: !!sess?.email, address: sess?.email };
   const phone = status?.phone || { verified: false };
   const bio   = status?.biometric || { status: 'none' };
@@ -3098,7 +3097,7 @@ function _renderVeriCenter(status, sess) {
         <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
           <span style="display:flex;">${phone.verified ? tick : cross}</span>
           <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);">WhatsApp Phone</div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">Mobile Number</div>
             <div style="font-size:11.5px;color:var(--muted);">${phone.verified ? (phone.maskedNumber||'Verified') : 'Not verified'}</div>
           </div>
           ${phone.verified
@@ -3123,7 +3122,7 @@ function _renderVeriCenter(status, sess) {
             : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Verify</button>`}
         </div>
       </div>
-      <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Complete both verifications to earn a green badge on all your listings.</p>
+      <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Complete email, mobile number, and ID/selfie checks to earn one Verified Seller badge on all your listings.</p>
     </div>`;
 }
 
@@ -3479,8 +3478,8 @@ async function _bioPollResult(jobId, attempt) {
       </div>
       <div style="padding:28px 20px;text-align:center;">
         <div style="font-size:56px;margin-bottom:12px;">✅</div>
-        <h3 style="color:#2e7d32;margin-bottom:8px;">Identity Verified!</h3>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your identity has been confirmed. Your listings will now show a verified badge.</p>
+        <h3 style="color:#2e7d32;margin-bottom:8px;">Identity Check Approved</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your ID/selfie check is complete. Finish email and mobile verification to receive the Verified Seller badge.</p>
         <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Done</button>
       </div>`;
   } else if (result.status === 'review') {

@@ -83,6 +83,23 @@ function updateUserMeta(userId, meta) {
   });
 }
 
+async function hasVerifiedPhone(userId) {
+  const r = await sbRequest('GET',
+    `/rest/v1/phone_verifications?user_id=eq.${encodeURIComponent(userId)}&status=eq.verified&select=id&limit=1`
+  );
+  try {
+    const rows = JSON.parse(r.body);
+    return Array.isArray(rows) && rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function syncListingVerification(userId, verified) {
+  await sbRequest('PATCH', `/rest/v1/ads?user_id=eq.${encodeURIComponent(userId)}`, { verified: !!verified })
+    .catch(() => {});
+}
+
 function mintBioJwt(userId) {
   if (!BIO_SECRET) throw new Error('BIOMETRIC_JWT_SECRET not configured');
   const hdr = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -206,13 +223,16 @@ module.exports = async function handler(req, res) {
 
   /* Update user_metadata on approval (do NOT store scores or biometric data) */
   if (ourStatus === 'approved') {
+    const fullyVerified = !!user.email_confirmed_at && await hasVerifiedPhone(user.id);
     await updateUserMeta(user.id, {
+      ...(user.user_metadata || {}),
       biometric_verified: true,
       id_verified:        true,
-      verified:           true          /* triggers the existing verified badge */
+      verified:           fullyVerified
     });
+    if (fullyVerified) await syncListingVerification(user.id, true);
   } else if (ourStatus === 'review') {
-    await updateUserMeta(user.id, { biometric_verified: 'review' });
+    await updateUserMeta(user.id, { ...(user.user_metadata || {}), biometric_verified: 'review', verified: false });
   }
 
   /* Return only what the client needs — never forward receipt or raw scores */

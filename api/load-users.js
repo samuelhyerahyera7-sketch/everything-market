@@ -101,11 +101,9 @@ module.exports = async function handler(req, res) {
                         bio?.admin_decision === 'rejected' ? 'rejected' :
                         (bio?.status || 'none');
       const email = !!u.confirmed_at;
-      if (email && phone && bioStatus === 'approved') return 'Fully Verified';
-      if (email && bioStatus === 'approved') return 'Identity Verified';
-      if (email && phone) return 'Phone Verified';
-      if (email) return 'Basic Verified';
-      return 'Unverified';
+      if ((email && phone && bioStatus === 'approved') || u.user_metadata?.verified) return 'Verified Seller';
+      if (bioStatus === 'processing' || bioStatus === 'review') return 'Verification Pending';
+      return 'Not Verified';
     }
 
     const out = users.map(u => ({

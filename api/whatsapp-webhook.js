@@ -72,6 +72,31 @@ function updateUserMeta(userId, meta) {
   });
 }
 
+async function getAdminUser(userId) {
+  const r = await sbRequest('GET', `/auth/v1/admin/users/${userId}`);
+  if (r.status !== 200) return null;
+  try { return JSON.parse(r.body); } catch { return null; }
+}
+
+async function hasApprovedIdentity(userId) {
+  const r = await sbRequest('GET',
+    `/rest/v1/biometric_verifications?user_id=eq.${encodeURIComponent(userId)}&select=status,admin_decision&limit=1`
+  );
+  try {
+    const rows = JSON.parse(r.body);
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return row?.admin_decision === 'approved' || row?.status === 'approved';
+  } catch {
+    return false;
+  }
+}
+
+async function syncListingVerification(userId, verified) {
+  await sbRequest('PATCH', `/rest/v1/ads?user_id=eq.${encodeURIComponent(userId)}`, { verified: !!verified })
+    .catch(() => {});
+}
+
+
 function normalizePhone(raw) {
   const digits = String(raw || '').replace(/\D/g, '');
   /* WA sender IDs arrive without '+', e.g. "27821234567" */
@@ -181,11 +206,16 @@ async function processMessage(from, msgId, text) {
     }
   );
 
-  /* Update Supabase auth user_metadata */
+  /* Update Supabase auth user_metadata. Public verified badge only turns on after all hardcore checks. */
+  const user = await getAdminUser(session.user_id);
+  const fullyVerified = !!user?.email_confirmed_at && await hasApprovedIdentity(session.user_id);
   await updateUserMeta(session.user_id, {
+    ...(user?.user_metadata || {}),
     phone_verified: true,
-    phone:          phone
+    phone:          phone,
+    verified:       fullyVerified
   });
+  if (fullyVerified) await syncListingVerification(session.user_id, true);
 
   await markProcessed(msgId);
   console.log('[wa-webhook] Phone verified for user:', session.user_id, '→', phone.replace(/\d{4}$/, '****'));

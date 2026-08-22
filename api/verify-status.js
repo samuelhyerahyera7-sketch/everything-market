@@ -54,12 +54,10 @@ function maskPhone(phone) {
   return '+' + digits.slice(0, 4) + ' *** ' + digits.slice(-4);
 }
 
-function getLevel(email, phone, biometric) {
-  if (email && phone && biometric === 'approved') return 'Fully Verified';
-  if (email && biometric === 'approved')           return 'Identity Verified';
-  if (email && phone)                              return 'Phone Verified';
-  if (email)                                       return 'Basic Verified';
-  return 'Unverified';
+function getLevel(email, phone, biometric, manualVerified) {
+  if (manualVerified || (email && phone && biometric === 'approved')) return 'Verified Seller';
+  if (biometric === 'processing' || biometric === 'review') return 'Verification Pending';
+  return 'Not Verified';
 }
 
 module.exports = async function handler(req, res) {
@@ -115,6 +113,6 @@ module.exports = async function handler(req, res) {
       rejectionReason: effectiveBio === 'rejected' ? (bioRow?.rejection_reason || 'Verification failed') : null,
       verifiedAt:      bioRow?.verified_at || null
     },
-    level: getLevel(emailVerified, phoneVerified, effectiveBio)
+    level: getLevel(emailVerified, phoneVerified, effectiveBio, !!user.user_metadata?.verified)
   });
 };

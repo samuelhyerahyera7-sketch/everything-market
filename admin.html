@@ -708,20 +708,20 @@
       const lastSeen = u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('en-ZA') : 'Never';
       const confBadge = u.verified
         ? '<span class="badge badge-conf">✅ Verified Seller</span>'
-        : (u.confirmed ? '<span class="badge badge-pend">Email OK</span>' : '<span class="badge badge-pend">Unverified</span>');
+        : '<span class="badge badge-pend">Not Verified</span>';
       const userAd = ALL_ADS.find(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
       const rawPhone = u.phone || userAd?.phone || '';
       const phone  = rawPhone ? `<a href="tel:${rawPhone}" style="color:#1565C0;text-decoration:none;">${rawPhone}</a>` : '–';
       const email  = u.email ? `<a href="mailto:${u.email}" style="color:#1565C0;text-decoration:none;">${u.email}</a>` : '–';
       const v = u.verification || {};
-      const level = v.level || (u.verified ? 'Manually Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'));
+      const level = v.level || (u.verified ? 'Verified Seller' : 'Not Verified');
       const typeBadge = u.auth_user === false
         ? '<span class="badge badge-biz">Listing Seller</span>'
         : '<span class="badge badge-priv">Registered</span>';
       const veriBadge = u.verified
         ? '<span class="badge badge-conf">✅ Verified Seller</span>'
         : confBadge;
-      const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Phone ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
+      const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Mobile ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
       const actions = u.auth_user === false
         ? '<span style="font-size:11px;color:#777;">Contact seller from listing</span>'
         : `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
@@ -750,7 +750,7 @@
     if (!u) return;
     const v = u.verification || {};
     const ads = ALL_ADS.filter(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
-    const level = v.level || (u.verified ? 'Manually Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'));
+    const level = v.level || (u.verified ? 'Verified Seller' : 'Not Verified');
     const latestAd = ads
       .slice()
       .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0];
@@ -809,7 +809,7 @@
           u.verified = newVerified;
           u.verification = {
             ...(u.verification || {}),
-            level: newVerified ? 'Admin Verified' : (u.confirmed ? 'Basic Verified' : 'Unverified'),
+            level: newVerified ? 'Verified Seller' : 'Not Verified',
             identity_status: newVerified ? 'approved' : 'rejected',
           };
         }
