@@ -3381,6 +3381,29 @@ function _bioPreviewSelfie(input) {
   reader.readAsDataURL(file);
 }
 
+function _bioFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 1800;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.86));
+      };
+      img.onerror = () => reject(new Error('Could not prepare photo. Please try another image.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Could not read photo. Please try again.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function _bioSubmitVerification() {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -3393,22 +3416,17 @@ async function _bioSubmitVerification() {
     </div>`;
 
   const sess = _getSession();
-  const prefix = sess?.userId + '/' + Date.now();
-  let idPath, selfiePath;
+  if (!sess) { openSignInModal('Sign in to submit identity verification.'); return; }
+  let idDataUrl, selfieDataUrl;
 
   try {
     if (!window._bioIdFile || !window._bioSelfieFile) throw new Error('Please take both photos first.');
-    const idExt = window._bioIdFile.type.includes('png') ? 'png' : window._bioIdFile.type.includes('webp') ? 'webp' : 'jpg';
-    idPath = prefix + '/id.' + idExt;
-    const { error: e1 } = await _sb.storage.from('biometric-temp').upload(idPath, window._bioIdFile, { contentType: window._bioIdFile.type });
-    if (e1) throw new Error('ID upload failed: ' + e1.message);
-
-    const selfieExt = window._bioSelfieFile.type.includes('png') ? 'png' : window._bioSelfieFile.type.includes('webp') ? 'webp' : 'jpg';
-    selfiePath = prefix + '/selfie.' + selfieExt;
-    const { error: e2 } = await _sb.storage.from('biometric-temp').upload(selfiePath, window._bioSelfieFile, { contentType: window._bioSelfieFile.type });
-    if (e2) throw new Error('Selfie upload failed: ' + e2.message);
+    [idDataUrl, selfieDataUrl] = await Promise.all([
+      _bioFileToDataUrl(window._bioIdFile),
+      _bioFileToDataUrl(window._bioSelfieFile)
+    ]);
   } catch(e) {
-    toast('Upload failed: ' + e.message);
+    toast(e.message || 'Could not read photos. Please try again.');
     return openVerificationCenter();
   }
 
@@ -3419,8 +3437,14 @@ async function _bioSubmitVerification() {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        idStoragePath: idPath,
-        selfieStoragePath: selfiePath
+        idPhoto: {
+          dataUrl: idDataUrl,
+          name: window._bioIdFile.name || 'id-photo'
+        },
+        selfiePhoto: {
+          dataUrl: selfieDataUrl,
+          name: window._bioSelfieFile.name || 'selfie-photo'
+        }
       })
     });
     const data = await r.json();

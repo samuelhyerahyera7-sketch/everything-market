@@ -1,6 +1,8 @@
 /* POST /api/verify-biometric-submit
    Manual identity review submission.
-   Body: { idStoragePath, selfieStoragePath }
+   Body:
+     { idStoragePath, selfieStoragePath }
+     or { idPhoto: { dataUrl, name }, selfiePhoto: { dataUrl, name } }
    Stores private Supabase Storage paths for admin review.
 */
 'use strict';
@@ -13,7 +15,7 @@ const SB_KEY  = process.env.SUPABASE_SERVICE_KEY;
 const SB_ANON = process.env.SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 
-module.exports.config = { api: { bodyParser: { sizeLimit: '1mb' } } };
+module.exports.config = { api: { bodyParser: { sizeLimit: '18mb' } } };
 
 function getAuthUser(authHeader) {
   const token = (authHeader || '').replace(/^Bearer\s+/i, '').trim();
@@ -85,6 +87,54 @@ function fetchStorageMeta(storagePath) {
   });
 }
 
+function parseImageUpload(file, label) {
+  const dataUrl = String(file?.dataUrl || '');
+  const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw new Error(`${label} must be a JPEG, PNG, or WebP image`);
+  const contentType = match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length) throw new Error(`${label} is empty`);
+  if (buffer.length > 8 * 1024 * 1024) throw new Error(`${label} must be 8 MB or smaller`);
+  const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  return { contentType, buffer, ext };
+}
+
+function uploadStorageObject(storagePath, parsed) {
+  const safePath = storagePath.replace(/\.\./g, '').replace(/^\//, '');
+  const encodedPath = safePath.split('/').map(encodeURIComponent).join('/');
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: SB_HOST,
+      path: `/storage/v1/object/biometric-temp/${encodedPath}`,
+      method: 'POST',
+      headers: {
+        apikey: SB_KEY,
+        Authorization: 'Bearer ' + SB_KEY,
+        'Content-Type': parsed.contentType,
+        'Cache-Control': 'no-store',
+        'x-upsert': 'true',
+        'Content-Length': parsed.buffer.length
+      }
+    }, res => {
+      let raw = '';
+      res.on('data', d => raw += d);
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          return reject(new Error(`Could not save ${safePath}`));
+        }
+        resolve({
+          path: safePath,
+          contentType: parsed.contentType,
+          size: parsed.buffer.length
+        });
+      });
+    });
+    req.on('error', reject);
+    req.write(parsed.buffer);
+    req.end();
+  });
+}
+
 function safeReviewRef() {
   return 'manual-' + crypto.randomBytes(8).toString('hex');
 }
@@ -100,15 +150,14 @@ module.exports = async function handler(req, res) {
   const user = await getAuthUser(req.headers['authorization']);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
 
-  const { idStoragePath, selfieStoragePath } = req.body || {};
-  if (!idStoragePath || !selfieStoragePath) {
+  const { idStoragePath, selfieStoragePath, idPhoto, selfiePhoto } = req.body || {};
+  if ((!idStoragePath || !selfieStoragePath) && (!idPhoto || !selfiePhoto)) {
     return res.status(400).json({ error: 'ID photo and selfie photo are required' });
   }
 
   const userId = user.id;
-  if (!idStoragePath.startsWith(userId + '/') || !selfieStoragePath.startsWith(userId + '/')) {
-    return res.status(403).json({ error: 'Storage path does not belong to your account' });
-  }
+  let finalIdPath = idStoragePath;
+  let finalSelfiePath = selfieStoragePath;
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const rateRes = await sbRequest('GET',
@@ -123,12 +172,27 @@ module.exports = async function handler(req, res) {
 
   let idMeta, selfieMeta;
   try {
-    [idMeta, selfieMeta] = await Promise.all([
-      fetchStorageMeta(idStoragePath),
-      fetchStorageMeta(selfieStoragePath)
-    ]);
+    if (idPhoto && selfiePhoto) {
+      const stamp = Date.now();
+      const parsedId = parseImageUpload(idPhoto, 'ID photo');
+      const parsedSelfie = parseImageUpload(selfiePhoto, 'Selfie photo');
+      finalIdPath = `${userId}/${stamp}/id.${parsedId.ext}`;
+      finalSelfiePath = `${userId}/${stamp}/selfie.${parsedSelfie.ext}`;
+      [idMeta, selfieMeta] = await Promise.all([
+        uploadStorageObject(finalIdPath, parsedId),
+        uploadStorageObject(finalSelfiePath, parsedSelfie)
+      ]);
+    } else {
+      if (!finalIdPath.startsWith(userId + '/') || !finalSelfiePath.startsWith(userId + '/')) {
+        return res.status(403).json({ error: 'Storage path does not belong to your account' });
+      }
+      [idMeta, selfieMeta] = await Promise.all([
+        fetchStorageMeta(finalIdPath),
+        fetchStorageMeta(finalSelfiePath)
+      ]);
+    }
   } catch (e) {
-    return res.status(400).json({ error: 'Could not retrieve uploaded photos. Please upload again.' });
+    return res.status(400).json({ error: e.message || 'Could not save uploaded photos. Please upload again.' });
   }
 
   const allowedImg = ['image/jpeg', 'image/png', 'image/webp'];

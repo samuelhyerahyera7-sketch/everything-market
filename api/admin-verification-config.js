@@ -59,9 +59,9 @@ module.exports = async function handler(req, res) {
 
   const checks = [
     { name: 'phone_verifications table', ok: phoneTable.status === 200 },
-    { name: 'biometric_verifications table', ok: bioTable.status === 200 },
+    { name: 'identity selfie + ID review table', ok: bioTable.status === 200 },
     { name: 'verification_attempts table', ok: attemptsTable.status === 200 },
-    { name: 'biometric-temp storage bucket', ok: bucket.status === 200 },
+    { name: 'private selfie + ID storage bucket', ok: bucket.status === 200 },
   ];
 
   const ok = !!process.env.SUPABASE_SERVICE_KEY && checks.every(c => c.ok);
@@ -69,7 +69,7 @@ module.exports = async function handler(req, res) {
   if (!process.env.META_WHATSAPP_BUSINESS_NUMBER || !process.env.META_WEBHOOK_VERIFY_TOKEN || !process.env.META_APP_SECRET) {
     nextSteps.push('Create/connect a Meta WhatsApp Business app, set the webhook to https://www.everythingmarket.co.za/api/whatsapp-webhook, then add the WhatsApp number, verify token, and app secret in Vercel.');
   }
-  if (!checks.find(c => c.name === 'biometric-temp storage bucket')?.ok) {
+  if (!checks.find(c => c.name === 'private selfie + ID storage bucket')?.ok) {
     nextSteps.push('Create a private Supabase Storage bucket named biometric-temp.');
   }
   return res.status(200).json({ ok, env, checks, nextSteps });
