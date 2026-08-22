@@ -68,6 +68,34 @@ module.exports = async function handler(req, res) {
 
   const metaTitle = `${ad.title} — ${fmtPrice(ad.price)} | Everything Market`;
   const metaDesc  = `${ad.title} for sale in ${ad.loc || 'South Africa'}. ${fmtPrice(ad.price)}. ${(ad.description || '').slice(0, 120)}`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: ad.title || 'Everything Market listing',
+    description: (ad.description || ad.desc || '').slice(0, 500),
+    image: photo,
+    url: pageUrl,
+    category: ad.cat || ad.category || 'Marketplace listing',
+    areaServed: {
+      '@type': 'Country',
+      name: 'South Africa',
+    },
+    offers: {
+      '@type': 'Offer',
+      price: Number(ad.price) || 0,
+      priceCurrency: 'ZAR',
+      availability: 'https://schema.org/InStock',
+      url: pageUrl,
+      seller: {
+        '@type': 'Person',
+        name: ad.seller || ad.contact_name || 'Everything Market seller',
+      },
+      availableAtOrFrom: {
+        '@type': 'Place',
+        name: ad.loc || ad.location || 'South Africa',
+      },
+    },
+  };
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
@@ -89,22 +117,7 @@ module.exports = async function handler(req, res) {
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(metaTitle)}">
 <meta name="twitter:image" content="${esc(photo)}">
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": "${esc(ad.title)}",
-  "description": "${esc((ad.description || '').slice(0, 500))}",
-  "image": "${esc(photo)}",
-  "offers": {
-    "@type": "Offer",
-    "price": "${ad.price || 0}",
-    "priceCurrency": "ZAR",
-    "availability": "https://schema.org/InStock",
-    "seller": { "@type": "Person", "name": "${seller}" }
-  }
-}
-</script>
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f8; color: #111; }

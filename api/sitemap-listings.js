@@ -43,19 +43,26 @@ function lastmod(row) {
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
+function firstPhoto(row) {
+  return Array.isArray(row.photos) && row.photos[0] ? row.photos[0] : '';
+}
+
 module.exports = async function handler(req, res) {
   if (req.method && req.method !== 'GET' && req.method !== 'HEAD') {
     return res.status(405).send('Method not allowed');
   }
 
   try {
-    const response = await sbGet('/rest/v1/ads?select=id,created_at&order=created_at.desc&limit=5000');
+    const response = await sbGet('/rest/v1/ads?select=id,title,photos,created_at&order=created_at.desc&limit=5000');
     const rows = response.status === 200 ? JSON.parse(response.body || '[]') : [];
     const ads = Array.isArray(rows) ? rows.filter(row => row && row.id) : [];
 
-    const urls = ads.map(row => `  <url><loc>${SITE_URL}/ad/${esc(row.id)}</loc><lastmod>${esc(lastmod(row))}</lastmod><changefreq>daily</changefreq><priority>0.92</priority></url>`).join('\n');
+    const urls = ads.map(row => {
+      const photo = firstPhoto(row);
+      return `  <url><loc>${SITE_URL}/ad/${esc(row.id)}</loc><lastmod>${esc(lastmod(row))}</lastmod><changefreq>daily</changefreq><priority>0.92</priority>${photo ? `<image:image><image:loc>${esc(photo)}</image:loc><image:title>${esc(row.title || 'Everything Market listing')}</image:title></image:image>` : ''}</url>`;
+    }).join('\n');
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}
 </urlset>`;
 

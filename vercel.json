@@ -27,6 +27,7 @@
   ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/sitemap-index.xml", "destination": "/api/sitemap-index" },
     { "source": "/sitemap-listings.xml", "destination": "/api/sitemap-listings" },
     { "source": "/store/:id", "destination": "/api/store-page?id=:id" },
     { "source": "/buy-sell/:slug", "destination": "/api/seo-page?type=category&slug=:slug" },

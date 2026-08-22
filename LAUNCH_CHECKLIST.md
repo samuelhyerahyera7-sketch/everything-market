@@ -13,6 +13,7 @@ Use this after every production push.
 
 2. Google Search Console
    - Verify `everythingmarket.co.za` as a domain property.
+   - Submit `https://www.everythingmarket.co.za/sitemap-index.xml`.
    - Submit `https://www.everythingmarket.co.za/sitemap.xml`.
    - Submit `https://www.everythingmarket.co.za/sitemap-listings.xml`.
    - Inspect and request indexing for:
@@ -43,3 +44,4 @@ Use this after every production push.
 - Listing pages: `https://www.everythingmarket.co.za/ad/:id`
 - Static sitemap: `https://www.everythingmarket.co.za/sitemap.xml`
 - Live listing sitemap: `https://www.everythingmarket.co.za/sitemap-listings.xml`
+- Sitemap index: `https://www.everythingmarket.co.za/sitemap-index.xml`

@@ -1810,7 +1810,7 @@ function submitPostAd(e) {
   /* Show confirmation immediately; upload to Supabase in background */
   const photoCopy = [...(window._paPhotos || [])];
   window._paPhotos = [];
-  showAdPostedConfirm(listing.title);
+  showAdPostedConfirm(listing);
   if (window.emStoreAd) {
     emStoreAd({ ...listing, photos: photoCopy }).then(result => {
       if (result && result.ok) {
@@ -1858,7 +1858,12 @@ function _showToast(msg, durationMs) {
   setTimeout(() => t.classList.remove('show'), durationMs || 8000);
 }
 
-function showAdPostedConfirm(title) {
+function showAdPostedConfirm(listing) {
+  const title = typeof listing === 'string' ? listing : (listing?.title || 'Your ad');
+  const safeTitle = String(title).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
+  const id = typeof listing === 'object' && listing ? listing.id : '';
+  const adUrl = id ? 'https://www.everythingmarket.co.za/ad/' + id : 'https://www.everythingmarket.co.za/';
+  const shareText = encodeURIComponent('I just posted this on Everything Market:\n\n' + title + '\n\n' + adUrl);
   modalBox.innerHTML = `
     <div class="em-confirm">
       <div class="em-confirm-icon">
@@ -1868,7 +1873,13 @@ function showAdPostedConfirm(title) {
         </svg>
       </div>
       <div class="em-confirm-title">Ad Posted!</div>
-      <div class="em-confirm-sub">Your ad <strong>"${title}"</strong> is now live and visible to buyers on Everything Market.</div>
+      <div class="em-confirm-sub">Your ad <strong>"${safeTitle}"</strong> is now live and visible to buyers on Everything Market.</div>
+      ${id ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 6px;width:100%;">
+        <a href="https://wa.me/?text=${shareText}" target="_blank" onclick="if(window.emTrack)emTrack('listing_share',{channel:'whatsapp',ad_id:'${id}'})" style="background:#25D366;color:#fff;text-decoration:none;border-radius:10px;padding:12px 10px;font-size:13px;font-weight:800;text-align:center;">Share on WhatsApp</a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(adUrl)}" target="_blank" onclick="if(window.emTrack)emTrack('listing_share',{channel:'facebook',ad_id:'${id}'})" style="background:#1877F2;color:#fff;text-decoration:none;border-radius:10px;padding:12px 10px;font-size:13px;font-weight:800;text-align:center;">Share on Facebook</a>
+        <button onclick="navigator.clipboard.writeText('${adUrl}').then(()=>{toast('Listing link copied!');if(window.emTrack)emTrack('listing_share',{channel:'copy',ad_id:'${id}'});})" style="grid-column:1/-1;background:var(--surf3);border:none;border-radius:10px;padding:12px 10px;cursor:pointer;font-size:13px;font-weight:800;color:var(--ink);">Copy Listing Link</button>
+      </div>
+      <div class="em-confirm-sub" style="font-size:12.5px;">Sharing this listing link helps Google and real buyers discover it faster.</div>` : ''}
       <button class="em-confirm-close" onclick="closeModal()">Done</button>
     </div>`;
 }

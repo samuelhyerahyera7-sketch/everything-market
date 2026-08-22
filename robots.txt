@@ -3,3 +3,4 @@ Allow: /
 
 Sitemap: https://www.everythingmarket.co.za/sitemap.xml
 Sitemap: https://www.everythingmarket.co.za/sitemap-listings.xml
+Sitemap: https://www.everythingmarket.co.za/sitemap-index.xml
