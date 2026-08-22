@@ -101,8 +101,10 @@ module.exports = async function handler(req, res) {
   const storeType = ['retail', 'dealership', 'services', 'wholesale', 'other'].includes(body.store_type)
     ? body.store_type
     : 'retail';
+  const acceptedTerms = body.accepted_terms === true;
 
   if (!storeName) return res.status(400).json({ error: 'Store name is required' });
+  if (!acceptedTerms) return res.status(400).json({ error: 'Please accept the Store Terms & Conditions before submitting.' });
 
   const existingRes = await request(
     'GET',

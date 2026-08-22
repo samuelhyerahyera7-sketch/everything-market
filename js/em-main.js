@@ -2634,6 +2634,20 @@ function openApplyStoreModal() {
           <option value="other">Other</option>
         </select>
       </div>
+      <div style="background:var(--surf2);border:1px solid var(--border-lt);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Store Terms &amp; Conditions</div>
+        <ul style="margin:0 0 0 18px;padding:0;color:var(--muted);font-size:12.5px;line-height:1.55;">
+          <li>You must provide accurate store and product information.</li>
+          <li>You are responsible for the listings, prices, stock, orders, and buyer communication connected to your store.</li>
+          <li>Everything Market may review, reject, suspend, or remove stores and listings that are unsafe, misleading, illegal, or against platform rules.</li>
+          <li>All buyer and seller communication must stay on Everything Market where required for safety and monitoring.</li>
+          <li>Approval does not guarantee sales, ranking, traffic, or permanent store access.</li>
+        </ul>
+      </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;color:var(--ink);font-size:13px;line-height:1.45;cursor:pointer;">
+        <input id="apply-store-terms" type="checkbox" style="margin-top:3px;accent-color:var(--leaf);">
+        <span>I agree to the Everything Market Store Terms &amp; Conditions and understand my application will be manually reviewed.</span>
+      </label>
       <div id="apply-store-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
       <button id="apply-store-submit" class="em-post-submit" onclick="submitStoreApplication(this)">Submit Application</button>
     </div>`;
@@ -2646,12 +2660,14 @@ async function submitStoreApplication(btn) {
   const name = document.getElementById('apply-store-name')?.value.trim();
   const desc = document.getElementById('apply-store-desc')?.value.trim();
   const type = document.getElementById('apply-store-type')?.value;
+  const acceptedTerms = !!document.getElementById('apply-store-terms')?.checked;
   const err = document.getElementById('apply-store-err');
   const fail = msg => {
     if (err) { err.textContent = msg; err.style.display = 'block'; }
     else toast(msg);
   };
   if (!name) { fail('Please enter a store name.'); return; }
+  if (!acceptedTerms) { fail('Please accept the Store Terms & Conditions before submitting.'); return; }
 
   const sess = _getSession();
   if (!sess) { openSignInModal('Sign in to apply for a store.'); return; }
@@ -2666,7 +2682,7 @@ async function submitStoreApplication(btn) {
     const r = await fetch('/api/apply-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type })
+      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type, accepted_terms: acceptedTerms })
     });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {
