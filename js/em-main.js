@@ -2607,53 +2607,84 @@ function openApplyStoreModal() {
     return;
   }
   const html = `
-    <div style="padding:4px 0 8px;">
-      <h3 style="margin:0 0 6px;font-size:17px;font-weight:800;">Apply to be a Store</h3>
-      <p style="margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.5;">Get your own storefront on Everything Market. We review all applications manually.</p>
-      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Store Name *</label>
-      <input id="apply-store-name" class="em-input" placeholder="e.g. Cape Town Auto Parts" style="width:100%;margin-bottom:12px;" maxlength="60">
-      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">What do you sell?</label>
-      <textarea id="apply-store-desc" class="em-input" placeholder="Short description of your business and products…" style="width:100%;height:72px;resize:none;margin-bottom:12px;" maxlength="300"></textarea>
-      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px;">Store Type</label>
-      <select id="apply-store-type" class="em-input" style="width:100%;margin-bottom:20px;">
-        <option value="retail">Retail Shop</option>
-        <option value="dealership">Vehicle Dealership</option>
-        <option value="services">Services / Contractor</option>
-        <option value="wholesale">Wholesale / Distributor</option>
-        <option value="other">Other</option>
-      </select>
-      <button class="btn-primary" style="width:100%;" onclick="submitStoreApplication()">Submit Application</button>
+    <div class="em-modal-bar">
+      <h3>Apply to be a Store</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div style="padding:18px 20px 20px;">
+      <div style="background:var(--surf2);border:1px solid var(--border-lt);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;">Everything Market Storefront</div>
+        <p style="margin:0;font-size:12.5px;color:var(--muted);line-height:1.5;">Apply for a storefront so buyers can browse your products from one place. We review every application manually.</p>
+      </div>
+      <div class="em-post-field" style="margin-bottom:12px;">
+        <label class="em-post-label" for="apply-store-name">Store Name <span>(required)</span></label>
+        <input id="apply-store-name" class="em-post-input" placeholder="e.g. Cape Town Auto Parts" maxlength="60" autocomplete="organization">
+      </div>
+      <div class="em-post-field" style="margin-bottom:12px;">
+        <label class="em-post-label" for="apply-store-desc">What do you sell?</label>
+        <textarea id="apply-store-desc" class="em-post-input" placeholder="Short description of your business and products..." style="height:88px;resize:vertical;" maxlength="300"></textarea>
+      </div>
+      <div class="em-post-field" style="margin-bottom:14px;">
+        <label class="em-post-label" for="apply-store-type">Store Type</label>
+        <select id="apply-store-type" class="em-post-input">
+          <option value="retail">Retail Shop</option>
+          <option value="dealership">Vehicle Dealership</option>
+          <option value="services">Services / Contractor</option>
+          <option value="wholesale">Wholesale / Distributor</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div id="apply-store-err" class="em-post-error" style="display:none;margin-bottom:10px;"></div>
+      <button id="apply-store-submit" class="em-post-submit" onclick="submitStoreApplication(this)">Submit Application</button>
     </div>`;
   modalBox.innerHTML = html;
   _openModal();
+  setTimeout(() => document.getElementById('apply-store-name')?.focus(), 80);
 }
 
-async function submitStoreApplication() {
+async function submitStoreApplication(btn) {
   const name = document.getElementById('apply-store-name')?.value.trim();
   const desc = document.getElementById('apply-store-desc')?.value.trim();
   const type = document.getElementById('apply-store-type')?.value;
-  if (!name) { toast('Please enter a store name.'); return; }
+  const err = document.getElementById('apply-store-err');
+  const fail = msg => {
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+    else toast(msg);
+  };
+  if (!name) { fail('Please enter a store name.'); return; }
 
   const sess = _getSession();
-  if (!sess) return;
+  if (!sess) { openSignInModal('Sign in to apply for a store.'); return; }
 
-  const btn = document.querySelector('.em-modal-box .btn-primary');
+  btn = btn || document.getElementById('apply-store-submit');
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  if (err) err.style.display = 'none';
 
   try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token;
+    if (!token) throw new Error('Please sign in again before applying.');
     const r = await fetch('/api/apply-store', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (_vfyJwt || (await _sb.auth.getSession()).data.session?.access_token) },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ store_name: name, store_description: desc, store_type: type })
     });
-    const json = await r.json();
-    if (!r.ok) { toast(json.error || 'Could not submit application'); if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; } return; }
+    const json = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      fail(json.error || 'Could not submit application. Please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; }
+      return;
+    }
     /* Flag locally so we don't re-prompt */
     await _sb.auth.updateUser({ data: { store_applied: true } });
-    closeModal();
-    toast('Application submitted! We\'ll review it and get back to you.');
+    modalBox.innerHTML = `
+      <div class="em-confirm">
+        <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+        <div class="em-confirm-title">Application Submitted</div>
+        <div class="em-confirm-sub">Thanks ${sess.name.split(' ')[0]}. We'll review your store application and update your account once approved.</div>
+        <button class="em-confirm-close" onclick="closeModal()">Done</button>
+      </div>`;
   } catch (e) {
-    toast('Network error. Please try again.');
+    fail(e.message || 'Network error. Please try again.');
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Application'; }
   }
 }
