@@ -3724,12 +3724,15 @@ async function _checkUnreadMessages(email) {
 async function _initAuth() {
   /* Handle email verification link — Supabase puts token_hash in the URL */
   const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const tokenHash = params.get('token_hash');
   const type = params.get('type');
   if (tokenHash && type) {
     const { error } = await _sb.auth.verifyOtp({ token_hash: tokenHash, type });
     history.replaceState(null, '', window.location.pathname);
-    if (!error) {
+    if (!error && type === 'recovery') {
+      setTimeout(openResetPasswordModal, 250);
+    } else if (!error) {
       toast('Email verified! You are now signed in.');
     }
   }
@@ -3747,6 +3750,10 @@ async function _initAuth() {
   const { data: { session } } = await _sb.auth.getSession();
   _sbUser = session?.user || null;
   _updateAuthUI();
+  if ((hashParams.get('type') === 'recovery' || params.get('type') === 'recovery') && _sbUser) {
+    setTimeout(openResetPasswordModal, 250);
+    history.replaceState(null, '', window.location.pathname);
+  }
   if (params.get('signin') === '1' && !_sbUser) {
     setTimeout(() => openSignInModal('Sign in to continue on Everything Market.'), 250);
     const clean = new URL(window.location.href);
@@ -3814,6 +3821,7 @@ function openSignInModal(hint) {
       </div>
       <div id="auth-error" class="em-post-error" style="display:none;"></div>
       <button type="submit" class="em-post-submit">Sign In</button>
+      <p class="em-auth-switch" style="margin-top:10px;"><button type="button" onclick="openForgotPasswordModal()">Forgot password?</button></p>
       <p class="em-auth-switch">No account yet? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
   _openModal();
@@ -3862,6 +3870,110 @@ async function submitSignIn(e) {
   const name = data.user.user_metadata?.name || email.split('@')[0];
   if (window.emTrack) emTrack('login');
   toast('Welcome back, ' + name.split(' ')[0] + '!');
+}
+
+function openForgotPasswordModal() {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Reset Password</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitForgotPassword(event)" novalidate>
+      <p class="em-signin-hint">Enter your account email and we will send you a secure password reset link.</p>
+      <div class="em-post-field">
+        <label class="em-post-label" for="fp-email">Email address</label>
+        <input class="em-post-input" id="fp-email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Send Reset Link</button>
+      <p class="em-auth-switch">Remembered it? <button type="button" onclick="openSignInModal()">Sign in</button></p>
+    </form>`;
+  _openModal();
+  setTimeout(() => document.getElementById('fp-email')?.focus(), 80);
+}
+
+async function submitForgotPassword(e) {
+  e.preventDefault();
+  const email = (document.getElementById('fp-email')?.value || '').trim().toLowerCase();
+  const errEl = document.getElementById('auth-error');
+  const btn = e.target.querySelector('[type=submit]');
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  let error = null;
+  try {
+    const result = await _sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/?type=recovery'
+    });
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Reset Link';
+  }
+  if (error) {
+    errEl.textContent = error.message || 'Could not send reset link. Please try again.';
+    errEl.style.display = '';
+    return;
+  }
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">Reset Link Sent</div>
+      <div class="em-confirm-sub">Check ${email}. Open the link in the email, then choose a new password.</div>
+      <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
+    </div>`;
+}
+
+function openResetPasswordModal() {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Choose New Password</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitNewPassword(event)" novalidate>
+      <p class="em-signin-hint">Create a new password for your Everything Market account.</p>
+      <div class="em-post-field">
+        <label class="em-post-label" for="new-pass">New password</label>
+        <div style="position:relative;">
+          <input class="em-post-input" id="new-pass" type="password" placeholder="At least 6 characters" autocomplete="new-password" style="padding-right:44px;">
+          <button type="button" onclick="const f=document.getElementById('new-pass');f.type=f.type==='password'?'text':'password';this.textContent=f.type==='password'?'👁':'🙈';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;">👁</button>
+        </div>
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Update Password</button>
+    </form>`;
+  _openModal();
+  setTimeout(() => document.getElementById('new-pass')?.focus(), 80);
+}
+
+async function submitNewPassword(e) {
+  e.preventDefault();
+  const pass = document.getElementById('new-pass')?.value || '';
+  const errEl = document.getElementById('auth-error');
+  const btn = e.target.querySelector('[type=submit]');
+  if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Updating…';
+  let data, error;
+  try {
+    const result = await _sb.auth.updateUser({ password: pass });
+    data = result.data;
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Password';
+  }
+  if (error) {
+    errEl.textContent = error.message || 'Could not update password. Please request a new reset link.';
+    errEl.style.display = '';
+    return;
+  }
+  _sbUser = data.user || _sbUser;
+  _updateAuthUI();
+  closeModal();
+  toast('Password updated. You are signed in.');
 }
 
 function openRegisterModal() {
