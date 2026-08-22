@@ -1,5 +1,6 @@
 /* Delete an ad — verifies the caller owns it before deleting */
 const https = require('https');
+const { verifyAdminToken } = require('./_admin-auth');
 
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
@@ -49,6 +50,7 @@ module.exports = async function handler(req, res) {
   /* Get user identity from their JWT */
   const authHeader = req.headers.authorization || '';
   const userJwt    = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const isAdmin    = verifyAdminToken(req);
 
   let userId = null;
   if (userJwt) {
@@ -84,7 +86,11 @@ module.exports = async function handler(req, res) {
   /* If we have a service key, verify ownership then delete */
   if (SB_SVC_KEY) {
     /* First fetch the ad to check ownership */
-    if (userId) {
+    if (!isAdmin && !userId) {
+      return res.status(401).json({ error: 'Authentication required to delete ads' });
+    }
+
+    if (!isAdmin && userId) {
       const check = await sbReq('GET', `/rest/v1/ads?id=eq.${encodeURIComponent(String(id))}&select=user_id`, null, SB_SVC_KEY);
       if (check.status === 200) {
         const rows = JSON.parse(check.body || '[]');
@@ -129,6 +135,6 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Authentication required to delete ads' });
   }
 
-  console.log('[delete-ad] deleted ad id:', id, 'by user:', userId);
+  console.log('[delete-ad] deleted ad id:', id, 'by:', isAdmin ? 'admin' : userId);
   return res.status(200).json({ ok: true });
 };

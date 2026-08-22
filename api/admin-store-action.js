@@ -1,12 +1,12 @@
 /* POST /api/admin-store-action — approve/reject store applications, manage subscriptions */
 const https = require('https');
+const { ADMIN_SECRET, verifyAdminToken } = require('./_admin-auth');
 
 const SB_HOST = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co')
   .replace('https://', '').replace(/\/$/, '');
 const SVC  = process.env.SUPABASE_SERVICE_KEY;
 const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 const KEY  = SVC || ANON;
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'EM@dmin2026!';
 
 function sb(method, path, body, key) {
   return new Promise((resolve, reject) => {
@@ -28,12 +28,15 @@ function sb(method, path, body, key) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+  if (!ADMIN_SECRET) return res.status(500).json({ error: 'ADMIN_SECRET not configured' });
 
   const adminKey = req.headers['x-admin-key'] || '';
-  if (adminKey !== ADMIN_SECRET) return res.status(403).json({ error: 'Unauthorized' });
+  if (!verifyAdminToken(req) && adminKey !== ADMIN_SECRET) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
 
   let body;
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); }

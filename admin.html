@@ -203,14 +203,35 @@
 </div>
 
 <script>
-  const ADMIN_PASS = 'EM@dmin2026!';
   let ALL_ADS   = [];
   let ALL_USERS = [];
   let ALL_CHATS = [];
+  let ADMIN_TOKEN = sessionStorage.getItem('em_admin_token') || '';
+
+  function adminHeaders(extra) {
+    return {
+      ...(extra || {}),
+      ...(ADMIN_TOKEN ? { Authorization: 'Bearer ' + ADMIN_TOKEN } : {}),
+    };
+  }
 
   /* ── Login ── */
-  function doLogin() {
-    if (document.getElementById('adm-pass').value !== ADMIN_PASS) {
+  async function doLogin() {
+    const passEl = document.getElementById('adm-pass');
+    const errEl = document.getElementById('login-err');
+    errEl.style.display = 'none';
+    try {
+      const r = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passEl.value })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.token) throw new Error(j.error || 'Sign in failed');
+      ADMIN_TOKEN = j.token;
+      sessionStorage.setItem('em_admin_token', ADMIN_TOKEN);
+    } catch (e) {
+      errEl.textContent = e.message || 'Incorrect password.';
       document.getElementById('login-err').style.display = 'block';
       return;
     }
@@ -310,7 +331,7 @@
     if (!confirm('Delete this ad? This cannot be undone.')) return;
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch('/api/delete-ad', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      const r = await fetch('/api/delete-ad', { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ id }) });
       const j = await r.json();
       if (j.ok) {
         ALL_ADS = ALL_ADS.filter(a => String(a.id) !== String(id));
@@ -323,7 +344,7 @@
   /* ── USERS ── */
   async function loadUsers() {
     try {
-      const r = await fetch('/api/load-users');
+      const r = await fetch('/api/load-users', { headers: adminHeaders() });
       if (!r.ok) throw new Error('Status ' + r.status);
       ALL_USERS = await r.json();
       const today = new Date().toISOString().slice(0, 10);
@@ -383,7 +404,7 @@
   async function toggleVerify(userId, newVerified, btn) {
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch('/api/verify-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, verified: newVerified }) });
+      const r = await fetch('/api/verify-user', { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ userId, verified: newVerified }) });
       const j = await r.json();
       if (j.ok) {
         const u = ALL_USERS.find(x => x.id === userId);
@@ -410,7 +431,7 @@
     if (!confirm(`Delete user ${email}?\nThis will also delete all their ads. This cannot be undone.`)) return;
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch('/api/delete-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, email }) });
+      const r = await fetch('/api/delete-user', { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ userId, email }) });
       const j = await r.json();
       if (j.ok) {
         ALL_USERS = ALL_USERS.filter(u => u.id !== userId);
@@ -427,7 +448,7 @@
   /* ── CHATS ── */
   async function loadChats() {
     try {
-      const r = await fetch('/api/load-chats');
+      const r = await fetch('/api/load-chats', { headers: adminHeaders() });
       if (!r.ok) throw new Error('Status ' + r.status);
       ALL_CHATS = await r.json();
       document.getElementById('stat-msgs').textContent = ALL_CHATS.reduce((s, c) => s + c.messages.length, 0);

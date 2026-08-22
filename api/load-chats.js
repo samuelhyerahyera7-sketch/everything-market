@@ -1,5 +1,6 @@
 /* Vercel serverless — load all messages from events table */
 const https = require('https');
+const { requireAdmin } = require('./_admin-auth');
 
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
@@ -8,8 +9,10 @@ const SB_KEY     = process.env.SUPABASE_SERVICE_KEY;
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!requireAdmin(req, res)) return;
   if (!SB_KEY) return res.status(500).json({ error: 'SUPABASE_SERVICE_KEY not set' });
 
   try {

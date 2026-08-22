@@ -3,9 +3,36 @@
   "short_name": "Everything Market",
   "description": "South Africa's free online marketplace",
   "start_url": "/",
-  "display": "browser",
+  "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0A3D22",
+  "categories": ["shopping", "business", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Post Free Ad",
+      "short_name": "Post Ad",
+      "description": "Post a free listing on Everything Market",
+      "url": "/sell-online-south-africa"
+    },
+    {
+      "name": "Cars & Bakkies",
+      "short_name": "Cars",
+      "description": "Browse cars and bakkies for sale",
+      "url": "/buy-sell/cars-bakkies"
+    },
+    {
+      "name": "Property",
+      "short_name": "Property",
+      "description": "Browse property for sale and rent",
+      "url": "/buy-sell/property"
+    },
+    {
+      "name": "Electronics",
+      "short_name": "Electronics",
+      "description": "Browse phones, laptops, TVs and gaming",
+      "url": "/buy-sell/electronics"
+    }
+  ],
   "icons": [
     {
       "src": "/favicon-192.png",

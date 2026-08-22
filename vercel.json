@@ -1,6 +1,18 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "marketplacesouthafrica.co.za" }],
+      "destination": "https://everythingmarket.co.za/marketplace-south-africa",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.marketplacesouthafrica.co.za" }],
+      "destination": "https://everythingmarket.co.za/marketplace-south-africa",
+      "permanent": true
+    },
+    {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "marketplacesouthafrica.co.za" }],
       "destination": "https://everythingmarket.co.za/$1",
@@ -15,6 +27,18 @@
   ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/buy-sell/:slug", "destination": "/api/seo-page?type=category&slug=:slug" },
+    { "source": "/searches/:slug", "destination": "/api/seo-page?type=popular&slug=:slug" },
+    { "source": "/sell-online-south-africa", "destination": "/api/seo-page?type=static&slug=sell-online-south-africa" },
+    { "source": "/post-free-ad-south-africa", "destination": "/api/seo-page?type=static&slug=post-free-ad-south-africa" },
+    { "source": "/seller-growth-kit", "destination": "/api/seo-page?type=static&slug=seller-growth-kit" },
+    { "source": "/safety", "destination": "/api/seo-page?type=static&slug=safety" },
+    { "source": "/verified-sellers", "destination": "/api/seo-page?type=static&slug=verified-sellers" },
+    { "source": "/marketplace-south-africa", "destination": "/api/seo-page?type=static&slug=marketplace-south-africa" },
+    { "source": "/city/:city/:category", "destination": "/api/seo-page?type=city-category&city=:city&category=:category" },
+    { "source": "/city/:slug", "destination": "/api/seo-page?type=city&slug=:slug" },
+    { "source": "/province/:province/:category", "destination": "/api/seo-page?type=province-category&province=:province&category=:category" },
+    { "source": "/province/:slug", "destination": "/api/seo-page?type=province&slug=:slug" },
     { "source": "/ad/:id", "destination": "/api/ad?id=:id" },
     { "source": "/api/verify/phone-start",        "destination": "/api/verify-phone-start" },
     { "source": "/api/verify/biometric-challenge","destination": "/api/verify-biometric-challenge" },

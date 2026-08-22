@@ -1,5 +1,6 @@
 /* Vercel serverless — delete a user from Supabase Auth + their ads */
 const https = require('https');
+const { requireAdmin } = require('./_admin-auth');
 
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
@@ -32,8 +33,10 @@ function sbReq(method, path, body) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!requireAdmin(req, res)) return;
   if (!SB_KEY) return res.status(500).json({ error: 'SUPABASE_SERVICE_KEY not set' });
 
   const { userId, email } = req.body || {};
