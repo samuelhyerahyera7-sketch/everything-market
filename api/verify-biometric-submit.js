@@ -16,6 +16,7 @@ const SB_ANON   = process.env.SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 const BIO_URL   = (process.env.BIOMETRIC_API_URL || '').replace(/\/$/, '');
 const BIO_SECRET = process.env.BIOMETRIC_JWT_SECRET || '';
+const BIO_ISSUER = process.env.BIOMETRIC_JWT_ISSUER || 'biometrical';
 
 /* Large files come via Supabase Storage, not as request body */
 module.exports.config = { api: { bodyParser: { sizeLimit: '1mb' } } };
@@ -105,7 +106,7 @@ function mintBioJwt(userId) {
   const hdr = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
   const pl  = Buffer.from(JSON.stringify({
     sub: userId.replace(/-/g, '').slice(0, 64),
-    iss: 'everything-market',
+    iss: BIO_ISSUER,
     aud: 'biometrical-verify',
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600
