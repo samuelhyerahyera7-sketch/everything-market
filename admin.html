@@ -817,6 +817,7 @@
       const checkRows = (data.checks || []).map(c =>
         `<div class="verify-check"><span>${escHtml(c.name)}${c.status ? ` <small style="color:#777;">(${escHtml(c.status)})</small>` : ''}</span><strong class="${c.ok ? 'check-ok' : 'check-bad'}">${c.ok ? 'Ready' : 'Needs setup'}</strong></div>`
       ).join('');
+      const nextRows = (data.nextSteps || []).map(s => `<li>${escHtml(s)}</li>`).join('');
       backdrop.querySelector('.admin-modal-body').innerHTML = `
         <div style="font-size:13px;color:#4f5d55;line-height:1.55;margin-bottom:12px;">
           Verified Seller requires email, mobile number, and ID/selfie checks, unless you approve the seller manually.
@@ -825,6 +826,7 @@
         ${envRows || '<div class="empty">No environment data.</div>'}
         <h4 style="color:#0A3D22;margin:16px 0 6px;">Readiness</h4>
         ${checkRows || '<div class="empty">No checks returned.</div>'}
+        ${nextRows ? `<h4 style="color:#0A3D22;margin:16px 0 6px;">Next Steps</h4><ul style="font-size:12.5px;color:#4f5d55;line-height:1.65;padding-left:18px;">${nextRows}</ul>` : ''}
         <div class="verify-actions">
           <button class="btn-info" onclick="showVerificationSetup()">Refresh</button>
           <button class="btn-info" onclick="closeVerifyModal()">Close</button>

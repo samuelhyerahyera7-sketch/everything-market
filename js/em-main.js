@@ -3146,7 +3146,9 @@ async function startPhoneVerification() {
     data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Failed');
   } catch(e) {
-    toast('Could not start verification: ' + e.message);
+    toast(e.message.includes('not configured')
+      ? 'Mobile verification is not configured yet. Please contact Everything Market support.'
+      : 'Could not start verification: ' + e.message);
     return openVerificationCenter();
   }
 
@@ -3189,7 +3191,7 @@ async function startPhoneVerification() {
   _vfyRtChannel = _sb.channel('wa-verify-' + sessionId)
     .on('postgres_changes', {
       event: 'UPDATE', schema: 'public', table: 'phone_verifications',
-      filter: 'session_id=eq.' + sessionId
+      filter: 'id=eq.' + sessionId
     }, payload => {
       if (payload.new?.status === 'verified') {
         const box = document.getElementById('wa-status-box');
@@ -3250,10 +3252,14 @@ async function _bioStep1_ID() {
   let challenge;
   try {
     const r = await fetch('/api/verify/biometric-challenge', { headers: { 'Authorization': 'Bearer ' + _vfyJwt } });
-    challenge = r.ok ? await r.json() : null;
+    const data = await r.json().catch(() => null);
+    if (!r.ok) throw new Error(data?.error || 'Could not load challenge');
+    challenge = data;
     if (!challenge?.nonce) throw new Error('No challenge');
   } catch(e) {
-    toast('Could not load verification challenge. Try again.');
+    toast(e.message.includes('configured')
+      ? 'ID/selfie verification is not configured yet. Please contact Everything Market support.'
+      : 'Could not load verification challenge. Try again.');
     return openVerificationCenter();
   }
 

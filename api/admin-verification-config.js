@@ -95,5 +95,15 @@ module.exports = async function handler(req, res) {
   ];
 
   const ok = env.every(e => e.configured) && checks.every(c => c.ok);
-  return res.status(200).json({ ok, env, checks });
+  const nextSteps = [];
+  if (!process.env.BIOMETRIC_API_URL || !process.env.BIOMETRIC_JWT_SECRET) {
+    nextSteps.push('Deploy the biometrical-verify GitHub service to a Docker host, then set BIOMETRIC_API_URL and BIOMETRIC_JWT_SECRET in Vercel.');
+  }
+  if (!process.env.META_WHATSAPP_BUSINESS_NUMBER || !process.env.META_WEBHOOK_VERIFY_TOKEN || !process.env.META_APP_SECRET) {
+    nextSteps.push('Create/connect a Meta WhatsApp Business app, set the webhook to https://www.everythingmarket.co.za/api/whatsapp-webhook, then add the WhatsApp number, verify token, and app secret in Vercel.');
+  }
+  if (!checks.find(c => c.name === 'biometric-temp storage bucket')?.ok) {
+    nextSteps.push('Create a private Supabase Storage bucket named biometric-temp.');
+  }
+  return res.status(200).json({ ok, env, checks, nextSteps });
 };
