@@ -33,6 +33,7 @@ Use this after every production push.
 - Ask 20 sellers to share individual listing links.
 - Review Search Console queries.
 - Add pages for promising searches.
+- Open `/admin`, tap the growth blocks, and review outreach priorities.
 
 ## Important URLs
 

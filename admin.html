@@ -32,12 +32,34 @@
 
   /* ── Stats ── */
   .adm-stats { display: flex; gap: 12px; padding: 16px 24px 0; flex-wrap: wrap; }
-  .stat-card { background: #fff; border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 110px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .stat-card { background: #fff; border: 2px solid transparent; border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 110px; box-shadow: 0 2px 8px rgba(0,0,0,.06); cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s; text-align: left; }
+  .stat-card:hover { transform: translateY(-1px); border-color: #b6d7c2; box-shadow: 0 5px 16px rgba(0,0,0,.09); }
+  .stat-card.active { border-color: #1A7A42; box-shadow: 0 5px 16px rgba(26,122,66,.16); }
   .stat-card .num { font-size: 26px; font-weight: 800; color: #0A3D22; }
   .stat-card .lbl { font-size: 11px; color: #666; margin-top: 2px; }
   .stat-card.blue .num { color: #1565C0; }
   .stat-card.orange .num { color: #E37400; }
   .stat-card.red .num { color: #C0392B; }
+  .stat-card.green .num { color: #1A7A42; }
+  .stat-detail { margin: 14px 24px 0; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); padding: 16px 18px; }
+  .stat-detail h2 { font-size: 16px; color: #0A3D22; margin-bottom: 6px; }
+  .stat-detail p { font-size: 13px; color: #5d675f; line-height: 1.55; margin-bottom: 10px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+  .detail-box { border: 1px solid #e5ece7; border-radius: 8px; padding: 10px; background: #fbfcfb; min-height: 70px; }
+  .detail-box strong { display: block; color: #0A3D22; font-size: 18px; margin-bottom: 3px; }
+  .detail-box span { color: #637067; font-size: 12px; line-height: 1.4; }
+  .detail-list { margin-top: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .detail-item { border: 1px solid #edf1ee; border-radius: 8px; padding: 9px 10px; font-size: 12px; color: #36423b; background: #fff; }
+  .detail-item b { color: #0A3D22; }
+  .growth-panels { padding: 0 24px 40px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .growth-panel { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); padding: 16px; }
+  .growth-panel h3 { color: #0A3D22; font-size: 15px; margin-bottom: 8px; }
+  .growth-panel ul { padding-left: 18px; color: #4c5a52; font-size: 13px; line-height: 1.7; }
+  .growth-panel li strong { color: #0A3D22; }
+  @media (max-width: 760px) {
+    .detail-grid, .detail-list, .growth-panels { grid-template-columns: 1fr; }
+    .adm-header { align-items: flex-start; flex-direction: column; }
+  }
 
   /* ── Tabs ── */
   .tabs { display: flex; gap: 0; padding: 16px 24px 0; border-bottom: 2px solid #e8ede9; margin: 0 0 0; }
@@ -129,14 +151,19 @@
 
   <!-- Stats -->
   <div class="adm-stats">
-    <div class="stat-card"><div class="num" id="stat-total">–</div><div class="lbl">Total Ads</div></div>
-    <div class="stat-card"><div class="num" id="stat-today">–</div><div class="lbl">Posted Today</div></div>
-    <div class="stat-card"><div class="num" id="stat-photos">–</div><div class="lbl">With Photos</div></div>
-    <div class="stat-card"><div class="num" id="stat-sellers">–</div><div class="lbl">Unique Sellers</div></div>
-    <div class="stat-card blue"><div class="num" id="stat-users">–</div><div class="lbl">Registered Users</div></div>
-    <div class="stat-card blue"><div class="num" id="stat-users-today">–</div><div class="lbl">New Users Today</div></div>
-    <div class="stat-card orange"><div class="num" id="stat-msgs">–</div><div class="lbl">Messages Sent</div></div>
-    <div class="stat-card orange"><div class="num" id="stat-boosted">–</div><div class="lbl">Boosted Ads</div></div>
+    <div class="stat-card active" data-stat="total" onclick="showStatDetail('total')"><div class="num" id="stat-total">–</div><div class="lbl">Total Ads</div></div>
+    <div class="stat-card" data-stat="today" onclick="showStatDetail('today')"><div class="num" id="stat-today">–</div><div class="lbl">Posted Today</div></div>
+    <div class="stat-card" data-stat="photos" onclick="showStatDetail('photos')"><div class="num" id="stat-photos">–</div><div class="lbl">With Photos</div></div>
+    <div class="stat-card" data-stat="sellers" onclick="showStatDetail('sellers')"><div class="num" id="stat-sellers">–</div><div class="lbl">Unique Sellers</div></div>
+    <div class="stat-card blue" data-stat="users" onclick="showStatDetail('users')"><div class="num" id="stat-users">–</div><div class="lbl">Registered Users</div></div>
+    <div class="stat-card blue" data-stat="users-today" onclick="showStatDetail('users-today')"><div class="num" id="stat-users-today">–</div><div class="lbl">New Users Today</div></div>
+    <div class="stat-card orange" data-stat="msgs" onclick="showStatDetail('msgs')"><div class="num" id="stat-msgs">–</div><div class="lbl">Messages Sent</div></div>
+    <div class="stat-card orange" data-stat="boosted" onclick="showStatDetail('boosted')"><div class="num" id="stat-boosted">–</div><div class="lbl">Boosted Ads</div></div>
+    <div class="stat-card green" data-stat="views" onclick="showStatDetail('views')"><div class="num" id="stat-views">–</div><div class="lbl">Views 30 Days</div></div>
+  </div>
+  <div class="stat-detail" id="stat-detail">
+    <h2>Loading dashboard details…</h2>
+    <p>Tap any block above to see the numbers behind it.</p>
   </div>
 
   <!-- Tabs -->
@@ -144,6 +171,7 @@
     <div class="tab active" onclick="switchTab('ads')">📋 Ads</div>
     <div class="tab" onclick="switchTab('users')">👥 Users</div>
     <div class="tab" onclick="switchTab('chats')">💬 Chats</div>
+    <div class="tab" onclick="switchTab('growth')">📈 Growth</div>
   </div>
 
   <!-- ── ADS TAB ── -->
@@ -200,12 +228,26 @@
     </div>
     <div class="chat-list" id="chat-list"><div class="loading">Loading chats…</div></div>
   </div>
+
+  <!-- ── GROWTH TAB ── -->
+  <div class="tab-content" id="tab-growth">
+    <div class="filter-bar">
+      <button class="btn-vfy" onclick="loadGrowth()">Refresh Growth Data</button>
+      <a class="btn-ga" href="https://search.google.com/search-console/sitemaps?resource_id=sc-domain%3Aeverythingmarket.co.za" target="_blank">Search Console</a>
+      <a class="btn-ga" href="https://analytics.google.com/analytics/web/#/p550104180/reports/home" target="_blank">Google Analytics</a>
+    </div>
+    <div class="growth-panels" id="growth-panels">
+      <div class="growth-panel"><h3>Loading growth analysis…</h3><ul><li>Fetching views, searches and outreach signals.</li></ul></div>
+    </div>
+  </div>
 </div>
 
 <script>
   let ALL_ADS   = [];
   let ALL_USERS = [];
   let ALL_CHATS = [];
+  let ALL_GROWTH = null;
+  let CURRENT_STAT = 'total';
   let ADMIN_TOKEN = sessionStorage.getItem('em_admin_token') || '';
 
   function adminHeaders(extra) {
@@ -245,9 +287,10 @@
 
   /* ── Tab switching ── */
   function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','chats'][i] === name));
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','chats','growth'][i] === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'growth') renderGrowthPanels();
   }
 
   /* ── Load everything ── */
@@ -255,6 +298,7 @@
     loadAds();
     loadUsers();
     loadChats();
+    loadGrowth();
   }
 
   /* ── ADS ── */
@@ -276,6 +320,263 @@
     document.getElementById('stat-photos').textContent  = ALL_ADS.filter(a => Array.isArray(a.photos) && a.photos.length).length;
     document.getElementById('stat-sellers').textContent = new Set(ALL_ADS.map(a => a.seller)).size;
     document.getElementById('stat-boosted').textContent = ALL_ADS.filter(a => a.sponsored).length;
+    document.getElementById('stat-views').textContent   = fmtNum(ALL_GROWTH?.totals?.pageViews30d || 0);
+    showStatDetail(CURRENT_STAT);
+  }
+
+  function fmtNum(n) {
+    return Number(n || 0).toLocaleString('en-ZA');
+  }
+
+  function escHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
+  }
+
+  function pct(part, total) {
+    return total ? Math.round((part / total) * 100) + '%' : '0%';
+  }
+
+  function listItems(items, emptyText) {
+    if (!items || !items.length) return `<div class="detail-item">${emptyText || 'No data yet.'}</div>`;
+    return items.map(item => `<div class="detail-item">${item}</div>`).join('');
+  }
+
+  function adLink(adId) {
+    return `<a href="/ad/${escHtml(adId)}" target="_blank" style="color:#1565C0;text-decoration:none;font-weight:700;">/ad/${escHtml(adId)}</a>`;
+  }
+
+  function statCard(title, value, note) {
+    return `<div class="detail-box"><strong>${value}</strong><span>${title}${note ? '<br>' + note : ''}</span></div>`;
+  }
+
+  function adsToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    return ALL_ADS.filter(a => (a.created_at || '').startsWith(today));
+  }
+
+  function activeSellers() {
+    const sellers = {};
+    ALL_ADS.forEach(a => {
+      const key = a.contact_email || a.seller || 'Unknown';
+      if (!sellers[key]) sellers[key] = { name: a.seller || 'Unknown', email: a.contact_email || '', phone: a.phone || '', count: 0, photos: 0 };
+      sellers[key].count += 1;
+      if (Array.isArray(a.photos) && a.photos.length) sellers[key].photos += 1;
+    });
+    return Object.values(sellers).sort((a, b) => b.count - a.count);
+  }
+
+  function showStatDetail(name) {
+    CURRENT_STAT = name || CURRENT_STAT || 'total';
+    document.querySelectorAll('.stat-card').forEach(card => card.classList.toggle('active', card.dataset.stat === CURRENT_STAT));
+    const box = document.getElementById('stat-detail');
+    if (!box) return;
+
+    const todayAds = adsToday();
+    const withPhotos = ALL_ADS.filter(a => Array.isArray(a.photos) && a.photos.length);
+    const sellers = activeSellers();
+    const boosted = ALL_ADS.filter(a => a.sponsored);
+    const usersToday = ALL_USERS.filter(u => (u.created_at || '').startsWith(new Date().toISOString().slice(0, 10)));
+    const messages = ALL_CHATS.reduce((sum, c) => sum + (c.messages?.length || 0), 0);
+    const growth = ALL_GROWTH?.totals || {};
+    const topAds = (ALL_GROWTH?.topAds || []).slice(0, 6);
+    const topSearches = (ALL_GROWTH?.topSearches || []).slice(0, 6);
+    const topCats = (ALL_GROWTH?.topCategories || []).slice(0, 6);
+
+    const detail = {
+      total: {
+        title: 'Total Ads',
+        intro: 'This is the live supply on the marketplace. More quality listings create more searchable pages and more reasons for buyers to return.',
+        cards: [
+          statCard('Active listing pages', fmtNum(ALL_ADS.length), 'Submit via sitemap-listings.xml'),
+          statCard('With photos', fmtNum(withPhotos.length), pct(withPhotos.length, ALL_ADS.length) + ' photo coverage'),
+          statCard('Categories represented', fmtNum(new Set(ALL_ADS.map(a => a.cat || 'other')).size), 'More spread helps SEO'),
+        ],
+        list: listItems(ALL_ADS.slice(0, 6).map(a => `<b>${escHtml(a.title)}</b> · ${escHtml(a.loc || 'South Africa')} · ${adLink(a.id)}`), 'No ads yet.'),
+      },
+      today: {
+        title: 'Posted Today',
+        intro: 'Daily posting velocity matters. A marketplace that changes every day gives people and search engines a reason to come back.',
+        cards: [
+          statCard('New ads today', fmtNum(todayAds.length), 'Target: 10+ per day'),
+          statCard('Sellers today', fmtNum(new Set(todayAds.map(a => a.seller || a.contact_email)).size), 'Fresh seller activity'),
+          statCard('Photos today', fmtNum(todayAds.filter(a => Array.isArray(a.photos) && a.photos.length).length), 'Quality signal'),
+        ],
+        list: listItems(todayAds.slice(0, 8).map(a => `<b>${escHtml(a.title)}</b> by ${escHtml(a.seller)} · ${adLink(a.id)}`), 'No listings posted today yet.'),
+      },
+      photos: {
+        title: 'Listings With Photos',
+        intro: 'Listings with clear photos get more trust, more clicks and better sharing performance. Push sellers without photos to improve their ads.',
+        cards: [
+          statCard('With photos', fmtNum(withPhotos.length), pct(withPhotos.length, ALL_ADS.length) + ' of ads'),
+          statCard('Missing photos', fmtNum(ALL_ADS.length - withPhotos.length), 'Outreach opportunity'),
+          statCard('Average photos', ALL_ADS.length ? (ALL_ADS.reduce((s, a) => s + (Array.isArray(a.photos) ? a.photos.length : 0), 0) / ALL_ADS.length).toFixed(1) : '0', 'Per listing'),
+        ],
+        list: listItems(ALL_ADS.filter(a => !Array.isArray(a.photos) || !a.photos.length).slice(0, 8).map(a => `<b>${escHtml(a.title)}</b> · ask ${escHtml(a.seller || 'seller')} to add photos`), 'All current ads have photos.'),
+      },
+      sellers: {
+        title: 'Unique Sellers',
+        intro: 'Sellers are the engine. Prioritize the sellers with multiple listings, then help one-listing sellers post more.',
+        cards: [
+          statCard('Active sellers', fmtNum(sellers.length), 'Target: grow weekly'),
+          statCard('Multi-listing sellers', fmtNum(sellers.filter(s => s.count > 1).length), 'Best outreach group'),
+          statCard('Avg ads per seller', sellers.length ? (ALL_ADS.length / sellers.length).toFixed(1) : '0', 'Supply depth'),
+        ],
+        list: listItems(sellers.slice(0, 8).map(s => `<b>${escHtml(s.name)}</b> · ${fmtNum(s.count)} ads · ${escHtml(s.phone || s.email || 'no contact found')}`), 'No sellers yet.'),
+      },
+      users: {
+        title: 'Registered Users',
+        intro: 'Registered users are your owned audience. The goal is to turn them into repeat sellers, buyers and referrers.',
+        cards: [
+          statCard('Registered users', fmtNum(ALL_USERS.length), 'Account base'),
+          statCard('Verified sellers', fmtNum(ALL_USERS.filter(u => u.verified).length), 'Trust signal'),
+          statCard('Users with ads', fmtNum(ALL_USERS.filter(u => (u.ad_count || 0) > 0).length), 'Activation'),
+        ],
+        list: listItems(ALL_USERS.slice(0, 8).map(u => `<b>${escHtml(u.name || u.email)}</b> · ${fmtNum(u.ad_count || 0)} ads · ${u.verified ? 'verified' : 'not verified'}`), 'No users loaded yet.'),
+      },
+      'users-today': {
+        title: 'New Users Today',
+        intro: 'This shows whether today’s outreach, SEO and sharing work is creating new accounts.',
+        cards: [
+          statCard('New users today', fmtNum(usersToday.length), 'Target: grow daily'),
+          statCard('New user ads', fmtNum(usersToday.reduce((s, u) => s + (u.ad_count || 0), 0)), 'Activation today'),
+          statCard('Total users', fmtNum(ALL_USERS.length), 'Base size'),
+        ],
+        list: listItems(usersToday.slice(0, 8).map(u => `<b>${escHtml(u.name || u.email)}</b> · joined today · ${fmtNum(u.ad_count || 0)} ads`), 'No new users today yet.'),
+      },
+      msgs: {
+        title: 'Messages Sent',
+        intro: 'Messages are a strong buyer intent signal. More messages means listings are turning into real conversations.',
+        cards: [
+          statCard('Total loaded messages', fmtNum(messages), 'From admin chat log'),
+          statCard('Conversation threads', fmtNum(ALL_CHATS.length), 'Buyer-seller threads'),
+          statCard('Messages 30 days', fmtNum(growth.messages30d || 0), 'Event tracking'),
+        ],
+        list: listItems(ALL_CHATS.slice(0, 8).map(c => `<b>${escHtml(c.ad_title || 'Unknown ad')}</b> · ${fmtNum(c.messages?.length || 0)} messages · ${escHtml(c.sender_name || c.sender_email)}`), 'No chats yet.'),
+      },
+      boosted: {
+        title: 'Boosted Ads',
+        intro: 'Boosted ads are revenue and performance signals. Track which categories sellers are willing to pay to promote.',
+        cards: [
+          statCard('Boosted ads', fmtNum(boosted.length), pct(boosted.length, ALL_ADS.length) + ' of listings'),
+          statCard('Boosted categories', fmtNum(new Set(boosted.map(a => a.cat || 'other')).size), 'Revenue spread'),
+          statCard('Unboosted ads', fmtNum(ALL_ADS.length - boosted.length), 'Upsell pool'),
+        ],
+        list: listItems(boosted.slice(0, 8).map(a => `<b>${escHtml(a.title)}</b> · ${escHtml(a.seller)} · ${adLink(a.id)}`), 'No boosted ads yet.'),
+      },
+      views: {
+        title: 'Website Views',
+        intro: 'This is the internal progress tracker from site events. Use Google Analytics and Search Console as the official source of truth, but this shows quick movement in admin.',
+        cards: [
+          statCard('Page views 30 days', fmtNum(growth.pageViews30d || 0), fmtNum(growth.pageViewsToday || 0) + ' today'),
+          statCard('Listing views 30 days', fmtNum(growth.adViews30d || 0), 'Ad detail opens'),
+          statCard('7-day growth', (growth.growthRate || 0) + '%', fmtNum(growth.recent7Views || 0) + ' vs ' + fmtNum(growth.previous7Views || 0)),
+        ],
+        list: listItems([
+          ...topAds.map(a => `<b>Top ad</b> ${adLink(a.key)} · ${fmtNum(a.count)} views`),
+          ...topSearches.map(s => `<b>Search</b> ${escHtml(s.key)} · ${fmtNum(s.count)} times`),
+          ...topCats.map(c => `<b>Category</b> ${escHtml(c.key)} · ${fmtNum(c.count)} ad views`)
+        ].slice(0, 10), 'No view events tracked yet.'),
+      },
+    }[CURRENT_STAT];
+
+    box.innerHTML = `
+      <h2>${detail.title}</h2>
+      <p>${detail.intro}</p>
+      <div class="detail-grid">${detail.cards.join('')}</div>
+      <div class="detail-list">${detail.list}</div>`;
+  }
+
+  async function loadGrowth() {
+    try {
+      const r = await fetch('/api/admin-growth', { headers: adminHeaders() });
+      if (!r.ok) throw new Error('Status ' + r.status);
+      ALL_GROWTH = await r.json();
+      updateStats();
+      renderGrowthPanels();
+    } catch (e) {
+      const el = document.getElementById('growth-panels');
+      if (el) el.innerHTML = `<div class="growth-panel"><h3>Growth data unavailable</h3><ul><li>${escHtml(e.message)}</li><li>Check that the Supabase service key is set in Vercel.</li></ul></div>`;
+    }
+  }
+
+  function renderGrowthPanels() {
+    const el = document.getElementById('growth-panels');
+    if (!el) return;
+    const growth = ALL_GROWTH?.totals || {};
+    const sellers = activeSellers();
+    const noPhotoAds = ALL_ADS.filter(a => !Array.isArray(a.photos) || !a.photos.length);
+    const oneAdSellers = sellers.filter(s => s.count === 1).slice(0, 8);
+    const multiAdSellers = sellers.filter(s => s.count > 1).slice(0, 8);
+    const oldAds = ALL_ADS
+      .filter(a => a.created_at && (Date.now() - new Date(a.created_at).getTime()) > 7 * 86400000)
+      .slice(0, 8);
+    const topAds = ALL_GROWTH?.topAds || [];
+    const topSearches = ALL_GROWTH?.topSearches || [];
+    const topCategories = ALL_GROWTH?.topCategories || [];
+
+    const li = (items, empty) => items.length ? items.map(x => `<li>${x}</li>`).join('') : (empty ? `<li>${empty}</li>` : '');
+    el.innerHTML = `
+      <div class="growth-panel">
+        <h3>Progress Snapshot</h3>
+        <ul>
+          <li><strong>${fmtNum(growth.pageViews30d || 0)}</strong> page views in the last 30 days</li>
+          <li><strong>${fmtNum(growth.adViews30d || 0)}</strong> listing views in the last 30 days</li>
+          <li><strong>${fmtNum(growth.searches30d || 0)}</strong> searches tracked in the last 30 days</li>
+          <li><strong>${growth.growthRate || 0}%</strong> 7-day view change</li>
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Top Listing Demand</h3>
+        <ul>
+          ${li(topAds.slice(0, 8).map(a => `${adLink(a.key)} · <strong>${fmtNum(a.count)}</strong> views`), 'No ad view data yet.')}
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Search Intelligence</h3>
+        <ul>
+          ${li(topSearches.slice(0, 8).map(s => `<strong>${escHtml(s.key)}</strong> · ${fmtNum(s.count)} searches`), 'No searches tracked yet.')}
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Category Momentum</h3>
+        <ul>
+          ${li(topCategories.slice(0, 8).map(c => `<strong>${escHtml(c.key)}</strong> · ${fmtNum(c.count)} listing views`), 'No category view data yet.')}
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Seller Outreach Priority</h3>
+        <ul>
+          ${li(multiAdSellers.map(s => `<strong>${escHtml(s.name)}</strong> has ${fmtNum(s.count)} ads. Ask them to share their best listing and post 3 more.`), 'No multi-listing sellers yet. Recruit sellers to post more than one item.')}
+          ${li(oneAdSellers.slice(0, 4).map(s => `<strong>${escHtml(s.name)}</strong> has 1 ad. Ask for 2 more listings this week.`), '')}
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Listing Quality Fixes</h3>
+        <ul>
+          ${li(noPhotoAds.slice(0, 8).map(a => `<strong>${escHtml(a.title)}</strong> needs photos. Contact ${escHtml(a.seller || a.contact_email || 'seller')}.`), 'Photo coverage is good right now.')}
+          ${li(oldAds.slice(0, 4).map(a => `<strong>${escHtml(a.title)}</strong> is older than 7 days. Ask seller to refresh/share it.`), '')}
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>This Week's Targets</h3>
+        <ul>
+          <li>Get <strong>100 new quality listings</strong>, especially with photos.</li>
+          <li>Ask <strong>20 sellers</strong> to share individual /ad links on WhatsApp and Facebook.</li>
+          <li>Request indexing for <strong>10 strongest listing pages</strong> in Search Console.</li>
+          <li>Create content around top searches that show buyer demand.</li>
+        </ul>
+      </div>
+      <div class="growth-panel">
+        <h3>Tracking Setup</h3>
+        <ul>
+          <li>Submit <strong>sitemap.xml</strong> and <strong>sitemap-listings.xml</strong> in Search Console.</li>
+          <li>Use Google Analytics for official users/sessions.</li>
+          <li>Use this admin panel for daily operational movement.</li>
+          <li>Refresh this tab after outreach campaigns to see new views, searches and messages.</li>
+        </ul>
+      </div>`;
   }
 
   function renderAdsTable() {
@@ -350,6 +651,7 @@
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById('stat-users').textContent       = ALL_USERS.length;
       document.getElementById('stat-users-today').textContent = ALL_USERS.filter(u => (u.created_at || '').startsWith(today)).length;
+      showStatDetail(CURRENT_STAT);
       renderUsersTable();
     } catch(e) {
       document.getElementById('users-wrap').innerHTML = '<div class="empty">Failed to load users: ' + e.message + '</div>';
@@ -452,6 +754,7 @@
       if (!r.ok) throw new Error('Status ' + r.status);
       ALL_CHATS = await r.json();
       document.getElementById('stat-msgs').textContent = ALL_CHATS.reduce((s, c) => s + c.messages.length, 0);
+      showStatDetail(CURRENT_STAT);
       renderChats();
     } catch(e) {
       document.getElementById('chat-list').innerHTML = '<div class="empty">Failed to load chats: ' + e.message + '</div>';
