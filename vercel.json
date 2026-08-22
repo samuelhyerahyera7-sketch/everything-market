@@ -27,6 +27,7 @@
   ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/store/:id", "destination": "/api/store-page?id=:id" },
     { "source": "/buy-sell/:slug", "destination": "/api/seo-page?type=category&slug=:slug" },
     { "source": "/searches/:slug", "destination": "/api/seo-page?type=popular&slug=:slug" },
     { "source": "/sell-online-south-africa", "destination": "/api/seo-page?type=static&slug=sell-online-south-africa" },

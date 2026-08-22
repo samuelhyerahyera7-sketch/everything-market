@@ -179,6 +179,7 @@ Best setup:
 - Push sellers to share listings.
 - Add social share buttons.
 - Start weekly seller outreach.
+- Give approved businesses their `/store/:id` page to share on WhatsApp, Facebook and printed QR codes.
 
 ## First 90 Days
 

@@ -38,8 +38,9 @@ async function fetchAd(id) {
 }
 
 module.exports = async function handler(req, res) {
-  /* Extract id from URL: /ad/123 */
-  const id = (req.url || '').replace(/^\/ad\//, '').replace(/[^a-zA-Z0-9_-]/g, '');
+  const url = new URL('https://everythingmarket.co.za' + (req.url || ''));
+  const pathId = url.pathname.replace(/^\/ad\//, '').replace(/^\/api\/ad\/?/, '');
+  const id = String(req.query?.id || url.searchParams.get('id') || pathId || '').replace(/[^a-zA-Z0-9_-]/g, '');
   if (!id) return res.status(400).send('Missing ad id');
 
   let ad = null;
