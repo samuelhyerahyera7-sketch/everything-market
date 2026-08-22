@@ -3028,6 +3028,13 @@ let _bioStream = null;
 let _bioRecorder = null;
 let _bioChunks = [];
 
+async function _getVfyAccessToken() {
+  const session = (await _sb.auth.getSession()).data?.session || null;
+  const token = session?.access_token || null;
+  _vfyJwt = token;
+  return token;
+}
+
 function openGetVerifiedModal() {
   closeModal();
   setTimeout(openVerificationCenter, 250);
@@ -3036,7 +3043,7 @@ function openGetVerifiedModal() {
 async function openVerificationCenter() {
   const sess = _getSession();
   if (!sess) { openSignInModal('Sign in to access verification.'); return; }
-  _vfyJwt = (await _sb.auth.getSession()).data?.session?.access_token || null;
+  await _getVfyAccessToken();
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
@@ -3048,7 +3055,8 @@ async function openVerificationCenter() {
 
   let status = null;
   try {
-    const r = await fetch('/api/verify/status', { headers: { 'Authorization': 'Bearer ' + _vfyJwt } });
+    const token = await _getVfyAccessToken();
+    const r = await fetch('/api/verify/status', { headers: { 'Authorization': 'Bearer ' + token } });
     if (r.ok) status = await r.json();
   } catch(e) {}
 
@@ -3251,14 +3259,20 @@ async function _bioStep1_ID() {
 
   let challenge;
   try {
-    const r = await fetch('/api/verify/biometric-challenge', { headers: { 'Authorization': 'Bearer ' + _vfyJwt } });
+    const token = await _getVfyAccessToken();
+    if (!token) throw new Error('Please sign in again before starting identity verification.');
+    const r = await fetch('/api/verify/biometric-challenge', { headers: { 'Authorization': 'Bearer ' + token } });
     const data = await r.json().catch(() => null);
     if (!r.ok) throw new Error(data?.error || 'Could not load challenge');
     challenge = data;
     if (!challenge?.nonce) throw new Error('No challenge');
   } catch(e) {
-    toast(e.message.includes('configured')
+    toast(e.message.includes('sign in')
+      ? e.message
+      : e.message.includes('configured')
       ? 'ID/selfie verification is not configured yet. Please contact Everything Market support.'
+      : e.message.includes('unavailable') || e.message.includes('reach')
+      ? 'Identity verification is temporarily unavailable. Please try again shortly.'
       : 'Could not load verification challenge. Try again.');
     return openVerificationCenter();
   }
@@ -3425,9 +3439,11 @@ async function _bioSubmitVerification() {
   const c = window._bioChallengeData || {};
   let jobId;
   try {
+    const token = await _getVfyAccessToken();
+    if (!token) throw new Error('Please sign in again before submitting identity verification.');
     const r = await fetch('/api/verify/biometric-submit', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + _vfyJwt, 'Content-Type': 'application/json' },
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         idStoragePath: idPath,
         videoStoragePath: videoPath,
@@ -3465,8 +3481,10 @@ async function _bioPollResult(jobId, attempt) {
 
   let result;
   try {
+    const token = await _getVfyAccessToken();
+    if (!token) throw new Error('No active verification session');
     const r = await fetch('/api/verify/biometric-poll?jobId=' + encodeURIComponent(jobId), {
-      headers: { 'Authorization': 'Bearer ' + _vfyJwt }
+      headers: { 'Authorization': 'Bearer ' + token }
     });
     result = r.ok ? await r.json() : null;
   } catch(e) { result = null; }
