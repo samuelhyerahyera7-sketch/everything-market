@@ -107,7 +107,12 @@ module.exports = async function handler(req, res) {
 <title>${esc(metaTitle)}</title>
 <meta name="description" content="${esc(metaDesc)}">
 <link rel="canonical" href="${pageUrl}">
-<link rel="icon" type="image/png" href="/logo.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/favicon-192.png">
 <meta property="og:type" content="product">
 <meta property="og:title" content="${esc(metaTitle)}">
 <meta property="og:description" content="${esc(metaDesc)}">
