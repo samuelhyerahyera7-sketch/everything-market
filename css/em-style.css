@@ -454,12 +454,12 @@ svg { display: block; }
 .em-contact-btns { display: flex; flex-direction: column; gap: 8px; padding: 0 20px; }
 .em-contact-btn { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink); background: var(--white); transition: .13s; text-align: left; width: 100%; }
 .em-contact-btn:hover { border-color: var(--forest); background: var(--surf); }
-.em-contact-btn.wa { border-color: #25D366; color: #fff; background: #25D366; }
-.em-contact-btn.wa:hover { background: #1BB256; }
+.em-contact-btn.chat { border-color: var(--forest); color: #fff; background: var(--forest); }
+.em-contact-btn.chat:hover { background: var(--leaf); }
 .em-contact-btn.call { border-color: #1565C0; color: #1565C0; }
 .em-contact-btn.call:hover { background: #E3F0FF; }
 .em-contact-btn-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.em-contact-btn.wa .em-contact-btn-icon { background: rgba(255,255,255,.2); }
+.em-contact-btn.chat .em-contact-btn-icon { background: rgba(255,255,255,.2); }
 .em-contact-btn-sub { font-size: 11px; font-weight: 400; opacity: .7; display: block; margin-top: 1px; }
 .em-offer-body { padding: 0 20px; }
 .em-offer-ref { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
