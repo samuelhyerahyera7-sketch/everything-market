@@ -118,6 +118,10 @@
   .verify-row:last-child { border-bottom: none; }
   .verify-row strong { color: #0A3D22; }
   .verify-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .verify-check { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #edf1ee; font-size: 13px; }
+  .verify-check:last-child { border-bottom: none; }
+  .check-ok { color: #2e7d32; font-weight: 800; }
+  .check-bad { color: #c62828; font-weight: 800; }
   .empty { text-align: center; padding: 40px; color: #999; }
   .loading { text-align: center; padding: 40px; color: #666; }
 
@@ -237,6 +241,7 @@
         <option value="oldest">Oldest first</option>
         <option value="ads">Most ads</option>
       </select>
+      <button class="btn-info" onclick="showVerificationSetup()">Verification Setup</button>
     </div>
     <div class="tbl-wrap">
       <div id="users-wrap"><div class="loading">Loading users…</div></div>
@@ -786,6 +791,47 @@
 
   function closeVerifyModal() {
     document.getElementById('verify-modal')?.remove();
+  }
+
+  async function showVerificationSetup() {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'admin-modal-backdrop';
+    backdrop.id = 'verify-modal';
+    backdrop.innerHTML = `
+      <div class="admin-modal">
+        <div class="admin-modal-head">
+          <h3>Verification Setup</h3>
+          <button class="admin-modal-close" onclick="closeVerifyModal()">×</button>
+        </div>
+        <div class="admin-modal-body">
+          <div class="loading" style="padding:18px;">Checking configuration…</div>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    try {
+      const r = await fetch('/api/admin-verification-config', { headers: adminHeaders() });
+      const data = await r.json();
+      const envRows = (data.env || []).map(e =>
+        `<div class="verify-check"><span>${escHtml(e.name)}</span><strong class="${e.configured ? 'check-ok' : 'check-bad'}">${e.configured ? 'Set' : 'Missing'}</strong></div>`
+      ).join('');
+      const checkRows = (data.checks || []).map(c =>
+        `<div class="verify-check"><span>${escHtml(c.name)}${c.status ? ` <small style="color:#777;">(${escHtml(c.status)})</small>` : ''}</span><strong class="${c.ok ? 'check-ok' : 'check-bad'}">${c.ok ? 'Ready' : 'Needs setup'}</strong></div>`
+      ).join('');
+      backdrop.querySelector('.admin-modal-body').innerHTML = `
+        <div style="font-size:13px;color:#4f5d55;line-height:1.55;margin-bottom:12px;">
+          Verified Seller requires email, mobile number, and ID/selfie checks, unless you approve the seller manually.
+        </div>
+        <h4 style="color:#0A3D22;margin:10px 0 6px;">Environment</h4>
+        ${envRows || '<div class="empty">No environment data.</div>'}
+        <h4 style="color:#0A3D22;margin:16px 0 6px;">Readiness</h4>
+        ${checkRows || '<div class="empty">No checks returned.</div>'}
+        <div class="verify-actions">
+          <button class="btn-info" onclick="showVerificationSetup()">Refresh</button>
+          <button class="btn-info" onclick="closeVerifyModal()">Close</button>
+        </div>`;
+    } catch(e) {
+      backdrop.querySelector('.admin-modal-body').innerHTML = `<div class="empty">Could not check verification setup: ${escHtml(e.message)}</div>`;
+    }
   }
 
   async function toggleVerify(userId, newVerified, btn) {
