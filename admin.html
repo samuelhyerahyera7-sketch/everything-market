@@ -15,8 +15,11 @@
   .login-box { background: #fff; border-radius: 14px; padding: 40px 36px; width: 340px; box-shadow: 0 4px 24px rgba(0,0,0,.10); text-align: center; }
   .login-box h1 { font-size: 22px; color: #0A3D22; margin-bottom: 6px; }
   .login-box p { font-size: 13px; color: #666; margin-bottom: 24px; }
-  .login-box input { width: 100%; padding: 11px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 14px; }
+  .login-field { position: relative; margin-bottom: 14px; }
+  .login-box input { width: 100%; padding: 11px 44px 11px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 15px; }
   .login-box input:focus { border-color: #1A7A42; outline: none; }
+  .login-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: #5c6b62; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+  .login-eye:hover { background: #eef4ef; color: #0A3D22; }
   .login-btn { width: 100%; padding: 12px; background: #1A7A42; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
   .login-btn:hover { background: #145C35; }
   .login-err { color: #c0392b; font-size: 13px; margin-top: 10px; display: none; }
@@ -133,7 +136,10 @@
   <div class="login-box">
     <h1>🛡️ Admin Panel</h1>
     <p>Everything Market</p>
-    <input type="password" id="adm-pass" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="login-field">
+      <input type="password" id="adm-pass" placeholder="Admin password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button type="button" class="login-eye" id="adm-eye" onclick="toggleAdminPassword()" aria-label="Show password" title="Show password">👁</button>
+    </div>
     <button class="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="login-err">Incorrect password.</div>
   </div>
@@ -255,6 +261,15 @@
       ...(extra || {}),
       ...(ADMIN_TOKEN ? { Authorization: 'Bearer ' + ADMIN_TOKEN } : {}),
     };
+  }
+
+  function toggleAdminPassword() {
+    const input = document.getElementById('adm-pass');
+    const btn = document.getElementById('adm-eye');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    btn.title = showing ? 'Show password' : 'Hide password';
   }
 
   /* ── Login ── */
