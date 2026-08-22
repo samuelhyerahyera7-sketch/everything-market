@@ -3824,6 +3824,7 @@ function openSignInModal(hint) {
       <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;">
         <button type="button" onclick="openForgotPasswordModal()" style="border:1px solid var(--border-lt);background:var(--surf2);color:var(--forest);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;">Forgot password?</button>
         <button type="button" onclick="submitMagicSignInLink()" style="border:1px solid var(--border-lt);background:#fff;color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;">Email me a sign-in link</button>
+        <button type="button" onclick="openResendVerificationModal()" style="border:1px solid var(--border-lt);background:#fff;color:var(--ink);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:800;cursor:pointer;">Resend verification email</button>
       </div>
       <p class="em-auth-switch">No account yet? <button type="button" onclick="openRegisterModal()">Create one free</button></p>
     </form>`;
@@ -3859,7 +3860,7 @@ async function submitSignIn(e) {
   if (error || !data?.user) {
     const msg = String(error?.message || '').toLowerCase();
     if (msg.includes('email not confirmed')) {
-      showErr('Please confirm your email address first, then sign in again.');
+      showErr('Please confirm your email address first. Use Resend verification email below if you cannot find it.');
     } else if (msg.includes('network') || msg.includes('fetch')) {
       showErr('Could not reach the sign-in service. Please check your connection and try again.');
     } else {
@@ -3905,6 +3906,61 @@ async function submitMagicSignInLink() {
       <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
       <div class="em-confirm-title">Sign-In Link Sent</div>
       <div class="em-confirm-sub">Check ${email}. Open the link in the email and you will be signed in automatically.</div>
+      <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
+    </div>`;
+}
+
+function openResendVerificationModal(emailValue) {
+  modalBox.innerHTML = `
+    <div class="em-modal-bar">
+      <h3>Verify Email</h3>
+      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form class="em-post-form" onsubmit="submitResendVerification(event)" novalidate>
+      <p class="em-signin-hint">Enter your email and we will send another account verification link.</p>
+      <div class="em-post-field">
+        <label class="em-post-label" for="rv-email">Email address</label>
+        <input class="em-post-input" id="rv-email" type="email" placeholder="you@example.com" autocomplete="email" value="${emailValue ? String(emailValue).replace(/"/g, '&quot;') : ''}">
+      </div>
+      <div id="auth-error" class="em-post-error" style="display:none;"></div>
+      <button type="submit" class="em-post-submit">Send Verification Email</button>
+      <p class="em-auth-switch">Already verified? <button type="button" onclick="openSignInModal()">Sign in</button></p>
+    </form>`;
+  _openModal();
+  setTimeout(() => document.getElementById('rv-email')?.focus(), 80);
+}
+
+async function submitResendVerification(e) {
+  e.preventDefault();
+  const email = (document.getElementById('rv-email')?.value || '').trim().toLowerCase();
+  const errEl = document.getElementById('auth-error');
+  const btn = e.target.querySelector('[type=submit]');
+  if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  let error = null;
+  try {
+    const result = await _sb.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: window.location.origin + '/?signin=1' }
+    });
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Verification Email';
+  }
+  if (error) {
+    errEl.textContent = error.message || 'Could not resend verification email. Please try again.';
+    errEl.style.display = '';
+    return;
+  }
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">Verification Email Sent</div>
+      <div class="em-confirm-sub">Check ${email}. Open the link to verify your account, then sign in.</div>
       <button class="em-confirm-close" onclick="openSignInModal()">Back to Sign In</button>
     </div>`;
 }
@@ -4054,18 +4110,47 @@ async function submitRegister(e) {
   if (!email.includes('@')) { errEl.textContent = 'Please enter a valid email address.'; errEl.style.display = ''; return; }
   if (pass.length < 6)     { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = ''; return; }
   btn.disabled = true; btn.textContent = 'Creating account…';
-  const { data, error } = await _sb.auth.signUp({ email, password: pass, options: { data: { name } } });
-  btn.disabled = false; btn.textContent = 'Create Account';
+  let data, error;
+  try {
+    const result = await _sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: { name },
+        emailRedirectTo: window.location.origin + '/?signin=1'
+      }
+    });
+    data = result.data;
+    error = result.error;
+  } catch (e2) {
+    error = e2;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
   if (error) {
     errEl.textContent = error.message || 'Could not create account. Please try again.';
     errEl.style.display = '';
     return;
   }
-  _sbUser = data.user;
-  _updateAuthUI();
-  closeModal();
   if (window.emTrack) emTrack('register');
-  toast('Welcome to Everything Market, ' + name.split(' ')[0] + '!');
+  if (data?.session?.user) {
+    _sbUser = data.session.user;
+    _updateAuthUI();
+    closeModal();
+    toast('Welcome to Everything Market, ' + name.split(' ')[0] + '!');
+    return;
+  }
+  _sbUser = null;
+  _updateAuthUI();
+  modalBox.innerHTML = `
+    <div class="em-confirm">
+      <div class="em-confirm-icon"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="var(--leaf)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
+      <div class="em-confirm-title">Verify Your Email</div>
+      <div class="em-confirm-sub">We created your account. Check ${email} and open the verification link before signing in.</div>
+      <button class="em-confirm-close" onclick="openSignInModal()">Go to Sign In</button>
+      <button class="em-confirm-close" onclick="openResendVerificationModal('${email.replace(/'/g, "\\'")}')" style="margin-top:8px;background:var(--surf2);color:var(--forest);">Resend Verification Email</button>
+    </div>`;
 }
 
 /* ── My Ads ── */
