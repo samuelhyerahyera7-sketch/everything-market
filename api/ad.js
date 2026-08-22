@@ -38,7 +38,7 @@ async function fetchAd(id) {
 }
 
 module.exports = async function handler(req, res) {
-  const url = new URL('https://everythingmarket.co.za' + (req.url || ''));
+  const url = new URL('https://www.everythingmarket.co.za' + (req.url || ''));
   const pathId = url.pathname.replace(/^\/ad\//, '').replace(/^\/api\/ad\/?/, '');
   const id = String(req.query?.id || url.searchParams.get('id') || pathId || '').replace(/[^a-zA-Z0-9_-]/g, '');
   if (!id) return res.status(400).send('Missing ad id');
@@ -63,8 +63,8 @@ module.exports = async function handler(req, res) {
   const seller      = esc(ad.seller || ad.contact_name || '');
   const description = esc((ad.description || ad.desc || '').slice(0, 300));
   const cat         = esc(ad.cat || ad.category || '');
-  const photo       = (Array.isArray(ad.photos) && ad.photos[0]) ? ad.photos[0] : 'https://everythingmarket.co.za/logo.png';
-  const pageUrl     = `https://everythingmarket.co.za/ad/${id}`;
+  const photo       = (Array.isArray(ad.photos) && ad.photos[0]) ? ad.photos[0] : 'https://www.everythingmarket.co.za/logo.png';
+  const pageUrl     = `https://www.everythingmarket.co.za/ad/${id}`;
 
   const metaTitle = `${ad.title} — ${fmtPrice(ad.price)} | Everything Market`;
   const metaDesc  = `${ad.title} for sale in ${ad.loc || 'South Africa'}. ${fmtPrice(ad.price)}. ${(ad.description || '').slice(0, 120)}`;
@@ -134,7 +134,7 @@ module.exports = async function handler(req, res) {
 </div>
 <a class="back" href="/">← Back to all ads</a>
 <div class="card">
-  ${photo !== 'https://everythingmarket.co.za/logo.png' ? `<img class="photo" src="${esc(photo)}" alt="${title}" loading="eager">` : ''}
+  ${photo !== 'https://www.everythingmarket.co.za/logo.png' ? `<img class="photo" src="${esc(photo)}" alt="${title}" loading="eager">` : ''}
   <div class="body">
     <h1>${title}</h1>
     <div class="price">${price}</div>

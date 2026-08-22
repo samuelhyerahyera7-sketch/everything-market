@@ -3,25 +3,25 @@
     {
       "source": "/",
       "has": [{ "type": "host", "value": "marketplacesouthafrica.co.za" }],
-      "destination": "https://everythingmarket.co.za/marketplace-south-africa",
+      "destination": "https://www.everythingmarket.co.za/marketplace-south-africa",
       "permanent": true
     },
     {
       "source": "/",
       "has": [{ "type": "host", "value": "www.marketplacesouthafrica.co.za" }],
-      "destination": "https://everythingmarket.co.za/marketplace-south-africa",
+      "destination": "https://www.everythingmarket.co.za/marketplace-south-africa",
       "permanent": true
     },
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "marketplacesouthafrica.co.za" }],
-      "destination": "https://everythingmarket.co.za/$1",
+      "destination": "https://www.everythingmarket.co.za/$1",
       "permanent": true
     },
     {
       "source": "/(.*)",
       "has": [{ "type": "host", "value": "www.marketplacesouthafrica.co.za" }],
-      "destination": "https://everythingmarket.co.za/$1",
+      "destination": "https://www.everythingmarket.co.za/$1",
       "permanent": true
     }
   ],

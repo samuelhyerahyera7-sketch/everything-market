@@ -1,6 +1,6 @@
 const https = require('https');
 
-const SITE_URL = 'https://everythingmarket.co.za';
+const SITE_URL = 'https://www.everythingmarket.co.za';
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST = SB_URL_RAW.replace('https://', '');
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY ||
@@ -43,7 +43,7 @@ function fmtPrice(price) {
 }
 
 module.exports = async function handler(req, res) {
-  const url = new URL('https://everythingmarket.co.za' + (req.url || ''));
+  const url = new URL('https://www.everythingmarket.co.za' + (req.url || ''));
   const pathId = url.pathname.replace(/^\/store\//, '').replace(/^\/api\/store-page\/?/, '');
   const storeId = String(req.query?.id || url.searchParams.get('id') || pathId || '').replace(/[^a-zA-Z0-9_-]/g, '');
 

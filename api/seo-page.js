@@ -1,4 +1,4 @@
-const SITE_URL = 'https://everythingmarket.co.za';
+const SITE_URL = 'https://www.everythingmarket.co.za';
 
 const CATEGORIES = {
   'cars-bakkies': {

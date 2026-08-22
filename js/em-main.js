@@ -580,7 +580,7 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
   const initials = sellerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const oldest   = ads.length ? Math.min(...ads.map(l => l.postedAt || Date.now())) : Date.now();
   const since    = new Date(oldest).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
-  const storeUrl = storeId ? 'https://everythingmarket.co.za/store/' + storeId : 'https://everythingmarket.co.za/';
+  const storeUrl = storeId ? 'https://www.everythingmarket.co.za/store/' + storeId : 'https://www.everythingmarket.co.za/';
   const storeShareText = encodeURIComponent('View ' + sellerName + ' on Everything Market: ' + storeUrl);
 
   /* Build category tabs — prefer custom categories from API, fall back to auto-detect */
@@ -2058,7 +2058,7 @@ function openBuyNow(listing) {
   const initials = listing.seller.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const rawPhone = (listing.phone || '').replace(/\D/g, '');
   const phone = rawPhone ? (rawPhone.startsWith('27') ? rawPhone : rawPhone.startsWith('0') ? '27' + rawPhone.slice(1) : '27' + rawPhone) : '';
-  const adUrl = 'https://everythingmarket.co.za/ad/' + listing.id;
+  const adUrl = 'https://www.everythingmarket.co.za/ad/' + listing.id;
   const shareText = 'Check out this listing on Everything Market!\n\n' + listing.title + '\n' + price + '\n' + _fmtLoc(listing.loc) + '\n\n' + adUrl;
   const shareUrl = encodeURIComponent(adUrl);
   const encodedShareText = encodeURIComponent(shareText);
