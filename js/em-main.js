@@ -3689,7 +3689,7 @@ function _renderVeriCenter(status, sess) {
             ? `<span style="font-size:11px;color:#2e7d32;font-weight:600;">Verified</span>`
             : pending
             ? `<span style="font-size:11px;color:#f57c00;font-weight:600;">Pending</span>`
-            : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Submit</button>`}
+            : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="width:auto;flex-shrink:0;padding:6px 12px;font-size:12px;margin:0;min-width:0;">Submit</button>`}
         </div>
       </div>
       <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Submit a live photo of your ID and a live selfie. Everything Market admin reviews both photos manually before approval.</p>
