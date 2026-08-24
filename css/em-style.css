@@ -272,7 +272,7 @@ svg { display: block; }
 .stype-private { background: var(--leaf-lt); color: var(--mid); }
 .stype-dealer  { background: var(--ochre-lt); color: #7A4E00; }
 .vfy-badge { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 4px; }
-.vfy-yes { background: var(--leaf-lt); color: var(--mid); }
+.vfy-yes { background: #E3F0FF; color: #1565C0; }
 .vfy-no  { background: #FFEBEE; color: #E53935; }
 
 /* ── GT list ── */
@@ -453,7 +453,7 @@ svg { display: block; }
 .em-modal-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--leaf); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .em-modal-seller-name { font-size: 13px; font-weight: 700; color: var(--ink); }
 .em-modal-seller-meta { font-size: 11px; color: var(--muted); }
-.em-modal-verified { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; background: var(--leaf-lt); color: var(--mid); padding: 2px 8px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }
+.em-modal-verified { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; background: #E3F0FF; color: #1565C0; padding: 2px 8px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }
 .em-modal-unverified { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; background: #FFEBEE; color: #E53935; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
 .em-modal-divider { height: 1px; background: var(--border-lt); margin: 0 20px 16px; }
 .em-modal-section-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 0 20px; margin-bottom: 10px; }
