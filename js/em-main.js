@@ -5111,36 +5111,6 @@ function openInfoModal(key) {
       <div style="padding:10px 0 4px;text-align:center;">
         <button class="em-post-submit" onclick="closeModal();openPostAdModal()">Post a Free Ad</button>
       </div>`),
-
-    'privacy': _infoStaticPage.bind(null, 'Privacy Policy', `
-      <div class="info-section"><p>Everything Market (Pty) Ltd ("Everything Market", "we", "us") respects your privacy and is committed to protecting your personal information in line with the Protection of Personal Information Act, 2013 (POPIA).</p></div>
-      <div class="info-section"><h4>Information we collect</h4><ul class="info-list"><li>Account details you give us — name, email, phone number, province/city.</li><li>Listing content you post — ad text, photos, price and location.</li><li>Messages sent between buyers and sellers through our in-app inbox.</li><li>Verification information if you choose to apply for a Verified badge.</li><li>Technical data — device, browser and approximate location, used for analytics and fraud prevention.</li></ul></div>
-      <div class="info-section"><h4>How we use it</h4><ul class="info-list"><li>To operate your account and show your listings to buyers.</li><li>To let buyers and sellers message each other safely.</li><li>To detect and prevent scams, fraud and abuse.</li><li>To send service messages (e.g. new message alerts) and, where you've opted in, marketing updates.</li><li>To improve the marketplace and understand how it's used.</li></ul></div>
-      <div class="info-section"><h4>Who we share it with</h4><p>We do not sell your personal information. We share it only with: service providers who help us run the platform (hosting, messaging, payments, identity verification), and law enforcement or regulators where we are legally required to.</p></div>
-      <div class="info-section"><h4>Your rights</h4><p>Under POPIA you can ask us to access, correct or delete your personal information, or object to certain processing. Contact us using the details below and we will respond within a reasonable time.</p></div>
-      <div class="info-section"><h4>Data security & retention</h4><p>We use reasonable technical and organisational measures to protect your data. We keep account and listing data for as long as your account is active, and for a limited period afterwards where needed for legal, safety or fraud-prevention purposes.</p></div>
-      <div class="info-section"><h4>Contact us</h4><p>For any privacy question or request, email <strong>admin@everythingmarket.co.za</strong>.</p></div>
-      <div class="info-section"><p style="color:var(--muted);font-size:12px;">This policy may be updated from time to time. Continued use of Everything Market after an update means you accept the revised policy.</p></div>`),
-
-    'terms': _infoStaticPage.bind(null, 'Terms & Conditions', `
-      <div class="info-section"><p>These terms govern your use of Everything Market. By registering, posting an ad or messaging another user, you agree to them.</p></div>
-      <div class="info-section"><h4>1. The service</h4><p>Everything Market is a free classifieds platform that lets users list items, property, jobs and services for sale or rent, and message each other about listings. We are not a party to any transaction between buyers and sellers.</p></div>
-      <div class="info-section"><h4>2. Your account</h4><p>You must provide accurate information when registering and keep your login details secure. You're responsible for all activity under your account.</p></div>
-      <div class="info-section"><h4>3. Posting rules</h4><ul class="info-list"><li>Listings must be for real items/services you own or are authorised to sell.</li><li>No stolen goods, counterfeit items, weapons, illegal substances or prohibited services.</li><li>No misleading prices, fake photos or duplicate spam listings.</li><li>You are responsible for the accuracy and legality of everything you post.</li></ul></div>
-      <div class="info-section"><h4>4. Fees</h4><p>Standard listings are free. Optional paid features (such as featured or sponsored placements) are described at the point of purchase and are non-refundable once activated, except as required by law.</p></div>
-      <div class="info-section"><h4>5. Safety & transactions</h4><p>All trades happen directly between buyers and sellers. Everything Market does not inspect goods, verify every seller, or guarantee any transaction. Follow our Safety Tips, and never send payment for an item you have not seen or verified.</p></div>
-      <div class="info-section"><h4>6. Moderation</h4><p>We may remove any listing or suspend any account that breaks these terms, our safety rules, or the law, without prior notice.</p></div>
-      <div class="info-section"><h4>7. Liability</h4><p>Everything Market is provided "as is". To the fullest extent permitted by law, we are not liable for losses arising from transactions between users, inaccurate listings, or service interruptions.</p></div>
-      <div class="info-section"><h4>8. Changes</h4><p>We may update these terms as the platform grows. Material changes will be highlighted on the site.</p></div>
-      <div class="info-section"><h4>Contact us</h4><p>Questions about these terms: <strong>admin@everythingmarket.co.za</strong>.</p></div>`),
-
-    'paia': _infoStaticPage.bind(null, 'PAIA Manual', `
-      <div class="info-section"><p>This manual is published in terms of Section 51 of the Promotion of Access to Information Act, 2000 (PAIA), as amended, and explains how to request records held by Everything Market (Pty) Ltd.</p></div>
-      <div class="info-section"><h4>Body particulars</h4><p>Everything Market (Pty) Ltd, operating the website everythingmarket.co.za, South Africa.</p></div>
-      <div class="info-section"><h4>Information Officer</h4><p>Requests under PAIA should be directed to the Information Officer at <strong>admin@everythingmarket.co.za</strong>. Please mark your request "PAIA Request" in the subject line.</p></div>
-      <div class="info-section"><h4>Records we hold</h4><ul class="info-list"><li>User account and contact information.</li><li>Listing and transaction-related records.</li><li>Correspondence between users and our support/safety team.</li><li>Verification records for users who applied for a Verified badge.</li><li>Financial records related to any paid features.</li></ul></div>
-      <div class="info-section"><h4>How to request access</h4><p>Submit a written request describing the record you need and why, along with proof of identity. We will respond within the timeframes set out in PAIA. Some records may be withheld where PAIA permits, for example to protect another person's privacy or ongoing safety investigations.</p></div>
-      <div class="info-section"><h4>Related policy</h4><p>See our Privacy Policy for how we handle personal information under POPIA.</p></div>`),
   };
 
   const builder = builders[key];

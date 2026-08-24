@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
     const users = parsed.users || parsed || [];
 
     /* Also fetch ads to count per-user ad totals and surface listing-only sellers */
-    const rAds = await sbReq('GET', '/rest/v1/ads?select=user_id,seller_email,contact_email,seller,phone,created_at,verified');
+    const rAds = await sbReq('GET', '/rest/v1/ads?select=user_id,seller_email,contact_email,seller,phone,created_at');
     const ads = rAds.status === 200 ? JSON.parse(rAds.body) : [];
     const adCountsByUserId = {};
     const adCountsByEmail = {};
@@ -64,32 +64,15 @@ module.exports = async function handler(req, res) {
             phone: a.phone || '',
             first_ad_at: a.created_at,
             last_ad_at: a.created_at,
-            verified: false,
           };
         }
         if (a.phone && !sellerProfiles[email].phone) sellerProfiles[email].phone = a.phone;
         if (a.seller && !sellerProfiles[email].name) sellerProfiles[email].name = a.seller;
-        if (a.verified) sellerProfiles[email].verified = true;
         if (a.created_at && (!sellerProfiles[email].last_ad_at || new Date(a.created_at) > new Date(sellerProfiles[email].last_ad_at))) {
           sellerProfiles[email].last_ad_at = a.created_at;
         }
       }
     });
-    /* suspended is an optional column added by supabase-suspend.sql — query it
-       separately so a not-yet-migrated database never breaks the user list. */
-    const suspendedByUserId = {};
-    const suspendedByEmail = {};
-    const rSuspended = await sbReq('GET', '/rest/v1/ads?select=user_id,contact_email&suspended=eq.true');
-    if (rSuspended.status === 200) {
-      try {
-        JSON.parse(rSuspended.body).forEach(row => {
-          if (row.user_id) suspendedByUserId[row.user_id] = true;
-          const e = String(row.contact_email || '').toLowerCase();
-          if (e) suspendedByEmail[e] = true;
-        });
-      } catch {}
-    }
-
     const authEmails = new Set(users.map(u => String(u.email || '').toLowerCase()).filter(Boolean));
     const userIds = users.map(u => u.id).filter(Boolean);
     let phoneByUser = {};
@@ -132,8 +115,6 @@ module.exports = async function handler(req, res) {
       last_sign_in: u.last_sign_in_at,
       confirmed:  !!u.confirmed_at,
       verified:   !!u.user_metadata?.verified,
-      suspended:  (!!u.banned_until && new Date(u.banned_until).getTime() > Date.now()) ||
-                  !!suspendedByUserId[u.id] || !!suspendedByEmail[String(u.email || '').toLowerCase()],
       auth_user:  true,
       source:     'registered',
       ad_count:   adCountsByUserId[u.id] || adCountsByEmail[String(u.email || '').toLowerCase()] || 0,
@@ -166,18 +147,11 @@ module.exports = async function handler(req, res) {
         created_at: s.first_ad_at,
         last_sign_in: null,
         confirmed: false,
-        verified: !!s.verified,
-        suspended: !!suspendedByEmail[s.email],
+        verified: false,
         auth_user: false,
         source: 'listing_seller',
         ad_count: adCountsByEmail[s.email] || 0,
         last_ad_at: s.last_ad_at || null,
-        verification: {
-          level: s.verified ? 'Verified Seller' : 'Not Verified',
-          email_verified: false,
-          phone_verified: false,
-          identity_status: s.verified ? 'approved' : 'none',
-        },
       });
     });
 
