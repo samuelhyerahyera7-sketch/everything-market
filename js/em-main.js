@@ -329,34 +329,132 @@ function toggleShopcat() {
 })();
 
 /* ── Category Page ── */
-let _catId = 'all', _catName = 'All Ads', _searchQuery = '';
+let _catId = 'all', _catName = 'All Ads', _searchQuery = '', _resultCatFilter = '';
+
+const _SEARCH_ALIASES = {
+  car: ['cars', 'bakkie', 'bakkies', 'vehicle', 'vehicles', 'auto', 'autos', 'transport', 'toyota', 'ford', 'vw', 'volkswagen', 'bmw', 'mercedes'],
+  cars: ['car', 'bakkie', 'bakkies', 'vehicle', 'vehicles', 'auto', 'autos', 'transport', 'toyota', 'ford', 'vw', 'volkswagen', 'bmw', 'mercedes'],
+  bakkie: ['car', 'cars', 'bakkies', 'vehicle', 'vehicles', 'transport'],
+  bakkies: ['car', 'cars', 'bakkie', 'vehicle', 'vehicles', 'transport'],
+  bike: ['motorcycle', 'motorcycles', 'moto', 'scooter'],
+  phones: ['phone', 'iphone', 'samsung', 'cellphone', 'mobile'],
+  phone: ['phones', 'iphone', 'samsung', 'cellphone', 'mobile'],
+  property: ['house', 'houses', 'flat', 'flats', 'apartment', 'apartments', 'rent', 'rental'],
+  house: ['property', 'houses', 'flat', 'apartment', 'rent', 'rental'],
+  job: ['jobs', 'work', 'vacancy', 'vacancies'],
+  jobs: ['job', 'work', 'vacancy', 'vacancies'],
+};
+
+const _SEARCH_INTENT_CATS = {
+  car: 'cars',
+  cars: 'cars',
+  bakkie: 'cars',
+  bakkies: 'cars',
+  vehicle: 'cars',
+  vehicles: 'cars',
+  auto: 'cars',
+  transport: 'cars',
+  phone: 'elec',
+  phones: 'elec',
+  electronics: 'elec',
+  laptop: 'elec',
+  property: 'prop',
+  house: 'prop',
+  houses: 'prop',
+  flat: 'prop',
+  rent: 'prop',
+  job: 'jobs',
+  jobs: 'jobs',
+  work: 'jobs',
+  furniture: 'furn',
+  couch: 'furn',
+  sofa: 'furn',
+  bed: 'furn',
+};
+
+function _normSearchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function _searchTerms(query) {
+  const base = _normSearchText(query).split(' ').filter(Boolean);
+  const terms = new Set(base);
+  base.forEach(term => {
+    if (term.endsWith('s') && term.length > 3) terms.add(term.slice(0, -1));
+    if (_SEARCH_ALIASES[term]) _SEARCH_ALIASES[term].forEach(alias => terms.add(alias));
+  });
+  return [...terms];
+}
+
+function _inferSearchCategory(query) {
+  const terms = _normSearchText(query).split(' ').filter(Boolean);
+  for (const term of terms) {
+    if (_SEARCH_INTENT_CATS[term]) return _SEARCH_INTENT_CATS[term];
+    if (term.endsWith('s') && _SEARCH_INTENT_CATS[term.slice(0, -1)]) return _SEARCH_INTENT_CATS[term.slice(0, -1)];
+  }
+  return '';
+}
+
+function _listingSearchText(l) {
+  const cat = CATS.find(c => c.id === l.cat);
+  return _normSearchText([
+    l.title,
+    l.desc,
+    l.description,
+    l.cat,
+    cat?.name,
+    l.seller,
+    l.sellerType,
+    l.cond,
+    l.loc,
+    l.make,
+    l.model,
+    l.year,
+  ].filter(Boolean).join(' '));
+}
 
 function _getCatListings() {
   let data = _catId === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === _catId);
   if (_searchQuery) {
-    const q = _searchQuery;
-    data = data.filter(l => (l.title + ' ' + (l.desc || '')).toLowerCase().includes(q));
+    const terms = _searchTerms(_searchQuery);
+    data = data.filter(l => {
+      const hay = _listingSearchText(l);
+      return terms.some(term => hay.includes(term));
+    });
+  }
+  if (_resultCatFilter) {
+    data = data.filter(l => l.cat === _resultCatFilter);
   }
   return data;
 }
 
 function _openResultsPage(title) {
+  const page = document.getElementById('cat-page');
+  const alreadyOpen = page && page.style.display !== 'none';
   document.getElementById('cat-page-title').textContent = title;
-  document.getElementById('cat-page').style.display = 'flex';
+  if (page) page.style.display = 'flex';
   const scrollEl = document.getElementById('cat-page-scroll');
   if (scrollEl) scrollEl.scrollTop = 0;
   document.getElementById('cf-min').value = '';
   document.getElementById('cf-max').value = '';
   document.querySelectorAll('.cf-cond').forEach(el => { el.checked = false; });
   document.getElementById('cf-sort').value = 'newest';
-  _lockScroll();
-  _navPush('results');
+  if (!alreadyOpen) {
+    _lockScroll();
+    _navPush('results');
+  }
 }
 
 function openCategoryPage(catId, catName) {
   _catId = catId;
   _catName = catName;
   _searchQuery = '';
+  _resultCatFilter = '';
   _openResultsPage(catName);
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = '';
@@ -368,6 +466,7 @@ function openProvincePage(province) {
   _catId = 'all';
   _catName = province;
   _searchQuery = '';
+  _resultCatFilter = '';
   _openResultsPage('Ads in ' + province);
   const locEl = document.getElementById('cf-loc');
   if (locEl) locEl.value = province;
@@ -386,6 +485,7 @@ function runSearch() {
 
   _catId = 'all';
   _searchQuery = q.toLowerCase();
+  _resultCatFilter = _inferSearchCategory(q);
 
   const title = q && prov ? `"${q}" in ${prov}` : q ? `Results for "${q}"` : `Ads in ${prov}`;
   _openResultsPage(title);
@@ -395,15 +495,18 @@ function runSearch() {
 
   applyCatFilters();
   document.getElementById('ac-drop')?.classList.remove('open');
+  document.getElementById('mob-ac-drop')?.classList.remove('open');
+  document.getElementById('srch-mob')?.classList.remove('open');
 
   if (window.emTrack && q) emTrack('search', { q: q.slice(0, 60) });
 }
 
 /* ── In-app navigation stack (pushState per layer so back gesture stays in the app) ── */
 let _navSuppressNext = false;
+try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (_) {}
 
-function _navPush(layer) {
-  history.pushState({ emNav: layer }, '', window.location.pathname);
+function _navPush(layer, extraState, url) {
+  history.pushState({ emNav: layer, ...(extraState || {}) }, '', url || (window.location.pathname + window.location.search));
 }
 
 function _navBack() {
@@ -419,7 +522,9 @@ function _navBack() {
 function _closeCatPageUI() {
   document.getElementById('cat-page').style.display = 'none';
   _searchQuery = '';
+  _resultCatFilter = '';
   _unlockScroll();
+  _ensureScrollUnlockedIfNoOverlay();
 }
 
 function closeCategoryPage() {
@@ -848,6 +953,57 @@ function clearCatFilters() {
   renderCatResults(_getCatListings());
 }
 
+function _searchBaseResults() {
+  let data = _catId === 'all' ? LISTINGS : LISTINGS.filter(l => l.cat === _catId);
+  if (_searchQuery) {
+    const terms = _searchTerms(_searchQuery);
+    data = data.filter(l => {
+      const hay = _listingSearchText(l);
+      return terms.some(term => hay.includes(term));
+    });
+  }
+  return data;
+}
+
+function _catLabel(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  return cat ? cat.name : catId;
+}
+
+function setResultCategoryFilter(catId) {
+  _resultCatFilter = catId || '';
+  applyCatFilters();
+  const scrollEl = document.getElementById('cat-page-scroll');
+  if (scrollEl) scrollEl.scrollTop = 0;
+}
+
+function _renderRefineStrip(activeData) {
+  if (!_searchQuery) return '';
+  const base = _searchBaseResults();
+  const counts = {};
+  base.forEach(l => { counts[l.cat] = (counts[l.cat] || 0) + 1; });
+  const cats = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  return `
+    <div class="cat-refine">
+      <div class="cat-refine-top">
+        <div>
+          <div class="cat-refine-kicker">Refine results</div>
+          <div class="cat-refine-title">${activeData.length} result${activeData.length !== 1 ? 's' : ''}${_resultCatFilter ? ' in ' + _catLabel(_resultCatFilter) : ''}</div>
+        </div>
+        <button class="cat-refine-filter-btn" onclick="toggleCatFilters()">Filters</button>
+      </div>
+      <div class="cat-refine-chips">
+        <button class="cat-refine-chip ${!_resultCatFilter ? 'active' : ''}" onclick="setResultCategoryFilter('')">All <span>${base.length}</span></button>
+        ${cats.map(([catId, count]) => `
+          <button class="cat-refine-chip ${_resultCatFilter === catId ? 'active' : ''}" onclick="setResultCategoryFilter('${catId}')">${_catLabel(catId)} <span>${count}</span></button>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
 /* ── Sidebar (homepage) filters ── */
 function sbApplyFilters() {
   const prov = document.getElementById('sb-prov')?.value || '';
@@ -887,11 +1043,12 @@ function sbClearFilters() {
 
 function renderCatResults(data) {
   const container = document.getElementById('cat-results');
+  const refine = _renderRefineStrip(data);
   if (!data.length) {
-    container.innerHTML = '<div class="cat-empty">No ads found in this category yet. Be the first to post one!</div>';
+    container.innerHTML = refine + '<div class="cat-empty">No ads found. Try another category, location or price range.</div>';
     return;
   }
-  container.innerHTML = '';
+  container.innerHTML = refine;
   data.forEach(l => {
     const card = document.createElement('div');
     card.className = 'bb-card';
@@ -1201,6 +1358,13 @@ PROVINCES.forEach(p => {
 /* ── Scroll lock (prevents background scroll behind overlays on iOS/Android) ── */
 let _scrollLockY = 0;
 let _scrollLockDepth = 0;
+function _instantScrollTo(y) {
+  const html = document.documentElement;
+  const prev = html.style.scrollBehavior;
+  html.style.scrollBehavior = 'auto';
+  window.scrollTo(0, y || 0);
+  requestAnimationFrame(() => { html.style.scrollBehavior = prev; });
+}
 function _lockScroll() {
   if (_scrollLockDepth === 0) {
     _scrollLockY = window.scrollY;
@@ -1216,13 +1380,29 @@ function _lockScroll() {
 function _unlockScroll() {
   _scrollLockDepth = Math.max(0, _scrollLockDepth - 1);
   if (_scrollLockDepth === 0) {
+    const restoreY = _scrollLockY || 0;
     document.documentElement.style.overflow = '';
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.overflow = '';
-    window.scrollTo(0, 0);
+    _instantScrollTo(restoreY);
+  }
+}
+
+function _forceUnlockScroll() {
+  _scrollLockDepth = 1;
+  _unlockScroll();
+}
+
+function _ensureScrollUnlockedIfNoOverlay() {
+  const modalOpen = modal && modal.classList.contains('open');
+  const catOpen = document.getElementById('cat-page')?.style.display !== 'none';
+  const shopOpen = document.getElementById('shop-page')?.style.display !== 'none';
+  const dashOpen = document.getElementById('store-dashboard')?.style.display !== 'none';
+  if (!modalOpen && !catOpen && !shopOpen && !dashOpen && _scrollLockDepth > 0) {
+    _forceUnlockScroll();
   }
 }
 
@@ -1265,19 +1445,27 @@ const modal = document.getElementById('em-modal');
 const modalBox = modal.querySelector('.em-modal-box');
 
 function closeModal() {
+  const state = history.state || {};
   modal.classList.remove('open');
   setTimeout(() => { modalBox.innerHTML = ''; }, 250);
   _unlockScroll();
-  _navBack();
-  /* Reset URL and page title when closing an ad */
-  if (location.pathname.startsWith('/ad/') || location.search.includes('ad=')) {
-    history.replaceState(null, '', '/');
+  if (state.emNav === 'ad') {
+    history.replaceState(null, '', state.returnUrl || '/');
+    if (Number.isFinite(state.returnScrollY)) _instantScrollTo(state.returnScrollY);
     document.title = 'Marketplace South Africa – Buy & Sell Anything Free | Everything Market';
+    return;
   }
+  _navBack();
 }
-function _openModal() {
+function _openModal(options) {
   const alreadyOpen = modal.classList.contains('open');
-  if (!alreadyOpen) { _lockScroll(); _navPush('modal'); }
+  if (!alreadyOpen) {
+    _lockScroll();
+    if (options?.layer) _navPush(options.layer, options.state, options.url);
+    else _navPush('modal');
+  } else if (options?.layer) {
+    history.replaceState({ emNav: options.layer, ...(options.state || {}) }, '', options.url || (window.location.pathname + window.location.search));
+  }
   modal.classList.add('open');
 }
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
@@ -2206,8 +2394,14 @@ function _emFmtVehicleKm(value) {
 function openBuyNow(listing) {
   if (!listing) return;
   if (window.emTrack) emTrack('ad_view', { cat: listing.cat, ad_id: String(listing.id), ad_title: listing.title.slice(0,80) });
-  /* Shareable URL — /ad/:id gets indexed by Google as its own page */
-  history.pushState({ adId: String(listing.id) }, '', '/ad/' + listing.id);
+  const alreadyOpen = modal && modal.classList.contains('open');
+  const currentState = history.state || {};
+  const returnUrl = alreadyOpen && currentState.returnUrl
+    ? currentState.returnUrl
+    : (location.pathname.startsWith('/ad/') ? '/' : (location.pathname + location.search + location.hash));
+  const returnScrollY = alreadyOpen && Number.isFinite(currentState.returnScrollY)
+    ? currentState.returnScrollY
+    : window.scrollY;
   document.title = listing.title + ' – Everything Market';
   const ogTitle = document.querySelector('meta[property="og:title"]');
   const ogDesc  = document.querySelector('meta[property="og:description"]');
@@ -2341,7 +2535,11 @@ function openBuyNow(listing) {
 
   window._emGalleryIdx = 0;
   modalBox.scrollTop = 0;
-  _openModal();
+  _openModal({
+    layer: 'ad',
+    url: '/ad/' + listing.id,
+    state: { adId: String(listing.id), returnUrl, returnScrollY },
+  });
   setTimeout(async () => {
     const imgEl = document.getElementById('modal-img');
     if (imgEl) _renderImg(imgEl, listing, true);
@@ -3452,20 +3650,25 @@ function _vfyLvlColor(level) {
 }
 
 function _renderVeriCenter(status, sess) {
-  const level = status?.level || 'Not Verified';
-  const email = status?.email || { verified: !!sess?.email, address: sess?.email };
-  const phone = status?.phone || { verified: false };
   const bio   = status?.biometric || { status: 'none' };
-  const c     = _vfyLvlColor(level);
+  const approved = bio.status === 'approved';
+  const pending = bio.status === 'review' || bio.status === 'processing';
+  const rejected = bio.status === 'rejected';
+  const level = approved ? 'Verified Seller' : pending ? 'Waiting for Admin Review' : 'Not Verified';
+  const c = approved ? '#2e7d32' : pending ? '#f57c00' : '#757575';
 
   const tick  = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#2e7d32" stroke-width="2.5"><polyline points="4,10 8,14 16,6"/></svg>`;
   const cross = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#c62828" stroke-width="2.5"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>`;
   const clock = `<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="#f57c00" stroke-width="2"><circle cx="10" cy="10" r="8"/><polyline points="10,5 10,10 14,13"/></svg>`;
-  const bioIcon = bio.status === 'approved' ? tick : (bio.status === 'processing' || bio.status === 'review') ? clock : cross;
+  const bioIcon = approved ? tick : pending ? clock : cross;
+  const reviewText = approved ? 'Approved by Everything Market admin' :
+    pending ? 'Your ID photo and selfie are waiting for admin review' :
+    rejected ? 'Please submit fresh ID and selfie photos for admin review' :
+    'Submit your ID photo and selfie for admin review';
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <h3>Verification Centre</h3>
+      <h3>Manual Identity Review</h3>
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
@@ -3477,42 +3680,19 @@ function _renderVeriCenter(status, sess) {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
         <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
-          <span style="display:flex;">${email.verified ? tick : cross}</span>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);">Email Address</div>
-            <div style="font-size:11.5px;color:var(--muted);">${email.address || sess?.email || ''}</div>
-          </div>
-          <span style="font-size:11px;color:${email.verified?'#2e7d32':'#c62828'};font-weight:600;">${email.verified?'Verified':'Unverified'}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
-          <span style="display:flex;">${phone.verified ? tick : cross}</span>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);">Mobile Number</div>
-            <div style="font-size:11.5px;color:var(--muted);">${phone.verified ? (phone.maskedNumber||'Verified') : 'Not verified'}</div>
-          </div>
-          ${phone.verified
-            ? `<span style="font-size:11px;color:#2e7d32;font-weight:600;">Verified</span>`
-            : `<button class="em-offer-submit" onclick="startPhoneVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Verify</button>`}
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;">
           <span style="display:flex;">${bioIcon}</span>
           <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);">Identity (Selfie + ID)</div>
-            <div style="font-size:11.5px;color:var(--muted);">${
-              bio.status === 'approved'   ? 'ID verified' :
-              bio.status === 'processing' ? 'Processing — check back soon' :
-              bio.status === 'review'     ? 'Manual review in progress' :
-              bio.status === 'rejected'   ? (bio.rejectionReason || 'Verification failed') :
-              'Not verified'}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">ID + Selfie</div>
+            <div style="font-size:11.5px;color:var(--muted);">${reviewText}</div>
           </div>
-          ${bio.status === 'approved'
+          ${approved
             ? `<span style="font-size:11px;color:#2e7d32;font-weight:600;">Verified</span>`
-            : (bio.status === 'processing' || bio.status === 'review')
+            : pending
             ? `<span style="font-size:11px;color:#f57c00;font-weight:600;">Pending</span>`
-            : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Verify</button>`}
+            : `<button class="em-offer-submit" onclick="openBiometricVerification()" style="padding:6px 12px;font-size:12px;margin:0;min-width:0;">Submit</button>`}
         </div>
       </div>
-      <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Complete email, mobile number, and ID/selfie checks to earn one Verified Seller badge on all your listings.</p>
+      <p style="font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">Submit a live photo of your ID and a live selfie. Everything Market admin reviews both photos manually before approval.</p>
     </div>`;
 }
 
@@ -3606,20 +3786,14 @@ async function openBiometricVerification() {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <button onclick="openVerificationCenter()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Identity Verification</h3>
+      <h3>Manual Identity Review</h3>
       <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
       <div style="text-align:center;font-size:36px;margin-bottom:10px;">🪪</div>
-      <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">ID + Selfie Verification</h3>
-      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:18px;">Take a live photo of your SA ID or passport, then take a live selfie photo. Our admin team will review and approve genuine sellers manually.</p>
-      <ul style="font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:20px;padding-left:18px;">
-        <li>Takes about 2 minutes</li>
-        <li>Camera access required</li>
-        <li>Photos are private and visible only to admins</li>
-        <li>Your ID number is never stored by us</li>
-      </ul>
-      <button class="em-offer-submit" onclick="_bioStep1_ID()">Start Verification</button>
+      <h3 style="text-align:center;color:var(--ink);margin-bottom:8px;">Submit Your ID + Selfie</h3>
+      <p style="font-size:12.5px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:18px;">Take a clear photo of your ID, then a clear selfie. Admin will manually approve it.</p>
+      <button class="em-offer-submit" onclick="_bioStep1_ID()">Continue</button>
     </div>`;
 }
 
@@ -3634,17 +3808,17 @@ async function _bioStep1_ID() {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
       <button onclick="openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <h3>Step 1 of 2 — ID Photo</h3>
+      <h3>Step 1 of 2 — Live ID Photo</h3>
       <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Use your camera to take a clear live photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
       <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-id-input').click()">
         <div id="bio-id-preview" style="font-size:40px;margin-bottom:8px;">🪪</div>
-        <div style="font-size:13px;color:var(--muted);">Tap to select ID photo</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+        <div style="font-size:13px;color:var(--muted);">Tap to take ID photo</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Camera photo preferred · max 8 MB</div>
       </div>
-      <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;" onchange="_bioPreviewID(this)">
+      <input type="file" id="bio-id-input" accept="image/*" capture="environment" style="display:none;" onchange="_bioPreviewID(this)">
       <div id="bio-id-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
       <button class="em-offer-submit" id="bio-id-next" onclick="_bioStep2_Selfie()" disabled style="opacity:0.4;">Next →</button>
     </div>`;
@@ -3683,13 +3857,13 @@ async function _bioStep2_Selfie() {
       <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live selfie. Use good lighting, no sunglasses, and keep your face inside the frame.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Use your camera to take a clear live selfie. Use good lighting, no sunglasses, and keep your face inside the frame.</p>
       <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-selfie-input').click()">
         <div id="bio-selfie-preview" style="font-size:40px;margin-bottom:8px;">📷</div>
-        <div style="font-size:13px;color:var(--muted);">Tap to take selfie photo</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+        <div style="font-size:13px;color:var(--muted);">Tap to take live selfie</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Camera selfie preferred · max 8 MB</div>
       </div>
-      <input type="file" id="bio-selfie-input" accept="image/jpeg,image/png,image/webp" capture="user" style="display:none;" onchange="_bioPreviewSelfie(this)">
+      <input type="file" id="bio-selfie-input" accept="image/*" capture="user" style="display:none;" onchange="_bioPreviewSelfie(this)">
       <div id="bio-selfie-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
       <button class="em-offer-submit" id="bio-submit-btn" onclick="_bioSubmitVerification()" disabled style="opacity:0.4;">Submit for Manual Review</button>
     </div>`;
@@ -3747,7 +3921,7 @@ async function _bioSubmitVerification() {
     </div>
     <div style="padding:28px 20px;text-align:center;">
       <div style="font-size:36px;margin-bottom:12px;">⏳</div>
-      <p style="color:var(--muted);font-size:13px;">Uploading and submitting for verification…</p>
+      <p style="color:var(--muted);font-size:13px;">Uploading your ID photo and selfie for admin review…</p>
     </div>`;
 
   const sess = _getSession();
@@ -3814,7 +3988,7 @@ async function _bioPollResult(jobId, attempt) {
       <div style="padding:28px 20px;text-align:center;">
         <div style="font-size:48px;margin-bottom:12px;">⏳</div>
         <h3 style="color:var(--ink);margin-bottom:8px;">Under Review</h3>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your verification is being processed. Check back in your Verification Centre in a few minutes.</p>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your ID photo and selfie are waiting for Everything Market admin review. Check your Verification Centre for updates.</p>
         <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Go to Verification Centre</button>
       </div>`;
     return;
@@ -3832,7 +4006,7 @@ async function _bioPollResult(jobId, attempt) {
 
   if (!result || result.status === 'processing') {
     const pEl = modalBox.querySelector('p');
-    if (pEl) pEl.textContent = 'Analysing your selfie and ID' + '.'.repeat((attempt % 3) + 1);
+    if (pEl) pEl.textContent = 'Waiting for manual admin review' + '.'.repeat((attempt % 3) + 1);
     setTimeout(() => _bioPollResult(jobId, attempt + 1), 4000);
     return;
   }
@@ -3845,8 +4019,8 @@ async function _bioPollResult(jobId, attempt) {
       </div>
       <div style="padding:28px 20px;text-align:center;">
         <div style="font-size:56px;margin-bottom:12px;">✅</div>
-        <h3 style="color:#2e7d32;margin-bottom:8px;">Identity Check Approved</h3>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your ID/selfie check is complete. Finish email and mobile verification to receive the Verified Seller badge.</p>
+        <h3 style="color:#2e7d32;margin-bottom:8px;">Identity Review Approved</h3>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Your ID/selfie review is approved. Finish any remaining account checks to receive the Verified Seller badge.</p>
         <button class="em-offer-submit" onclick="openVerificationCenter()" style="margin-top:16px;">Done</button>
       </div>`;
   } else if (result.status === 'review') {
@@ -4907,6 +5081,33 @@ function openInfoModal(key) {
       <div class="info-section"><h4>✅ Verified sellers</h4><p>The <strong>Verified</strong> badge means the seller has submitted valid South African ID. Always prefer verified sellers for high-value purchases.</p></div>
       <div class="info-section"><h4>⚑ Report & remove</h4><p>Fraudulent or misleading ads are removed within 24 hours of being reported. Use the <strong>Report this ad</strong> button inside any listing.</p></div>
       <div class="info-section"><h4>🛡️ Safe trading checklist</h4><ul class="info-list"><li>Inspect items before paying</li><li>Meet in public, never alone</li><li>Pay via EFT or cash only</li><li>Never pay a deposit before seeing the item</li><li>Check seller's ID for high-value items</li></ul></div>`),
+
+    'privacy': _infoStaticPage.bind(null, 'Privacy Policy', `
+      <div class="info-section"><h4>Who we are</h4><p>Everything Market is a South African online classifieds marketplace that helps buyers, sellers and approved stores connect across South Africa.</p></div>
+      <div class="info-section"><h4>Information we collect</h4><p>We may collect account details, listing information, photos, contact details, messages, device/browser data, analytics events, verification information, store application details and payment/boosting references where relevant.</p></div>
+      <div class="info-section"><h4>How we use information</h4><ul class="info-list"><li>To publish and manage listings</li><li>To help buyers contact sellers</li><li>To prevent spam, scams and abuse</li><li>To verify users, sellers and stores</li><li>To improve search, safety, analytics and support</li><li>To send service messages about accounts, listings or enquiries</li></ul></div>
+      <div class="info-section"><h4>Sharing and storage</h4><p>We share information only where needed to operate the marketplace, provide hosting, analytics, email, verification, payment or safety services, comply with law, or protect users. We do not sell personal information.</p></div>
+      <div class="info-section"><h4>Your rights</h4><p>Under POPIA you may ask to access, correct or delete your personal information, subject to legal and safety retention requirements. Contact us through the Contact Us page for privacy requests.</p></div>
+      <div class="info-section"><h4>Security</h4><p>We use reasonable technical and organisational measures to protect information, but users should avoid sharing passwords, OTPs, banking PINs or sensitive documents in listing chats.</p></div>
+      <div class="info-section"><h4>Last updated</h4><p>23 August 2026.</p></div>`),
+
+    'terms': _infoStaticPage.bind(null, 'Terms & Conditions', `
+      <div class="info-section"><h4>Using Everything Market</h4><p>By using Everything Market, you agree to use the service lawfully, honestly and respectfully. You are responsible for your account, listings, messages and transactions.</p></div>
+      <div class="info-section"><h4>Listings</h4><ul class="info-list"><li>Listings must be accurate and must not be misleading</li><li>You may not post illegal, stolen, counterfeit, unsafe or prohibited items</li><li>Photos and descriptions must belong to you or be used with permission</li><li>We may remove, edit, reject or demote listings that break these terms or create risk</li></ul></div>
+      <div class="info-section"><h4>Transactions</h4><p>Everything Market connects buyers and sellers but is not a party to private transactions unless a specific paid service says otherwise. Buyers and sellers must inspect goods, agree payment and comply with applicable law.</p></div>
+      <div class="info-section"><h4>Safety and verification</h4><p>Verification badges are trust signals, not guarantees. Always meet safely, inspect before paying and report suspicious conduct.</p></div>
+      <div class="info-section"><h4>Paid promotions</h4><p>Boosted or sponsored listings may receive extra visibility. Payment does not guarantee a sale and does not permit misleading or unsafe listings.</p></div>
+      <div class="info-section"><h4>Limitation</h4><p>To the extent allowed by South African law, Everything Market is not liable for user conduct, failed deals, losses, inaccurate listings, third-party services or indirect damages.</p></div>
+      <div class="info-section"><h4>Last updated</h4><p>23 August 2026.</p></div>`),
+
+    'paia': _infoStaticPage.bind(null, 'PAIA Manual', `
+      <div class="info-section"><h4>Purpose</h4><p>This PAIA manual explains how people may request access to records held by Everything Market in line with the Promotion of Access to Information Act, 2000 and related South African privacy laws.</p></div>
+      <div class="info-section"><h4>Business details</h4><p><strong>Entity:</strong> Everything Market (Pty) Ltd<br><strong>Website:</strong> www.everythingmarket.co.za<br><strong>Country:</strong> South Africa</p></div>
+      <div class="info-section"><h4>Information officer</h4><p>Requests may be sent through the Contact Us page. Use the subject "PAIA request" and include your full name, contact details, the record requested, your right or reason for access, and preferred format.</p></div>
+      <div class="info-section"><h4>Records we may hold</h4><ul class="info-list"><li>Company administration records</li><li>User account and listing records</li><li>Store application and verification records</li><li>Support, safety and scam-report records</li><li>Technical, analytics and security logs</li><li>Supplier, hosting, payment and operational records</li></ul></div>
+      <div class="info-section"><h4>Access process</h4><p>We may ask for identity confirmation, charge prescribed fees where allowed, refuse requests permitted by law, or redact third-party personal information. We aim to respond within the time periods required by PAIA.</p></div>
+      <div class="info-section"><h4>POPIA requests</h4><p>Data subjects may request access to, correction of, or deletion of personal information where legally permitted.</p></div>
+      <div class="info-section"><h4>Last updated</h4><p>23 August 2026.</p></div>`),
 
     'report-scam': () => {
       modalBox.innerHTML = `

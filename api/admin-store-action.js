@@ -25,6 +25,26 @@ function sb(method, path, body, key) {
   });
 }
 
+function getAuthUserMeta(userId) {
+  return new Promise(resolve => {
+    const req = https.request({
+      hostname: SB_HOST,
+      path: `/auth/v1/admin/users/${encodeURIComponent(userId)}`,
+      method: 'GET',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY }
+    }, r => {
+      let raw = '';
+      r.on('data', d => raw += d);
+      r.on('end', () => {
+        try { resolve(JSON.parse(raw).user_metadata || {}); }
+        catch { resolve({}); }
+      });
+    });
+    req.on('error', () => resolve({}));
+    req.end();
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -64,9 +84,11 @@ module.exports = async function handler(req, res) {
 
     /* Update the user's metadata so frontend knows they're approved */
     if (app.user_id) {
+      const existingMeta = await getAuthUserMeta(app.user_id);
       await new Promise((resolve, reject) => {
         const payload = JSON.stringify({
           user_metadata: {
+            ...existingMeta,
             store_approved: true,
             store_name: app.store_name,
             store_id: store_id,

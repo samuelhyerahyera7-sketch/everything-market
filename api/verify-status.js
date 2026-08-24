@@ -60,6 +60,17 @@ function getLevel(email, phone, biometric, manualVerified) {
   return 'Not Verified';
 }
 
+function publicIdentityIssue(reason) {
+  const raw = String(reason || '').trim();
+  if (!raw) return 'Identity review was not approved. Please submit fresh ID and selfie photos.';
+  const technical = /opencv|traceback|detectmultiscale|cascade|assertion|\/io\/|\.py\b|exception|error:/i;
+  if (technical.test(raw)) return 'Identity review was not approved. Please submit fresh ID and selfie photos.';
+  if (/no[_\s-]?face|face.*not.*detect|id quality unacceptable/i.test(raw)) {
+    return 'We could not clearly review the photos. Please submit fresh ID and selfie photos in good lighting.';
+  }
+  return raw.length > 140 ? 'Identity review was not approved. Please submit fresh ID and selfie photos.' : raw;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -110,7 +121,7 @@ module.exports = async function handler(req, res) {
       status:          effectiveBio,              /* none | processing | approved | review | rejected */
       selfieVerified:  bioRow?.selfie_verified  || false,
       idMatchVerified: bioRow?.id_face_match_verified || false,
-      rejectionReason: effectiveBio === 'rejected' ? (bioRow?.rejection_reason || 'Verification failed') : null,
+      rejectionReason: effectiveBio === 'rejected' ? publicIdentityIssue(bioRow?.rejection_reason) : null,
       verifiedAt:      bioRow?.verified_at || null
     },
     level: getLevel(emailVerified, phoneVerified, effectiveBio, !!user.user_metadata?.verified)
