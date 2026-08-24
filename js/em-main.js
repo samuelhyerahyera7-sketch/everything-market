@@ -242,6 +242,7 @@ function renderSponsoredStrip() {
         <div class="spons-title">${l.title}</div>
         <div class="spons-price">${fmtPrice(l, false)}</div>
         <div class="spons-loc">${_fmtLoc(l.loc)}</div>
+        <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}" style="margin-top:4px;">${l.verified?ICO.check+'Verified':'Unverified'}</span>
       </div>`;
     grid.appendChild(card);
     _renderImg(card.querySelector(`#spons-img-${l.id}-s${idx}`), l);
@@ -716,7 +717,7 @@ function _renderShopPageContent(sellerName, userId, storeId, verified, sellerTyp
       <div class="shop-hdr-info">
         <div class="shop-hdr-name">${sellerName}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
-          <span class="vfy-badge vfy-yes" style="background:rgba(26,122,66,.35);color:#7EF0A8;border:1px solid rgba(126,240,168,.4);font-weight:700;">Verified</span>
+          <span class="vfy-badge vfy-yes" style="background:rgba(26,122,66,.35);color:#7EF0A8;border:1px solid rgba(126,240,168,.4);font-weight:700;">${ICO.check}Verified</span>
           <span style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${typeLabel}</span>
           <button id="shop-cart-btn" class="shop-cart-btn" onclick="openStoreCart('${storeId}','${sellerName.replace(/'/g,"\\'")}')" style="margin-left:auto;">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/></svg>
@@ -1264,7 +1265,7 @@ function renderBB(data) {
         <div class="bb-seller-row">
           <span class="bb-seller-name">${l.seller}</span>
           <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span>
-          <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span>
+          <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?ICO.check+'Verified':'Unverified'}</span>
         </div>
         ${sd.delivery ? `<div class="bb-delivery"><span class="bb-delivery-dot"></span>Delivery available</div>` : ''}
         ${l.cond !== 'N/A' ? `<div class="bb-cond" style="margin-top:3px">${l.cond}</div>` : ''}
@@ -1327,7 +1328,7 @@ function renderGT(data) {
           <span class="gt-chip">${l.cat.charAt(0).toUpperCase() + l.cat.slice(1)}</span>
         </div>
         <div class="gt-foot">
-          <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?'Verified':'Unverified'}</span></div>
+          <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?ICO.check+'Verified':'Unverified'}</span></div>
           <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">💬 Chat</button>
         </div>
       </div>`;
@@ -2494,7 +2495,7 @@ function openBuyNow(listing) {
       <div class="em-modal-seller" style="margin:0 0 4px;">
         <div class="em-modal-avatar">${initials}</div>
         <div style="flex:1;min-width:0;">
-          <div class="em-modal-seller-name">${listing.seller}${listing.verified ? '<span class="em-modal-verified">Verified</span>' : '<span class="em-modal-unverified">Unverified</span>'}</div>
+          <div class="em-modal-seller-name">${listing.seller}${listing.verified ? `<span class="em-modal-verified">${ICO.check}Verified</span>` : '<span class="em-modal-unverified">Unverified</span>'}</div>
           <div class="em-modal-seller-meta">${listing.sellerType === 'dealer' ? 'Dealership' : 'Private Seller'} · ${sd.delivery ? 'Delivery available' : 'Collection only'}</div>
         </div>
       </div>

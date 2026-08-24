@@ -4,6 +4,7 @@ const ICO = {
   pin:  `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M6 1a3 3 0 013 3c0 2.5-3 7-3 7S3 6.5 3 4a3 3 0 013-3z"/><circle cx="6" cy="4" r="1.2"/></svg>`,
   time: `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="6" cy="6" r="4.5"/><path d="M6 3.5V6l1.5 1.2"/></svg>`,
   heart:`<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 10.5S1 7 1 3.8A2.8 2.8 0 016 2.6a2.8 2.8 0 015 1.2C11 7 6 10.5 6 10.5z"/></svg>`,
+  check:`<svg viewBox="0 0 20 20" width="13" height="13" fill="none" style="vertical-align:-2px;margin-right:3px;"><circle cx="10" cy="10" r="10" fill="currentColor"/><path d="M6 10.2l2.6 2.6L14.2 7" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
 /* ── Category definitions ── */
