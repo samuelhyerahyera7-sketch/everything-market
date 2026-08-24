@@ -4,8 +4,30 @@ const https = require('https');
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
 const SB_KEY     = process.env.SUPABASE_SERVICE_KEY;
+const SB_ANON    = process.env.SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
 
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function getAuthUser(authHeader) {
+  const token = (authHeader || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const req = https.request({
+      hostname: SB_HOST, path: '/auth/v1/user', method: 'GET',
+      headers: { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + token }
+    }, res => {
+      let raw = '';
+      res.on('data', d => raw += d);
+      res.on('end', () => {
+        if (res.statusCode !== 200) return resolve(null);
+        try { resolve(JSON.parse(raw)); } catch { resolve(null); }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
 
 function sbReq(method, path, body) {
   return new Promise((resolve, reject) => {
@@ -33,17 +55,20 @@ function sbReq(method, path, body) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
   if (!SB_KEY)                 return res.status(500).json({ error: 'SUPABASE_SERVICE_KEY not set' });
+
+  const caller = await getAuthUser(req.headers.authorization);
+  if (!caller) return res.status(401).json({ error: 'Sign in to edit this ad.' });
 
   let body;
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; }
   catch { return res.status(400).json({ error: 'Invalid JSON' }); }
 
-  const { id, user_id, title, description, price, photos, cond, neg } = body;
-  if (!id || !user_id) return res.status(400).json({ error: 'Missing id or user_id' });
+  const { id, title, description, price, photos, cond, neg } = body;
+  if (!id) return res.status(400).json({ error: 'Missing id' });
 
   // Fetch current ad
   const getR = await sbReq('GET',
@@ -56,8 +81,8 @@ module.exports = async function handler(req, res) {
   if (!ads.length) return res.status(404).json({ error: 'Ad not found' });
   const ad = ads[0];
 
-  // Ownership check
-  if (!ad.user_id || String(ad.user_id) !== String(user_id)) {
+  // Ownership check — derived from the verified session, never from client input
+  if (!ad.user_id || String(ad.user_id) !== String(caller.id)) {
     return res.status(403).json({ error: 'Not your ad' });
   }
 

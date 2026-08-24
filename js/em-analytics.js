@@ -52,9 +52,10 @@
   /* ── Upload a single photo via server endpoint (uses service key, always works) ── */
   async function _uploadPhoto(adId, index, dataUrl) {
     try {
+      const token = await _getAuthToken();
       const r = await fetch('/api/upload-photo', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({ adId, index, dataUrl })
       });
       if (!r.ok) { console.error('[EM] upload-photo', r.status); return null; }
@@ -312,7 +313,10 @@
   /* ── Load messages via server endpoint (bypasses RLS) ── */
   async function loadMessages(userEmail) {
     try {
-      const r = await fetch('/api/load-messages?email=' + encodeURIComponent(userEmail));
+      const token = await _getAuthToken();
+      const r = await fetch('/api/load-messages?email=' + encodeURIComponent(userEmail), {
+        headers: { Authorization: 'Bearer ' + token }
+      });
       if (r.ok) return await r.json();
       return { received: [], sent: [] };
     } catch(_) { return { received: [], sent: [] }; }

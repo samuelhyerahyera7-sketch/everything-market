@@ -5010,7 +5010,7 @@ window.submitEditAd = async function(id) {
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
   if (msg) { msg.style.display = 'none'; }
 
-  const body = { id, user_id: sess.userId };
+  const body = { id };
 
   const titleEl = document.getElementById('ea-title');
   const descEl  = document.getElementById('ea-desc');
@@ -5027,9 +5027,10 @@ window.submitEditAd = async function(id) {
   body.photos = [...window._editExistingPhotos, ...window._editPhotos];
 
   try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token || '';
     const r = await fetch('/api/edit-ad', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify(body)
     });
     const j = await r.json();
