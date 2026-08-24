@@ -1302,34 +1302,34 @@ function renderGT(data) {
   if (!items.length) return;
   items.forEach(l => {
     const card = document.createElement('div');
-    card.className = 'gt-card';
+    card.className = 'bb-card';
     card.onclick = () => openBuyNow(l);
+    const ribClass = l.sponsored ? 'r-feat' : l.badge === 'Hot' ? 'r-hot' : 'r-new';
+    const ribLabel = l.sponsored ? 'Sponsored' : l.badge;
+    const sd = BB_SELLER_DATA[l.id] || { delivery: false };
     const timeStr = fmtTime(l.postedAt);
     card.innerHTML = `
-      <div class="gt-img" id="gt-img-${l.id}">
-        <div class="gt-bdgs">
-          ${l.badge ? `<span class="gt-bdg ${l.badge === 'Hot' ? 'gb-hot' : 'gb-feat'}">${l.badge}</span>` : ''}
-          ${l.verified ? `<span class="gt-bdg gb-veri">Verified</span>` : ''}
+      <div class="bb-img" id="gt-img-${l.id}"></div>
+      ${(l.sponsored || l.badge) ? `<div class="bb-ribbon ${ribClass}">${ribLabel}</div>` : ''}
+      <button class="bb-save${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save ad">${ICO.heart}</button>
+      <div class="bb-body">
+        <div class="bb-eyebrow">${l.cat}</div>
+        <div class="bb-price-tag">${fmtPrice(l, true)}</div>
+        <div class="bb-title">${l.title}</div>
+        <div class="bb-seller-row">
+          <span class="bb-seller-name">${l.seller}</span>
+          <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span>
+          <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?ICO.check+'Verified':'Unverified'}</span>
         </div>
-      </div>
-      <div class="gt-body">
-        <div class="gt-price-wrap">
-          <div class="gt-price-tag">${fmtPrice(l, false)}</div>
-          <button class="gt-save-btn${wl.has(l.id) ? ' on' : ''}" onclick="event.stopPropagation();toggleWL('${l.id}',this)" aria-label="Save ad">${ICO.heart}</button>
-        </div>
-        <div class="gt-title">${l.title}</div>
-        <div class="gt-desc">${l.desc}</div>
-        <div class="gt-meta">
+        ${sd.delivery ? `<div class="bb-delivery"><span class="bb-delivery-dot"></span>Delivery available</div>` : ''}
+        ${l.cond !== 'N/A' ? `<div class="bb-cond" style="margin-top:3px">${l.cond}</div>` : ''}
+        <div class="bb-meta" style="margin-top:4px">
           <span>${ICO.pin} ${_fmtLoc(l.loc)}</span>
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
-        <div class="gt-chips">
-          ${l.cond !== 'N/A' ? `<span class="gt-chip">${l.cond}</span>` : ''}
-          <span class="gt-chip">${l.cat.charAt(0).toUpperCase() + l.cat.slice(1)}</span>
-        </div>
-        <div class="gt-foot">
-          <div class="gt-seller"><strong>${l.seller}</strong> <span class="stype-badge ${l.sellerType==='dealer'?'stype-dealer':'stype-private'}">${l.sellerType==='dealer'?'Dealership':'Private'}</span> <span class="vfy-badge ${l.verified?'vfy-yes':'vfy-no'}">${l.verified?ICO.check+'Verified':'Unverified'}</span></div>
-          <button class="gt-wa-sm" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">💬 Chat</button>
+        <div class="bb-actions">
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
+          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
     list.appendChild(card);
