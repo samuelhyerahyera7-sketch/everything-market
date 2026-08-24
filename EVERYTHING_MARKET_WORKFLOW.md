@@ -2,7 +2,7 @@
 
 Main domain: `everythingmarket.co.za`
 
-Support/acquisition domain: `marketplacesouthafrica.co.za`
+Support/acquisition domains: `marketplacesouthafrica.co.za`, `rentandbuy.co.za`
 
 ## How We Work
 
@@ -20,6 +20,8 @@ Everything Market grows by repeating one loop:
 `everythingmarket.co.za` is the main brand and canonical domain.
 
 `marketplacesouthafrica.co.za` is used for campaigns, radio, flyers, WhatsApp and memorable search intent. It redirects into Everything Market so all authority and users collect on one site.
+
+`rentandbuy.co.za` redirects into the Property category (`/buy-sell/property`) on Everything Market, so its existing traffic and search visibility for property/rental intent funnels straight into the main site instead of splitting the brand across two properties.
 
 ## Weekly Operating Rhythm
 

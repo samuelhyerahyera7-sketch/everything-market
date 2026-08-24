@@ -23,6 +23,18 @@
       "has": [{ "type": "host", "value": "www.marketplacesouthafrica.co.za" }],
       "destination": "https://www.everythingmarket.co.za/$1",
       "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "rentandbuy.co.za" }],
+      "destination": "https://www.everythingmarket.co.za/buy-sell/property",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.rentandbuy.co.za" }],
+      "destination": "https://www.everythingmarket.co.za/buy-sell/property",
+      "permanent": true
     }
   ],
   "rewrites": [
