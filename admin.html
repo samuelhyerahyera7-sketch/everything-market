@@ -765,7 +765,9 @@
         : confBadge;
       const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Mobile ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
       const actions = u.auth_user === false
-        ? '<span style="font-size:11px;color:#777;">Contact seller from listing</span>'
+        ? `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
+          <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+          <span style="font-size:11px;color:#777;display:block;margin-top:4px;">No account — listing only</span>`
         : `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
           <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
           <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>`;
