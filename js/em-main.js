@@ -978,7 +978,6 @@ function setResultCategoryFilter(catId) {
 }
 
 function _renderRefineStrip(activeData) {
-  if (!_searchQuery) return '';
   const base = _searchBaseResults();
   const counts = {};
   base.forEach(l => { counts[l.cat] = (counts[l.cat] || 0) + 1; });
