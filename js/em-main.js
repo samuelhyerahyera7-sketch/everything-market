@@ -3630,24 +3630,94 @@ function _stopBioStream() {
   _bioChunks = [];
 }
 
+/* Live in-page camera capture for the ID + selfie step — used instead of a
+   plain file picker so a seller can't just upload an old photo. Falls back
+   to the file input (with the mobile `capture` attribute) only when the
+   browser has no camera API or the user denies permission. */
+async function _bioStartCamera(kind, facingMode) {
+  const video   = document.getElementById('bio-' + kind + '-video');
+  const loading = document.getElementById('bio-' + kind + '-loading');
+  const capBtn  = document.getElementById('bio-' + kind + '-capture-btn');
+  const fallback = document.getElementById('bio-' + kind + '-fallback');
+  if (!navigator.mediaDevices?.getUserMedia) {
+    if (loading) loading.textContent = 'Live camera isn\'t supported on this browser.';
+    if (fallback) fallback.style.display = 'block';
+    return;
+  }
+  try {
+    _bioStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: false });
+    if (video) { video.srcObject = _bioStream; video.style.display = 'block'; }
+    if (loading) loading.style.display = 'none';
+    if (capBtn) capBtn.style.display = 'block';
+  } catch (e) {
+    if (loading) loading.textContent = 'Camera access denied — you can still upload a photo below.';
+    if (fallback) fallback.style.display = 'block';
+  }
+}
+
+function _bioCapture(kind) {
+  const video  = document.getElementById('bio-' + kind + '-video');
+  const canvas = document.getElementById('bio-' + kind + '-canvas');
+  const frozen = document.getElementById('bio-' + kind + '-frozen');
+  if (!video || !canvas || !video.videoWidth) return;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const file = new File([blob], 'live-' + kind + '-photo.jpg', { type: 'image/jpeg' });
+    if (kind === 'id') window._bioIdFile = file; else window._bioSelfieFile = file;
+    if (frozen) { frozen.src = URL.createObjectURL(blob); frozen.style.display = 'block'; }
+    video.style.display = 'none';
+    if (_bioStream) { _bioStream.getTracks().forEach(t => t.stop()); _bioStream = null; }
+    const capBtn = document.getElementById('bio-' + kind + '-capture-btn');
+    if (capBtn) capBtn.style.display = 'none';
+    const retake = document.getElementById('bio-' + kind + '-retake');
+    if (retake) retake.style.display = 'block';
+    const nextBtn = document.getElementById(kind === 'id' ? 'bio-id-next' : 'bio-submit-btn');
+    if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '1'; }
+  }, 'image/jpeg', 0.9);
+}
+
+function _bioRetake(kind) {
+  const frozen = document.getElementById('bio-' + kind + '-frozen');
+  if (frozen) frozen.style.display = 'none';
+  const retake = document.getElementById('bio-' + kind + '-retake');
+  if (retake) retake.style.display = 'none';
+  const nextBtn = document.getElementById(kind === 'id' ? 'bio-id-next' : 'bio-submit-btn');
+  if (nextBtn) { nextBtn.disabled = true; nextBtn.style.opacity = '0.4'; }
+  if (kind === 'id') window._bioIdFile = null; else window._bioSelfieFile = null;
+  _bioStartCamera(kind, kind === 'id' ? 'environment' : 'user');
+}
+
 async function _bioStep1_ID() {
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <button onclick="openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button onclick="_stopBioStream();openBiometricVerification()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
       <h3>Step 1 of 2 — ID Photo</h3>
       <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live photo of your SA ID card, ID book, or passport. Ensure it is well-lit and all text is readable.</p>
-      <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-id-input').click()">
-        <div id="bio-id-preview" style="font-size:40px;margin-bottom:8px;">🪪</div>
-        <div style="font-size:13px;color:var(--muted);">Tap to select ID photo</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Position your SA ID card, ID book, or passport inside the frame. Make sure it's well-lit and all text is readable, then capture.</p>
+      <div style="position:relative;border-radius:12px;overflow:hidden;background:#000;margin-bottom:14px;min-height:200px;display:flex;align-items:center;justify-content:center;">
+        <video id="bio-id-video" autoplay playsinline muted style="width:100%;max-height:280px;object-fit:cover;display:none;"></video>
+        <canvas id="bio-id-canvas" style="display:none;"></canvas>
+        <img id="bio-id-frozen" style="width:100%;max-height:280px;object-fit:contain;display:none;">
+        <div id="bio-id-loading" style="color:#fff;font-size:13px;padding:24px;text-align:center;">Starting camera…</div>
       </div>
-      <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;" onchange="_bioPreviewID(this)">
       <div id="bio-id-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" id="bio-id-capture-btn" onclick="_bioCapture('id')" style="display:none;margin-bottom:8px;">📸 Capture ID Photo</button>
+      <button class="em-offer-submit" id="bio-id-retake" onclick="_bioRetake('id')" style="display:none;margin-bottom:8px;background:var(--surf3);color:var(--ink);">↺ Retake</button>
+      <div id="bio-id-fallback" style="display:none;margin-bottom:8px;">
+        <div style="border:2px dashed var(--border);border-radius:12px;padding:18px 16px;text-align:center;cursor:pointer;" onclick="document.getElementById('bio-id-input').click()">
+          <div style="font-size:12.5px;color:var(--muted);">Tap to upload an ID photo instead</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+        </div>
+        <input type="file" id="bio-id-input" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;" onchange="_bioPreviewID(this)">
+      </div>
       <button class="em-offer-submit" id="bio-id-next" onclick="_bioStep2_Selfie()" disabled style="opacity:0.4;">Next →</button>
     </div>`;
+  _bioStartCamera('id', 'environment');
 }
 
 function _bioPreviewID(input) {
@@ -3657,10 +3727,11 @@ function _bioPreviewID(input) {
   if (file.size > 8 * 1024 * 1024) { err.textContent = 'Image too large (max 8 MB).'; err.style.display = 'block'; return; }
   if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { err.textContent = 'Use a JPEG, PNG, or WebP image.'; err.style.display = 'block'; return; }
   err.style.display = 'none';
+  window._bioIdFile = file;
   const reader = new FileReader();
   reader.onload = e => {
-    const p = document.getElementById('bio-id-preview');
-    if (p) p.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:140px;border-radius:8px;object-fit:contain;">`;
+    const frozen = document.getElementById('bio-id-frozen');
+    if (frozen) { frozen.src = e.target.result; frozen.style.display = 'block'; }
     const btn = document.getElementById('bio-id-next');
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
   };
@@ -3668,31 +3739,40 @@ function _bioPreviewID(input) {
 }
 
 async function _bioStep2_Selfie() {
-  const idInput = document.getElementById('bio-id-input');
-  if (!idInput?.files?.[0]) {
+  if (!window._bioIdFile) {
     const err = document.getElementById('bio-id-err');
-    if (err) { err.textContent = 'Please select your ID photo first.'; err.style.display = 'block'; }
+    if (err) { err.textContent = 'Please capture your ID photo first.'; err.style.display = 'block'; }
     return;
   }
-  window._bioIdFile = idInput.files[0];
+  _stopBioStream();
 
   modalBox.innerHTML = `
     <div class="em-modal-bar">
-      <button onclick="_bioStep1_ID()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button onclick="_stopBioStream();_bioStep1_ID()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;color:var(--ink);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
       <h3>Step 2 of 2 — Live Selfie</h3>
-      <button class="em-modal-close" onclick="closeModal()">&#x2715;</button>
+      <button class="em-modal-close" onclick="_stopBioStream();closeModal()">&#x2715;</button>
     </div>
     <div style="padding:20px;">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a clear live selfie. Use good lighting, no sunglasses, and keep your face inside the frame.</p>
-      <div style="border:2px dashed var(--border);border-radius:12px;padding:28px 16px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('bio-selfie-input').click()">
-        <div id="bio-selfie-preview" style="font-size:40px;margin-bottom:8px;">📷</div>
-        <div style="font-size:13px;color:var(--muted);">Tap to take selfie photo</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Take a live selfie. Use good lighting, no sunglasses, and keep your face inside the frame.</p>
+      <div style="position:relative;border-radius:12px;overflow:hidden;background:#000;margin-bottom:14px;min-height:200px;display:flex;align-items:center;justify-content:center;">
+        <video id="bio-selfie-video" autoplay playsinline muted style="width:100%;max-height:280px;object-fit:cover;display:none;"></video>
+        <canvas id="bio-selfie-canvas" style="display:none;"></canvas>
+        <img id="bio-selfie-frozen" style="width:100%;max-height:280px;object-fit:contain;display:none;">
+        <div id="bio-selfie-loading" style="color:#fff;font-size:13px;padding:24px;text-align:center;">Starting camera…</div>
       </div>
-      <input type="file" id="bio-selfie-input" accept="image/jpeg,image/png,image/webp" capture="user" style="display:none;" onchange="_bioPreviewSelfie(this)">
       <div id="bio-selfie-err" class="em-post-error" style="display:none;margin-bottom:8px;"></div>
+      <button class="em-offer-submit" id="bio-selfie-capture-btn" onclick="_bioCapture('selfie')" style="display:none;margin-bottom:8px;">📸 Capture Selfie</button>
+      <button class="em-offer-submit" id="bio-selfie-retake" onclick="_bioRetake('selfie')" style="display:none;margin-bottom:8px;background:var(--surf3);color:var(--ink);">↺ Retake</button>
+      <div id="bio-selfie-fallback" style="display:none;margin-bottom:8px;">
+        <div style="border:2px dashed var(--border);border-radius:12px;padding:18px 16px;text-align:center;cursor:pointer;" onclick="document.getElementById('bio-selfie-input').click()">
+          <div style="font-size:12.5px;color:var(--muted);">Tap to upload a selfie instead</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">JPEG / PNG / WebP · max 8 MB</div>
+        </div>
+        <input type="file" id="bio-selfie-input" accept="image/jpeg,image/png,image/webp" capture="user" style="display:none;" onchange="_bioPreviewSelfie(this)">
+      </div>
       <button class="em-offer-submit" id="bio-submit-btn" onclick="_bioSubmitVerification()" disabled style="opacity:0.4;">Submit for Manual Review</button>
     </div>`;
+  _bioStartCamera('selfie', 'user');
 }
 
 function _bioPreviewSelfie(input) {
@@ -3705,8 +3785,8 @@ function _bioPreviewSelfie(input) {
   window._bioSelfieFile = file;
   const reader = new FileReader();
   reader.onload = e => {
-    const p = document.getElementById('bio-selfie-preview');
-    if (p) p.innerHTML = `<img src="${e.target.result}" style="max-width:100%;max-height:160px;border-radius:8px;object-fit:contain;">`;
+    const frozen = document.getElementById('bio-selfie-frozen');
+    if (frozen) { frozen.src = e.target.result; frozen.style.display = 'block'; }
     const btn = document.getElementById('bio-submit-btn');
     if (btn) {
       btn.disabled = false;
