@@ -212,7 +212,7 @@
   <!-- ── ADS TAB ── -->
   <div class="tab-content active" id="tab-ads">
     <div class="filter-bar">
-      <input type="text" id="srch" placeholder="Search by title or seller…" oninput="renderAdsTable()">
+      <input type="text" id="srch" placeholder="Search by title or seller…" autocomplete="off" oninput="renderAdsTable()">
       <select id="cat-filter" onchange="renderAdsTable()">
         <option value="">All categories</option>
         <option value="elec">Electronics</option>
@@ -244,7 +244,7 @@
   <!-- ── USERS TAB ── -->
   <div class="tab-content" id="tab-users">
     <div class="filter-bar">
-      <input type="text" id="user-srch" placeholder="Search by name or email…" oninput="renderUsersTable()">
+      <input type="text" id="user-srch" placeholder="Search by name or email…" autocomplete="off" oninput="renderUsersTable()">
       <select id="user-sort" onchange="renderUsersTable()">
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
