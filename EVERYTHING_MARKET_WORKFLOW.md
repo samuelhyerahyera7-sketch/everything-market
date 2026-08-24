@@ -21,7 +21,7 @@ Everything Market grows by repeating one loop:
 
 `marketplacesouthafrica.co.za` is used for campaigns, radio, flyers, WhatsApp and memorable search intent. It redirects into Everything Market so all authority and users collect on one site.
 
-`rentandbuy.co.za` redirects into the Property category (`/buy-sell/property`) on Everything Market, so its existing traffic and search visibility for property/rental intent funnels straight into the main site instead of splitting the brand across two properties.
+`rentandbuy.co.za` stays live under its own name (so it keeps showing up in Google for "rent and buy" searches), but its pages carry prominent calls-to-action driving visitors into the Property category (`https://www.everythingmarket.co.za/buy-sell/property`) on Everything Market, converting that search intent into real leads without giving up the domain's own search presence.
 
 ## Weekly Operating Rhythm
 
