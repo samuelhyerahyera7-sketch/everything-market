@@ -1,10 +1,18 @@
-/* Vercel serverless — set/unset verified flag on a Supabase auth user */
+/* Vercel serverless — suspend/unsuspend a seller.
+   Registered accounts are banned via Supabase Auth (blocks sign-in).
+   Sellers who only ever posted as a guest have no account to ban, so for
+   them (and as a belt-and-braces step for registered sellers too) their
+   listings are hidden from the public marketplace via ads.suspended. */
 const https = require('https');
 const { requireAdmin } = require('./_admin-auth');
 
 const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.supabase.co').replace(/\/$/, '');
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
 const SB_KEY     = process.env.SUPABASE_SERVICE_KEY;
+
+/* ~100 years — Supabase Auth has no "forever" ban, so this stands in for one.
+   Unsuspending sends ban_duration: 'none' to lift it immediately. */
+const SUSPEND_DURATION = '876000h';
 
 function sbReq(method, path, body, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
@@ -40,13 +48,10 @@ module.exports = async function handler(req, res) {
   if (!requireAdmin(req, res)) return;
   if (!SB_KEY) return res.status(500).json({ error: 'SUPABASE_SERVICE_KEY not set' });
 
-  const { userId, verified, email, adminNote } = req.body || {};
-  /* Sellers who posted a listing as a guest have no Supabase Auth account —
-     load-users.js gives them a synthetic id like "seller:someone@example.com".
-     There is no auth user to update, so verify them by their listings instead. */
+  const { userId, suspended, email, adminNote } = req.body || {};
   const isListingSeller = !userId || String(userId).startsWith('seller:');
   if (!isListingSeller && !userId) return res.status(400).json({ error: 'userId required' });
-  if (isListingSeller && !email) return res.status(400).json({ error: 'email required to verify a seller with no account' });
+  if (isListingSeller && !email) return res.status(400).json({ error: 'email required to suspend a seller with no account' });
 
   try {
     const now = new Date().toISOString();
@@ -58,40 +63,30 @@ module.exports = async function handler(req, res) {
         try { existingMeta = JSON.parse(existing.body).user_metadata || {}; } catch {}
       }
       const r = await sbReq('PUT', `/auth/v1/admin/users/${userId}`, {
+        ban_duration: suspended ? SUSPEND_DURATION : 'none',
         user_metadata: {
           ...existingMeta,
-          verified: !!verified,
-          manual_verified: !!verified,
-          verified_by_admin_at: verified ? now : null,
+          suspended: !!suspended,
+          suspended_by_admin_at: suspended ? now : null,
+          suspend_reason: suspended ? String(adminNote || '').slice(0, 500) : null,
         }
       });
       if (r.status !== 200) return res.status(502).json({ error: 'Auth API error ' + r.status, detail: r.body });
-
-      const bioPatch = {
-        user_id: userId,
-        status: verified ? 'approved' : 'review',
-        admin_decision: verified ? 'approved' : 'rejected',
-        admin_notes: String(adminNote || (verified ? 'Manual admin approval' : 'Manual admin removal')).slice(0, 500),
-        admin_reviewed_by: 'Everything Market Admin',
-        admin_reviewed_at: now,
-        updated_at: now,
-        ...(verified ? { verified_at: now } : {}),
-      };
-      await sbReq('POST', '/rest/v1/biometric_verifications?on_conflict=user_id', bioPatch, {
-        Prefer: 'resolution=merge-duplicates,return=minimal'
-      }).catch(() => {});
     }
 
+    /* Hide (or restore) their listings either way — this column is added by
+       supabase-suspend.sql; if it hasn't been run yet these patches simply
+       fail silently and only the account-level ban above takes effect. */
     const adUpdates = [];
     if (!isListingSeller) {
-      adUpdates.push(sbReq('PATCH', `/rest/v1/ads?user_id=eq.${encodeURIComponent(userId)}`, { verified: !!verified }).catch(e => ({ error: String(e) })));
+      adUpdates.push(sbReq('PATCH', `/rest/v1/ads?user_id=eq.${encodeURIComponent(userId)}`, { suspended: !!suspended }).catch(e => ({ error: String(e) })));
     }
     if (email) {
-      adUpdates.push(sbReq('PATCH', `/rest/v1/ads?contact_email=eq.${encodeURIComponent(String(email).toLowerCase())}`, { verified: !!verified }).catch(e => ({ error: String(e) })));
+      adUpdates.push(sbReq('PATCH', `/rest/v1/ads?contact_email=eq.${encodeURIComponent(String(email).toLowerCase())}`, { suspended: !!suspended }).catch(e => ({ error: String(e) })));
     }
     await Promise.all(adUpdates);
 
-    return res.status(200).json({ ok: true, syncedListings: true });
+    return res.status(200).json({ ok: true });
   } catch(e) {
     return res.status(500).json({ error: String(e) });
   }
