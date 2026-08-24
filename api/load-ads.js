@@ -39,7 +39,13 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const r = await sbGet('/rest/v1/ads?select=*&order=created_at.desc&limit=500');
+    /* Hide suspended sellers' listings. The suspended column is optional
+       (added by supabase-suspend.sql) — if it doesn't exist yet, this filtered
+       query 400s and we fall back to the unfiltered one below. */
+    let r = await sbGet('/rest/v1/ads?select=*&suspended=eq.false&order=created_at.desc&limit=500');
+    if (r.status !== 200) {
+      r = await sbGet('/rest/v1/ads?select=*&order=created_at.desc&limit=500');
+    }
     if (r.status !== 200) {
       console.error('[load-ads] Supabase responded', r.status, r.body);
       return res.status(502).json({ error: 'DB error ' + r.status });
