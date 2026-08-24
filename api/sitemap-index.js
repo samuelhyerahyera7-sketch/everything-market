@@ -9,6 +9,8 @@ module.exports = async function handler(req, res) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>${SITE_URL}/sitemap.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${SITE_URL}/sitemap-keywords.xml</loc><lastmod>${now}</lastmod></sitemap>
+  <sitemap><loc>${SITE_URL}/sitemap-sellers.xml</loc><lastmod>${now}</lastmod></sitemap>
   <sitemap><loc>${SITE_URL}/sitemap-listings.xml</loc><lastmod>${now}</lastmod></sitemap>
 </sitemapindex>`;
 

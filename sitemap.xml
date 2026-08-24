@@ -2,11 +2,89 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.everythingmarket.co.za/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>
   <url><loc>https://www.everythingmarket.co.za/marketplace-south-africa</loc><changefreq>weekly</changefreq><priority>0.98</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-gauteng</loc><changefreq>daily</changefreq><priority>0.96</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-western-cape</loc><changefreq>daily</changefreq><priority>0.94</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kwazulu-natal</loc><changefreq>daily</changefreq><priority>0.94</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-eastern-cape</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-limpopo</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mpumalanga</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-north-west</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-free-state</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-northern-cape</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-johannesburg</loc><changefreq>daily</changefreq><priority>0.94</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-tshwane</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-ekurhuleni</loc><changefreq>daily</changefreq><priority>0.93</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-cape-town</loc><changefreq>daily</changefreq><priority>0.94</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-ethekwini</loc><changefreq>daily</changefreq><priority>0.92</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-nelson-mandela-bay</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-buffalo-city</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mangaung</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-bloemfontein</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-soweto</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-sandton</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-midrand</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-centurion</loc><changefreq>daily</changefreq><priority>0.88</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-boksburg</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-benoni</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-germiston</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-krugersdorp</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-vereeniging</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-vanderbijlpark</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-stellenbosch</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-paarl</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-george</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mossel-bay</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-worcester</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-knysna</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-pietermaritzburg</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-richards-bay</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-newcastle</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-ladysmith</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-margate</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-ballito</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-east-london</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mthatha</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-komani</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-makhanda</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kariega</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-tzaneen</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-thohoyandou</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-polokwane</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mokopane</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-bela-bela</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-lephalale</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-phalaborwa</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mbombela</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-emalahleni</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-middelburg</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-secunda</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-ermelo</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-white-river</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-hazyview</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-klerksdorp</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-rustenburg</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-potchefstroom</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-mahikeng</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-brits</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-hartbeespoort</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-upington</loc><changefreq>daily</changefreq><priority>0.82</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kimberley</loc><changefreq>daily</changefreq><priority>0.86</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kuruman</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-springbok</loc><changefreq>daily</changefreq><priority>0.78</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kathu</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-welkom</loc><changefreq>daily</changefreq><priority>0.84</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-bethlehem</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-sasolburg</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-kroonstad</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/marketplace-parys</loc><changefreq>daily</changefreq><priority>0.78</priority></url>
   <url><loc>https://www.everythingmarket.co.za/sell-online-south-africa</loc><changefreq>weekly</changefreq><priority>0.95</priority></url>
   <url><loc>https://www.everythingmarket.co.za/post-free-ad-south-africa</loc><changefreq>weekly</changefreq><priority>0.95</priority></url>
   <url><loc>https://www.everythingmarket.co.za/seller-growth-kit</loc><changefreq>weekly</changefreq><priority>0.82</priority></url>
   <url><loc>https://www.everythingmarket.co.za/safety</loc><changefreq>monthly</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.everythingmarket.co.za/verified-sellers</loc><changefreq>monthly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/privacy-policy</loc><changefreq>monthly</changefreq><priority>0.55</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/terms-and-conditions</loc><changefreq>monthly</changefreq><priority>0.55</priority></url>
+  <url><loc>https://www.everythingmarket.co.za/paia-manual</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://www.everythingmarket.co.za/buy-sell/cars-bakkies</loc><changefreq>daily</changefreq><priority>0.95</priority></url>
   <url><loc>https://www.everythingmarket.co.za/buy-sell/property</loc><changefreq>daily</changefreq><priority>0.95</priority></url>
   <url><loc>https://www.everythingmarket.co.za/buy-sell/electronics</loc><changefreq>daily</changefreq><priority>0.95</priority></url>

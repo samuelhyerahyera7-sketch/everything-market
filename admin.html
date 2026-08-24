@@ -198,7 +198,7 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('ads')">📋 Ads</div>
     <div class="tab" onclick="switchTab('users')">👥 Users</div>
-    <div class="tab" onclick="switchTab('stores')">🏪 Store Requests</div>
+    <div class="tab" onclick="switchTab('stores')">🏪 Store Requests & Deletion</div>
     <div class="tab" onclick="switchTab('chats')">💬 Chats</div>
     <div class="tab" onclick="switchTab('growth')">📈 Growth</div>
   </div>
@@ -821,14 +821,15 @@
           <div class="verify-row"><span>Current level</span><strong>${escHtml(level)}</strong></div>
           <div class="verify-row"><span>Email check</span><strong>${v.email_verified || u.confirmed ? 'Verified' : 'Not verified'}</strong></div>
           <div class="verify-row"><span>Phone check</span><strong>${v.phone_verified ? 'Verified' : 'Not verified'}</strong></div>
-          <div class="verify-row"><span>ID/selfie check</span><strong>${escHtml(v.identity_status || 'none')}</strong></div>
+          <div class="verify-row"><span>ID/selfie review</span><strong>${escHtml(v.identity_status || 'none')}</strong></div>
           ${reviewFiles}
           <div class="verify-row"><span>Listings</span><strong>${fmtNum(u.ad_count || ads.length)}</strong></div>
           <div class="verify-row"><span>Latest listing</span><strong>${escHtml(latestAd?.title || 'No listings')}</strong></div>
           ${v.admin_notes ? `<div class="verify-row"><span>Admin notes</span><strong>${escHtml(v.admin_notes)}</strong></div>` : ''}
           ${v.rejection_reason ? `<div class="verify-row"><span>Issue</span><strong>${escHtml(v.rejection_reason)}</strong></div>` : ''}
           <div class="verify-actions">
-            <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this,true)">${u.verified ? 'Remove Verification' : 'Approve Seller'}</button>
+            <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this,true)">${u.verified ? 'Remove Seller Badge' : 'Approve Seller'}</button>
+            ${!u.verified ? `<button class="btn-del" onclick="toggleVerify('${u.id}',false,this,true)">Reject ID/Selfie</button>` : ''}
             <button class="btn-info" onclick="closeVerifyModal()">Close</button>
           </div>
         </div>
@@ -911,7 +912,7 @@
           userId,
           verified: newVerified,
           email: u?.email || '',
-          adminNote: newVerified ? 'Approved from admin users tab' : 'Verification removed from admin users tab'
+          adminNote: newVerified ? 'Approved ID/selfie from admin users tab' : 'Rejected or removed ID/selfie from admin users tab'
         })
       });
       const j = await r.json();
@@ -928,7 +929,7 @@
         ALL_ADS.forEach(a => {
           if ((a.user_id && String(a.user_id) === String(userId)) || (u?.email && a.contact_email === u.email)) a.verified = newVerified;
         });
-        btn.textContent = newVerified ? 'Unverify' : 'Verify';
+        btn.textContent = newVerified ? 'Remove Seller Badge' : 'Approve Seller';
         btn.classList.toggle('unvfy', newVerified);
         btn.onclick = () => toggleVerify(userId, !newVerified, btn);
         closeVerifyModal();
@@ -936,10 +937,10 @@
         renderAdsTable();
         updateStats();
       } else {
-        btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify';
+        btn.disabled = false; btn.textContent = newVerified ? 'Approve Seller' : 'Remove Seller Badge';
         alert('Failed: ' + (j.error || 'unknown'));
       }
-    } catch(e) { btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify'; alert('Error: ' + e.message); }
+    } catch(e) { btn.disabled = false; btn.textContent = newVerified ? 'Approve Seller' : 'Remove Seller Badge'; alert('Error: ' + e.message); }
   }
 
   async function deleteUser(userId, email, btn) {
@@ -1008,7 +1009,7 @@
       const actions = (a.status || 'pending') === 'pending'
         ? `<button class="btn-vfy" onclick="reviewStoreApplication('${escJs(a.id)}','approve',this)">Approve</button>
            <button class="btn-del" onclick="reviewStoreApplication('${escJs(a.id)}','reject',this)">Reject</button>
-           <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:4px;">Delete</button>`
+           <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:4px;">Delete Store</button>`
         : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>
            <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:8px;">Delete Store</button>`;
       return `<tr id="store-row-${escHtml(a.id)}">

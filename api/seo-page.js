@@ -77,6 +77,84 @@ const CITIES = {
   kimberley: { name: 'Kimberley', province: 'Northern Cape', areas: 'Galeshewe, Belgravia, Roodepan, Hadison Park and nearby areas' },
 };
 
+const MARKETPLACE_LOCATIONS = {
+  gauteng: { name: 'Gauteng', kind: 'province', province: 'Gauteng', areas: 'Johannesburg, Pretoria, Soweto, Sandton, Midrand, Centurion and Ekurhuleni' },
+  'western-cape': { name: 'Western Cape', kind: 'province', province: 'Western Cape', areas: 'Cape Town, Bellville, Paarl, Stellenbosch, George and Somerset West' },
+  'kwazulu-natal': { name: 'KwaZulu-Natal', kind: 'province', province: 'KwaZulu-Natal', areas: 'Durban, Pietermaritzburg, Umhlanga, Pinetown, Ballito and Richards Bay' },
+  'eastern-cape': { name: 'Eastern Cape', kind: 'province', province: 'Eastern Cape', areas: 'Gqeberha, East London, Mthatha, Queenstown, Uitenhage and Port Alfred' },
+  limpopo: { name: 'Limpopo', kind: 'province', province: 'Limpopo', areas: 'Polokwane, Tzaneen, Thohoyandou, Mokopane, Bela-Bela and Lephalale' },
+  mpumalanga: { name: 'Mpumalanga', kind: 'province', province: 'Mpumalanga', areas: 'Mbombela, Nelspruit, Witbank, Middelburg, Secunda and White River' },
+  'north-west': { name: 'North West', kind: 'province', province: 'North West', areas: 'Rustenburg, Klerksdorp, Potchefstroom, Mahikeng, Brits and Hartbeespoort' },
+  'northern-cape': { name: 'Northern Cape', kind: 'province', province: 'Northern Cape', areas: 'Kimberley, Upington, Kuruman, Springbok, De Aar and Kathu' },
+  'free-state': { name: 'Free State', kind: 'province', province: 'Free State', areas: 'Bloemfontein, Welkom, Bethlehem, Sasolburg, Parys and Kroonstad' },
+  johannesburg: { name: 'Johannesburg', kind: 'metro', province: 'Gauteng', areas: 'Sandton, Soweto, Randburg, Roodepoort, Midrand and Fourways' },
+  tshwane: { name: 'Tshwane', kind: 'metro', province: 'Gauteng', areas: 'Pretoria, Centurion, Mamelodi, Hatfield, Soshanguve and Montana' },
+  ekurhuleni: { name: 'Ekurhuleni', kind: 'metro', province: 'Gauteng', areas: 'Boksburg, Benoni, Kempton Park, Germiston, Alberton and Springs' },
+  'cape-town': { name: 'Cape Town', kind: 'metro', province: 'Western Cape', areas: 'Bellville, Mitchells Plain, Khayelitsha, Durbanville, Somerset West and the CBD' },
+  ethekwini: { name: 'eThekwini', kind: 'metro', province: 'KwaZulu-Natal', areas: 'Durban, Umhlanga, Pinetown, Chatsworth, Umlazi and Amanzimtoti' },
+  'nelson-mandela-bay': { name: 'Nelson Mandela Bay', kind: 'metro', province: 'Eastern Cape', areas: 'Gqeberha, Port Elizabeth, Uitenhage, Despatch, Walmer and Summerstrand' },
+  'buffalo-city': { name: 'Buffalo City', kind: 'metro', province: 'Eastern Cape', areas: 'East London, Mdantsane, King William\'s Town, Bhisho and Beacon Bay' },
+  mangaung: { name: 'Mangaung', kind: 'metro', province: 'Free State', areas: 'Bloemfontein, Botshabelo, Thaba Nchu, Universitas and Bayswater' },
+  bloemfontein: { name: 'Bloemfontein', kind: 'city', province: 'Free State', areas: 'Mangaung, Universitas, Bayswater, Langenhoven Park, Heidedal and Botshabelo' },
+  soweto: { name: 'Soweto', kind: 'city', province: 'Gauteng', areas: 'Orlando, Diepkloof, Protea Glen, Meadowlands, Pimville and nearby Johannesburg areas' },
+  sandton: { name: 'Sandton', kind: 'city', province: 'Gauteng', areas: 'Fourways, Bryanston, Rivonia, Morningside, Woodmead and Alexandra' },
+  midrand: { name: 'Midrand', kind: 'city', province: 'Gauteng', areas: 'Halfway House, Noordwyk, Vorna Valley, Carlswald, Kyalami and Waterfall' },
+  centurion: { name: 'Centurion', kind: 'city', province: 'Gauteng', areas: 'Lyttelton, Irene, Rooihuiskraal, Wierdapark, Zwartkop and The Reeds' },
+  boksburg: { name: 'Boksburg', kind: 'city', province: 'Gauteng', areas: 'Parkrand, Sunward Park, Beyers Park, Dawn Park, Atlasville and Jet Park' },
+  benoni: { name: 'Benoni', kind: 'city', province: 'Gauteng', areas: 'Northmead, Farrarmere, Rynfield, Daveyton, Actonville and Lakefield' },
+  germiston: { name: 'Germiston', kind: 'city', province: 'Gauteng', areas: 'Primrose, Bedfordview, Elsburg, Lambton, Wadeville and Edenvale' },
+  krugersdorp: { name: 'Krugersdorp', kind: 'city', province: 'Gauteng', areas: 'Noordheuwel, Kenmare, Chancliff, Kagiso, Rant-en-Dal and Roodepoort' },
+  vereeniging: { name: 'Vereeniging', kind: 'city', province: 'Gauteng', areas: 'Three Rivers, Duncanville, Arcon Park, Sebokeng, Meyerton and Vanderbijlpark' },
+  'vanderbijlpark': { name: 'Vanderbijlpark', kind: 'city', province: 'Gauteng', areas: 'SE, SW, CE, CW, Boipatong, Bophelong and the Vaal Triangle' },
+  stellenbosch: { name: 'Stellenbosch', kind: 'city', province: 'Western Cape', areas: 'Cloetesville, Kayamandi, Jamestown, Paradyskloof, Somerset West and Paarl' },
+  paarl: { name: 'Paarl', kind: 'city', province: 'Western Cape', areas: 'Wellington, Mbekweni, Val de Vie, Franschhoek, Klapmuts and Stellenbosch' },
+  george: { name: 'George', kind: 'city', province: 'Western Cape', areas: 'Wilderness, Pacaltsdorp, Blanco, Heather Park, Knysna and Mossel Bay' },
+  'mossel-bay': { name: 'Mossel Bay', kind: 'city', province: 'Western Cape', areas: 'Hartenbos, Dana Bay, Great Brak River, Klein Brak River and George' },
+  worcester: { name: 'Worcester', kind: 'city', province: 'Western Cape', areas: 'Rawsonville, De Doorns, Touws River, Robertson, Ceres and the Breede Valley' },
+  knysna: { name: 'Knysna', kind: 'city', province: 'Western Cape', areas: 'Sedgefield, Brenton, Leisure Isle, Plettenberg Bay, George and the Garden Route' },
+  'pietermaritzburg': { name: 'Pietermaritzburg', kind: 'city', province: 'KwaZulu-Natal', areas: 'Scottsville, Hayfields, Northdale, Hilton, Howick and Edendale' },
+  'richards-bay': { name: 'Richards Bay', kind: 'city', province: 'KwaZulu-Natal', areas: 'Meerensee, Arboretum, Empangeni, Esikhawini, Mtunzini and eSikhaleni' },
+  newcastle: { name: 'Newcastle', kind: 'city', province: 'KwaZulu-Natal', areas: 'Madadeni, Osizweni, Amajuba Park, Hutten Heights, Ladysmith and Dundee' },
+  ladysmith: { name: 'Ladysmith', kind: 'city', province: 'KwaZulu-Natal', areas: 'Ezakheni, Acaciavale, Steadville, Colenso, Estcourt and Newcastle' },
+  margate: { name: 'Margate', kind: 'city', province: 'KwaZulu-Natal', areas: 'Shelly Beach, Ramsgate, Port Shepstone, Uvongo, Southbroom and Hibberdene' },
+  ballito: { name: 'Ballito', kind: 'city', province: 'KwaZulu-Natal', areas: 'Salt Rock, Shaka\'s Rock, Zimbali, Tongaat, Umhlanga and Stanger' },
+  'east-london': { name: 'East London', kind: 'city', province: 'Eastern Cape', areas: 'Beacon Bay, Gonubie, Mdantsane, Amalinda, King William\'s Town and Bhisho' },
+  mthatha: { name: 'Mthatha', kind: 'city', province: 'Eastern Cape', areas: 'Norwood, Southernwood, Ngangelizwe, Libode, Qumbu and Port St Johns' },
+  komani: { name: 'Komani', kind: 'city', province: 'Eastern Cape', areas: 'Queenstown, Ezibeleni, Mlungisi, Whittlesea, Cofimvaba and Tarkastad' },
+  makhanda: { name: 'Makhanda', kind: 'city', province: 'Eastern Cape', areas: 'Grahamstown, Joza, Alicedale, Kenton-on-Sea, Port Alfred and Bathurst' },
+  kariega: { name: 'Kariega', kind: 'city', province: 'Eastern Cape', areas: 'Uitenhage, Despatch, KwaNobuhle, Gqeberha and Nelson Mandela Bay' },
+  tzaneen: { name: 'Tzaneen', kind: 'city', province: 'Limpopo', areas: 'Nkowankowa, Letsitele, Haenertsburg, Modjadjiskloof, Phalaborwa and Polokwane' },
+  thohoyandou: { name: 'Thohoyandou', kind: 'city', province: 'Limpopo', areas: 'Sibasa, Shayandima, Louis Trichardt, Malamulele, Giyani and Venda' },
+  polokwane: { name: 'Polokwane', kind: 'city', province: 'Limpopo', areas: 'Bendor, Seshego, Flora Park, Ladanna, Mankweng and Pietersburg' },
+  mokopane: { name: 'Mokopane', kind: 'city', province: 'Limpopo', areas: 'Potgietersrus, Mahwelereng, Mookgophong, Polokwane and Bela-Bela' },
+  'bela-bela': { name: 'Bela-Bela', kind: 'city', province: 'Limpopo', areas: 'Warmbaths, Modimolle, Thabazimbi, Hammanskraal and Waterberg' },
+  lephalale: { name: 'Lephalale', kind: 'city', province: 'Limpopo', areas: 'Ellisras, Onverwacht, Marapong, Vaalwater, Thabazimbi and Waterberg' },
+  phalaborwa: { name: 'Phalaborwa', kind: 'city', province: 'Limpopo', areas: 'Namanga, Lulekani, Gravelotte, Hoedspruit, Tzaneen and Mopani' },
+  mbombela: { name: 'Mbombela', kind: 'city', province: 'Mpumalanga', areas: 'Nelspruit, White River, Hazyview, Barberton, Rocky Drift and Kabokweni' },
+  emalahleni: { name: 'eMalahleni', kind: 'city', province: 'Mpumalanga', areas: 'Witbank, Klarinet, Tasbet Park, Reyno Ridge, Middelburg and Ogies' },
+  middelburg: { name: 'Middelburg', kind: 'city', province: 'Mpumalanga', areas: 'Aerorand, Mhluzi, Mineralia, Groenkol, eMalahleni and Belfast' },
+  secunda: { name: 'Secunda', kind: 'city', province: 'Mpumalanga', areas: 'Trichardt, Evander, Kinross, Embalenhle, Bethal and Standerton' },
+  ermelo: { name: 'Ermelo', kind: 'city', province: 'Mpumalanga', areas: 'Wesselton, Breyten, Chrissiesmeer, Carolina, Standerton and Bethal' },
+  'white-river': { name: 'White River', kind: 'city', province: 'Mpumalanga', areas: 'Mbombela, Nelspruit, Hazyview, Sabie, Rocky Drift and Kabokweni' },
+  hazyview: { name: 'Hazyview', kind: 'city', province: 'Mpumalanga', areas: 'White River, Sabie, Graskop, Bushbuckridge, Kiepersol and Mbombela' },
+  klerksdorp: { name: 'Klerksdorp', kind: 'city', province: 'North West', areas: 'Orkney, Stilfontein, Jouberton, Wilkoppies, Potchefstroom and Wolmaransstad' },
+  rustenburg: { name: 'Rustenburg', kind: 'city', province: 'North West', areas: 'Boitekong, Tlhabane, Phokeng, Waterfall East, Brits and Sun City' },
+  potchefstroom: { name: 'Potchefstroom', kind: 'city', province: 'North West', areas: 'Ikageng, Baillie Park, Miederpark, Klerksdorp, Fochville and Ventersdorp' },
+  mahikeng: { name: 'Mahikeng', kind: 'city', province: 'North West', areas: 'Mmabatho, Montshiwa, Golf View, Lichtenburg, Zeerust and Stella' },
+  brits: { name: 'Brits', kind: 'city', province: 'North West', areas: 'Letlhabile, Oukasie, Hartbeespoort, Mooinooi, Rustenburg and Ga-Rankuwa' },
+  'hartbeespoort': { name: 'Hartbeespoort', kind: 'city', province: 'North West', areas: 'Schoemansville, Meerhof, Ifafi, Kosmos, Broederstroom and Brits' },
+  upington: { name: 'Upington', kind: 'city', province: 'Northern Cape', areas: 'Keimoes, Kakamas, Louisvale, Paballelo, Groblershoop and Kenhardt' },
+  kimberley: { name: 'Kimberley', kind: 'city', province: 'Northern Cape', areas: 'Galeshewe, Belgravia, Roodepan, Hadison Park, Cassandra and Barkly West' },
+  kuruman: { name: 'Kuruman', kind: 'city', province: 'Northern Cape', areas: 'Mothibistad, Kathu, Hotazel, Danielskuil, Postmasburg and Olifantshoek' },
+  springbok: { name: 'Springbok', kind: 'city', province: 'Northern Cape', areas: 'Okiep, Nababeep, Steinkopf, Port Nolloth, Kleinzee and Namaqualand' },
+  kathu: { name: 'Kathu', kind: 'city', province: 'Northern Cape', areas: 'Sishen, Kuruman, Olifantshoek, Postmasburg, Hotazel and Deben' },
+  welkom: { name: 'Welkom', kind: 'city', province: 'Free State', areas: 'Riebeeckstad, Thabong, Virginia, Odendaalsrus, Hennenman and Allanridge' },
+  bethlehem: { name: 'Bethlehem', kind: 'city', province: 'Free State', areas: 'Bohlokong, Clarens, Fouriesburg, Reitz, Harrismith and Kestell' },
+  sasolburg: { name: 'Sasolburg', kind: 'city', province: 'Free State', areas: 'Zamdela, Vaalpark, Parys, Heilbron, Vanderbijlpark and Vereeniging' },
+  kroonstad: { name: 'Kroonstad', kind: 'city', province: 'Free State', areas: 'Maokeng, Viljoenskroon, Steynsrus, Bothaville, Welkom and Parys' },
+  parys: { name: 'Parys', kind: 'city', province: 'Free State', areas: 'Vredefort, Tumahole, Sasolburg, Potchefstroom, Vanderbijlpark and the Vaal' },
+};
+
 const POPULAR_SEARCHES = {
   'iphone-for-sale-south-africa': {
     title: 'iPhone for Sale in South Africa',
@@ -180,6 +258,92 @@ const POPULAR_SEARCHES = {
   },
 };
 
+const ITEM_KEYWORDS = {
+  'cars-for-sale': { title: 'Cars for Sale', query: 'car', cat: 'cars', terms: 'used cars, second-hand cars, bakkies, SUVs and vehicle deals' },
+  'bakkies-for-sale': { title: 'Bakkies for Sale', query: 'bakkie', cat: 'cars', terms: 'used bakkies, work bakkies, double cabs and single cabs' },
+  'toyota-for-sale': { title: 'Toyota for Sale', query: 'toyota', cat: 'cars', terms: 'Toyota cars, Toyota bakkies, Corolla, Hilux and Fortuner listings' },
+  'vw-polo-for-sale': { title: 'VW Polo for Sale', query: 'vw polo', cat: 'cars', terms: 'VW Polo, Volkswagen cars and affordable used vehicles' },
+  'ford-ranger-for-sale': { title: 'Ford Ranger for Sale', query: 'ford ranger', cat: 'cars', terms: 'Ford Ranger bakkies, double cabs and work vehicles' },
+  'motorcycles-for-sale': { title: 'Motorcycles for Sale', query: 'motorcycle', cat: 'bike', terms: 'motorbikes, scooters, delivery bikes and riding gear' },
+  'trailers-for-sale': { title: 'Trailers for Sale', query: 'trailer', cat: 'cars', terms: 'trailers, car trailers, utility trailers and transport gear' },
+  'property-for-sale': { title: 'Property for Sale', query: 'property for sale', cat: 'prop', terms: 'houses, flats, land, plots and commercial property' },
+  'houses-to-rent': { title: 'Houses to Rent', query: 'house to rent', cat: 'prop', terms: 'houses, rooms, garden cottages and rental homes' },
+  'flats-to-rent': { title: 'Flats to Rent', query: 'flat to rent', cat: 'prop', terms: 'flats, apartments, rooms and rental accommodation' },
+  'rooms-to-rent': { title: 'Rooms to Rent', query: 'room to rent', cat: 'prop', terms: 'rooms, shared accommodation, student rooms and rentals' },
+  'land-for-sale': { title: 'Land for Sale', query: 'land for sale', cat: 'prop', terms: 'plots, stands, farms, smallholdings and vacant land' },
+  'iphones-for-sale': { title: 'iPhones for Sale', query: 'iphone', cat: 'elec', terms: 'iPhones, Apple phones, iPads and Apple accessories' },
+  'samsung-phones-for-sale': { title: 'Samsung Phones for Sale', query: 'samsung phone', cat: 'elec', terms: 'Samsung phones, Android phones and mobile accessories' },
+  'phones-for-sale': { title: 'Phones for Sale', query: 'phone', cat: 'elec', terms: 'cellphones, smartphones, Android phones, iPhones and accessories' },
+  'laptops-for-sale': { title: 'Laptops for Sale', query: 'laptop', cat: 'elec', terms: 'laptops, notebooks, MacBooks, desktops and computer gear' },
+  'tvs-for-sale': { title: 'TVs for Sale', query: 'tv', cat: 'elec', terms: 'TVs, smart TVs, monitors, soundbars and home entertainment' },
+  'gaming-consoles-for-sale': { title: 'Gaming Consoles for Sale', query: 'playstation xbox', cat: 'game', terms: 'PS5, PS4, Xbox, Nintendo, games and controllers' },
+  'fridges-for-sale': { title: 'Fridges for Sale', query: 'fridge', cat: 'furn', terms: 'fridges, freezers, bar fridges and kitchen appliances' },
+  'washing-machines-for-sale': { title: 'Washing Machines for Sale', query: 'washing machine', cat: 'furn', terms: 'washing machines, tumble dryers and laundry appliances' },
+  'couches-for-sale': { title: 'Couches for Sale', query: 'couch', cat: 'furn', terms: 'couches, lounge suites, sofas and living-room furniture' },
+  'beds-for-sale': { title: 'Beds for Sale', query: 'bed', cat: 'furn', terms: 'beds, mattresses, bunk beds and bedroom furniture' },
+  'furniture-for-sale': { title: 'Furniture for Sale', query: 'furniture', cat: 'furn', terms: 'used furniture, tables, chairs, beds, couches and cupboards' },
+  'appliances-for-sale': { title: 'Appliances for Sale', query: 'appliance', cat: 'furn', terms: 'fridges, stoves, microwaves, washing machines and home appliances' },
+  'jobs-near-me': { title: 'Jobs', query: 'job', cat: 'jobs', terms: 'jobs, vacancies, part-time work, full-time work and local employment' },
+  'driver-jobs': { title: 'Driver Jobs', query: 'driver job', cat: 'jobs', terms: 'driver jobs, delivery jobs, courier work and transport vacancies' },
+  'domestic-worker-jobs': { title: 'Domestic Worker Jobs', query: 'domestic worker', cat: 'jobs', terms: 'domestic work, cleaning jobs, nanny jobs and housekeeper roles' },
+  'cleaning-services': { title: 'Cleaning Services', query: 'cleaning', cat: 'serv', terms: 'cleaners, domestic cleaning, office cleaning and home services' },
+  'plumbers-near-me': { title: 'Plumbers', query: 'plumber', cat: 'serv', terms: 'plumbers, geyser repairs, pipe repairs and bathroom services' },
+  'electricians-near-me': { title: 'Electricians', query: 'electrician', cat: 'serv', terms: 'electricians, wiring, plugs, lights, DB boards and repairs' },
+  'mechanics-near-me': { title: 'Mechanics', query: 'mechanic', cat: 'serv', terms: 'mechanics, car repairs, vehicle servicing and diagnostics' },
+  'builders-near-me': { title: 'Builders', query: 'builder', cat: 'serv', terms: 'builders, renovations, paving, roofing and construction services' },
+  'garden-services': { title: 'Garden Services', query: 'garden service', cat: 'serv', terms: 'garden services, lawn care, tree felling and landscaping' },
+  'solar-panels-for-sale': { title: 'Solar Panels for Sale', query: 'solar', cat: 'elec', terms: 'solar panels, inverters, batteries and backup power systems' },
+  'generators-for-sale': { title: 'Generators for Sale', query: 'generator', cat: 'tool', terms: 'generators, inverters, backup power and load-shedding equipment' },
+  'tools-for-sale': { title: 'Tools for Sale', query: 'tools', cat: 'tool', terms: 'power tools, hand tools, hardware and workshop equipment' },
+  'building-materials': { title: 'Building Materials', query: 'building materials', cat: 'tool', terms: 'bricks, doors, windows, timber, roofing and building supplies' },
+  'clothes-for-sale': { title: 'Clothes for Sale', query: 'clothes', cat: 'fash', terms: 'clothing, dresses, jackets, shirts and second-hand fashion' },
+  'sneakers-for-sale': { title: 'Sneakers for Sale', query: 'sneakers', cat: 'fash', terms: 'sneakers, shoes, trainers and fashion footwear' },
+  'baby-items-for-sale': { title: 'Baby Items for Sale', query: 'baby', cat: 'kids', terms: 'baby clothes, prams, cots, toys and kids items' },
+  'pets-for-sale': { title: 'Pets for Sale', query: 'pet', cat: 'pets', terms: 'pets, puppies, kittens, pet supplies and animal listings' },
+  'puppies-for-sale': { title: 'Puppies for Sale', query: 'puppy', cat: 'pets', terms: 'puppies, dogs, pet supplies and animal listings' },
+  'bicycles-for-sale': { title: 'Bicycles for Sale', query: 'bicycle', cat: 'sport', terms: 'bicycles, mountain bikes, road bikes and cycling gear' },
+  'gym-equipment-for-sale': { title: 'Gym Equipment for Sale', query: 'gym', cat: 'sport', terms: 'weights, treadmills, benches, exercise bikes and fitness equipment' },
+  'musical-instruments-for-sale': { title: 'Musical Instruments for Sale', query: 'guitar keyboard piano', cat: 'music', terms: 'guitars, keyboards, pianos, drums and music gear' },
+  'textbooks-for-sale': { title: 'Textbooks for Sale', query: 'textbook', cat: 'book', terms: 'textbooks, study guides, school books and university books' },
+};
+
+const SELL_KEYWORDS = {
+  car: { title: 'Sell My Car', item: 'car', query: 'car', terms: 'cars, bakkies, SUVs and used vehicles' },
+  bakkie: { title: 'Sell My Bakkie', item: 'bakkie', query: 'bakkie', terms: 'single cabs, double cabs, work bakkies and used bakkies' },
+  motorcycle: { title: 'Sell My Motorcycle', item: 'motorcycle', query: 'motorcycle', terms: 'motorcycles, scooters, delivery bikes and riding gear' },
+  trailer: { title: 'Sell My Trailer', item: 'trailer', query: 'trailer', terms: 'trailers, utility trailers, car trailers and transport equipment' },
+  house: { title: 'Sell My House', item: 'house', query: 'house for sale', terms: 'houses, flats, rooms, land and property listings' },
+  property: { title: 'Sell My Property', item: 'property', query: 'property for sale', terms: 'houses, flats, plots, stands, farms and commercial property' },
+  land: { title: 'Sell My Land', item: 'land', query: 'land for sale', terms: 'land, plots, stands, farms and smallholdings' },
+  phone: { title: 'Sell My Phone', item: 'phone', query: 'phone', terms: 'phones, iPhones, Samsung phones, Android phones and accessories' },
+  iphone: { title: 'Sell My iPhone', item: 'iPhone', query: 'iphone', terms: 'iPhones, Apple phones, iPads and Apple accessories' },
+  laptop: { title: 'Sell My Laptop', item: 'laptop', query: 'laptop', terms: 'laptops, MacBooks, desktops and computer accessories' },
+  tv: { title: 'Sell My TV', item: 'TV', query: 'tv', terms: 'TVs, smart TVs, monitors, soundbars and entertainment devices' },
+  playstation: { title: 'Sell My PlayStation', item: 'PlayStation', query: 'playstation', terms: 'PS5, PS4, games, controllers and gaming consoles' },
+  xbox: { title: 'Sell My Xbox', item: 'Xbox', query: 'xbox', terms: 'Xbox consoles, games, controllers and gaming accessories' },
+  fridge: { title: 'Sell My Fridge', item: 'fridge', query: 'fridge', terms: 'fridges, freezers, bar fridges and kitchen appliances' },
+  'washing-machine': { title: 'Sell My Washing Machine', item: 'washing machine', query: 'washing machine', terms: 'washing machines, tumble dryers and laundry appliances' },
+  couch: { title: 'Sell My Couch', item: 'couch', query: 'couch', terms: 'couches, sofas, lounge suites and living-room furniture' },
+  bed: { title: 'Sell My Bed', item: 'bed', query: 'bed', terms: 'beds, mattresses, bunk beds and bedroom furniture' },
+  furniture: { title: 'Sell My Furniture', item: 'furniture', query: 'furniture', terms: 'furniture, couches, beds, tables, chairs and cupboards' },
+  appliance: { title: 'Sell My Appliance', item: 'appliance', query: 'appliance', terms: 'appliances, fridges, stoves, microwaves and washing machines' },
+  clothes: { title: 'Sell My Clothes', item: 'clothes', query: 'clothes', terms: 'clothing, shoes, dresses, jackets and second-hand fashion' },
+  sneakers: { title: 'Sell My Sneakers', item: 'sneakers', query: 'sneakers', terms: 'sneakers, shoes, trainers and fashion footwear' },
+  'baby-items': { title: 'Sell Baby Items', item: 'baby items', query: 'baby', terms: 'baby clothes, prams, cots, toys and kids items' },
+  tools: { title: 'Sell My Tools', item: 'tools', query: 'tools', terms: 'power tools, hand tools, hardware and workshop equipment' },
+  generator: { title: 'Sell My Generator', item: 'generator', query: 'generator', terms: 'generators, inverters and backup power equipment' },
+  solar: { title: 'Sell Solar Equipment', item: 'solar equipment', query: 'solar', terms: 'solar panels, inverters, batteries and backup power systems' },
+  'building-materials': { title: 'Sell Building Materials', item: 'building materials', query: 'building materials', terms: 'bricks, doors, windows, timber, roofing and building supplies' },
+  bike: { title: 'Sell My Bicycle', item: 'bicycle', query: 'bicycle', terms: 'bicycles, mountain bikes, road bikes and cycling gear' },
+  'gym-equipment': { title: 'Sell Gym Equipment', item: 'gym equipment', query: 'gym', terms: 'weights, treadmills, benches and home gym equipment' },
+  'musical-instrument': { title: 'Sell My Musical Instrument', item: 'musical instrument', query: 'guitar keyboard piano', terms: 'guitars, keyboards, pianos, drums and music gear' },
+  textbooks: { title: 'Sell My Textbooks', item: 'textbooks', query: 'textbook', terms: 'textbooks, study guides, school books and university books' },
+  pets: { title: 'Advertise Pets', item: 'pet listing', query: 'pet', terms: 'pet listings, puppies, kittens, pet supplies and animal listings' },
+  service: { title: 'Advertise My Service', item: 'service', query: 'service', terms: 'local services, trades, repairs, cleaning, plumbing and business services' },
+  business: { title: 'Advertise My Business', item: 'business', query: 'service', terms: 'small businesses, local services, shops, contractors and side hustles' },
+  job: { title: 'Post a Job', item: 'job', query: 'job', terms: 'jobs, vacancies, hiring posts, part-time work and employment listings' },
+};
+
 const STATIC_PAGES = {
   'sell-online-south-africa': {
     title: 'Sell Online in South Africa for Free',
@@ -214,6 +378,27 @@ const STATIC_PAGES = {
     h1: 'Verified Sellers on Everything Market',
     description: 'Learn how verified sellers help buyers trust listings and help good South African sellers stand out.',
     intro: 'Verified seller badges help trustworthy sellers stand out and help buyers make better decisions. Everything Market is building safer local trade through identity, phone and business verification options.',
+    ctaHref: '/',
+  },
+  'privacy-policy': {
+    title: 'Privacy Policy',
+    h1: 'Privacy Policy',
+    description: 'Privacy Policy for Everything Market, South Africa\'s free online classifieds marketplace.',
+    intro: 'Everything Market collects and uses account, listing, message, verification, analytics and support information to operate the marketplace, improve safety, prevent abuse and help buyers and sellers connect. We do not sell personal information.',
+    ctaHref: '/',
+  },
+  'terms-and-conditions': {
+    title: 'Terms and Conditions',
+    h1: 'Terms and Conditions',
+    description: 'Terms and Conditions for using Everything Market to buy, sell, message, verify and promote listings in South Africa.',
+    intro: 'By using Everything Market, users agree to post lawful and accurate listings, trade responsibly, avoid scams and prohibited items, and understand that private transactions are arranged between buyers and sellers.',
+    ctaHref: '/',
+  },
+  'paia-manual': {
+    title: 'PAIA Manual',
+    h1: 'PAIA Manual',
+    description: 'PAIA Manual for Everything Market, including access-to-information and POPIA request guidance.',
+    intro: 'This PAIA manual explains how people may request access to records held by Everything Market in line with South African access-to-information and privacy laws.',
     ctaHref: '/',
   },
   'marketplace-south-africa': {
@@ -364,6 +549,88 @@ module.exports = async function handler(req, res) {
         { href: '/province/gauteng', title: 'Browse Gauteng', text: 'Find local deals in Johannesburg, Pretoria and nearby areas.' },
       ],
     };
+  } else if (type === 'near-me' && ITEM_KEYWORDS[slug]) {
+    const item = ITEM_KEYWORDS[slug];
+    page = {
+      title: `${item.title} Near Me`,
+      description: `${item.title} near me: find ${item.terms} from local South African sellers on Everything Market.`,
+      canonical: `${SITE_URL}/near-me/${slug}`,
+      h1: `${item.title} Near Me`,
+      intro: `Looking for ${item.title.toLowerCase()} near you? Everything Market helps buyers find ${item.terms} from local sellers across South Africa. Browse live listings or post your own free ad today.`,
+      ctaHref: `/?q=${encodeURIComponent(item.query)}`,
+      links: [
+        { href: '/marketplace-gauteng', title: `${item.title} in Gauteng`, text: 'Find local listings around Johannesburg, Pretoria and nearby areas.' },
+        { href: '/marketplace-cape-town', title: `${item.title} in Cape Town`, text: 'Browse local Western Cape listings and nearby sellers.' },
+        { href: '/marketplace-ethekwini', title: `${item.title} in Durban`, text: 'Find listings around Durban and eThekwini.' },
+        { href: '/marketplace-johannesburg', title: 'Marketplace Johannesburg', text: 'Browse popular local marketplace listings.' },
+        { href: '/post-free-ad-south-africa', title: `Sell ${item.title.toLowerCase()} online`, text: 'Post a free ad and reach buyers near you.' },
+        { href: '/safety', title: 'Safe buying tips', text: 'Meet safely, inspect first and avoid scams.' },
+      ],
+    };
+  } else if (type === 'sell-my' && SELL_KEYWORDS[slug]) {
+    const item = SELL_KEYWORDS[slug];
+    page = {
+      title: `${item.title} Near Me`,
+      description: `${item.title} near me: post a free ad on Everything Market and reach South African buyers looking for ${item.terms}.`,
+      canonical: `${SITE_URL}/sell-my/${slug}`,
+      h1: `${item.title} Near Me`,
+      intro: `Want to ${item.title.toLowerCase()}? Post a free ad on Everything Market, add clear photos and details, and reach buyers near you looking for ${item.terms}.`,
+      ctaHref: `/?post=ad&sell=${encodeURIComponent(item.query)}`,
+      links: [
+        { href: '/post-free-ad-south-africa', title: 'Post a free ad', text: 'Create your listing and start reaching buyers.' },
+        { href: '/seller-growth-kit', title: 'Seller Growth Kit', text: 'Tips to write stronger ads and get more messages.' },
+        { href: `/near-me/${Object.keys(ITEM_KEYWORDS).find(key => ITEM_KEYWORDS[key].query === item.query) || 'cars-for-sale'}`, title: `${item.item} buyers near me`, text: 'See related buyer search pages.' },
+        { href: '/marketplace-gauteng', title: 'Sell in Gauteng', text: 'Reach buyers in Johannesburg, Pretoria and nearby areas.' },
+        { href: '/marketplace-cape-town', title: 'Sell in Cape Town', text: 'Reach Western Cape buyers.' },
+        { href: '/safety', title: 'Sell safely', text: 'Use safe meetups, honest photos and clear pricing.' },
+      ],
+    };
+  } else if (type === 'marketplace-location-item') {
+    const locationSlug = String(req.query.location || '').toLowerCase();
+    const itemSlug = String(req.query.item || '').toLowerCase();
+    const location = MARKETPLACE_LOCATIONS[locationSlug];
+    const item = ITEM_KEYWORDS[itemSlug];
+    if (location && item) {
+      page = {
+        title: `${item.title} in ${location.name}`,
+        description: `${item.title} in ${location.name}: browse ${item.terms} on Everything Market, South Africa's free local marketplace.`,
+        canonical: `${SITE_URL}/marketplace-${locationSlug}/${itemSlug}`,
+        h1: `${item.title} in ${location.name}`,
+        intro: `Find ${item.terms} in ${location.name} and nearby areas like ${location.areas}. Everything Market helps local buyers and sellers connect for free in ${location.province}.`,
+        ctaHref: `/?q=${encodeURIComponent(item.query)}&province=${encodeURIComponent(location.province)}`,
+        links: [
+          { href: `/marketplace-${locationSlug}`, title: `Marketplace ${location.name}`, text: `Browse all categories in ${location.name}.` },
+          { href: `/near-me/${itemSlug}`, title: `${item.title} near me`, text: 'Find this item across South Africa.' },
+          { href: '/buy-sell/cars-bakkies', title: 'Cars & Bakkies', text: 'Vehicle listings from local sellers.' },
+          { href: '/buy-sell/electronics', title: 'Electronics', text: 'Phones, laptops, TVs and gaming.' },
+          { href: '/buy-sell/furniture', title: 'Furniture', text: 'Couches, beds, fridges and appliances.' },
+          { href: '/post-free-ad-south-africa', title: `Sell in ${location.name}`, text: 'Post a free ad and reach local buyers.' },
+        ],
+      };
+    }
+  } else if (type === 'sell-location') {
+    const locationSlug = String(req.query.location || '').toLowerCase();
+    const itemSlug = String(req.query.item || '').toLowerCase();
+    const location = MARKETPLACE_LOCATIONS[locationSlug];
+    const item = SELL_KEYWORDS[itemSlug];
+    if (location && item) {
+      page = {
+        title: `${item.title} in ${location.name}`,
+        description: `${item.title} in ${location.name}: post a free ad and reach buyers looking for ${item.terms} on Everything Market.`,
+        canonical: `${SITE_URL}/sell/${locationSlug}/${itemSlug}`,
+        h1: `${item.title} in ${location.name}`,
+        intro: `If you want to ${item.title.toLowerCase()} in ${location.name}, Everything Market gives you a free listing page for buyers around ${location.areas}. Add photos, price, condition and location, then share your ad link anywhere.`,
+        ctaHref: `/?post=ad&sell=${encodeURIComponent(item.query)}&province=${encodeURIComponent(location.province)}`,
+        links: [
+          { href: '/post-free-ad-south-africa', title: 'Post your ad free', text: 'Create a listing for your item in minutes.' },
+          { href: `/marketplace-${locationSlug}`, title: `Marketplace ${location.name}`, text: `Browse all local marketplace categories in ${location.name}.` },
+          { href: `/sell-my/${itemSlug}`, title: `${item.title} near me`, text: 'View the national seller page for this item.' },
+          { href: '/seller-growth-kit', title: 'Seller tips', text: 'Improve your photos, pricing and description.' },
+          { href: '/verified-sellers', title: 'Verified sellers', text: 'Build buyer trust with verification.' },
+          { href: '/safety', title: 'Safe selling', text: 'Meet safely and avoid suspicious payment requests.' },
+        ],
+      };
+    }
   } else if (type === 'city-category') {
     const citySlug = String(req.query.city || '').toLowerCase();
     const categorySlug = String(req.query.category || '').toLowerCase();
@@ -417,6 +684,25 @@ module.exports = async function handler(req, res) {
         { href: '/buy-sell/electronics', title: 'Electronics', text: 'Find phones, laptops, gaming and appliances.' },
         { href: '/province/gauteng', title: 'Gauteng Marketplace', text: 'Local listings in Johannesburg, Pretoria and Soweto.' },
         { href: '/searches/iphone-for-sale-south-africa', title: 'Popular Searches', text: 'See high-demand searches on Everything Market.' },
+      ],
+    };
+  } else if (type === 'marketplace-location' && MARKETPLACE_LOCATIONS[slug]) {
+    const location = MARKETPLACE_LOCATIONS[slug];
+    const scope = location.kind === 'metro' ? `${location.name} metro` : location.name;
+    page = {
+      title: `Marketplace ${location.name}`,
+      description: `Marketplace ${location.name}: buy and sell cars, property, electronics, furniture, jobs, services and second-hand goods locally on Everything Market.`,
+      canonical: `${SITE_URL}/marketplace-${slug}`,
+      h1: `Marketplace ${location.name}`,
+      intro: `Everything Market is a free online marketplace for ${scope}. Browse local ads around ${location.areas}, or post your own listing for free and reach buyers in ${location.province}.`,
+      ctaHref: `/?province=${encodeURIComponent(location.province)}`,
+      links: [
+        { href: `/province/${Object.entries(PROVINCES).find(([, name]) => name === location.province)?.[0] || 'gauteng'}`, title: `Buy & Sell in ${location.province}`, text: `Browse all live listings in ${location.province}.` },
+        { href: '/buy-sell/cars-bakkies', title: `Cars on Marketplace ${location.name}`, text: 'Used cars, bakkies, motorcycles and transport deals.' },
+        { href: '/buy-sell/electronics', title: `Electronics on Marketplace ${location.name}`, text: 'Phones, laptops, gaming, appliances and more.' },
+        { href: '/buy-sell/property', title: `Property on Marketplace ${location.name}`, text: 'Houses, flats, rooms and property listings.' },
+        { href: '/buy-sell/furniture', title: `Furniture on Marketplace ${location.name}`, text: 'Couches, beds, fridges and household goods.' },
+        { href: '/post-free-ad-south-africa', title: `Sell on Marketplace ${location.name}`, text: 'Post a free ad and get discovered by local buyers.' },
       ],
     };
   } else if (type === 'province' && PROVINCES[slug]) {

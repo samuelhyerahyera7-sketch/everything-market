@@ -9,14 +9,58 @@ const SB_URL_RAW = (process.env.SUPABASE_URL || 'https://jucphfbaueowzlbjhxmm.su
 const SB_HOST    = SB_URL_RAW.replace('https://', '');
 const SB_KEY     = process.env.SUPABASE_SERVICE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y3BoZmJhdWVvd3psYmpoeG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MTc5ODIsImV4cCI6MjEwMTQ5Mzk4Mn0.e6qDIPOSs4zJVUM6MX9kJ7cim8WTGgmiCzWSdl6wNdw';
+const SITE_URL = 'https://www.everythingmarket.co.za';
 
 function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
 }
 
 function fmtPrice(price) {
-  if (!price || price === 0) return 'Contact for price';
-  return 'R ' + Number(price).toLocaleString('en-ZA');
+  const value = Number(price);
+  if (!Number.isFinite(value) || value <= 0) return 'Contact for price';
+  return 'R ' + value.toLocaleString('en-ZA');
+}
+
+function cleanText(value, maxLength) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function absoluteUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith('/')) return SITE_URL + raw;
+  return raw;
+}
+
+function parsePhotos(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return value ? [value] : [];
+    }
+  }
+  return [];
+}
+
+function schemaCondition(condition) {
+  const text = String(condition || '').toLowerCase();
+  if (text.includes('new') && !text.includes('used')) return 'https://schema.org/NewCondition';
+  if (text.includes('damaged') || text.includes('fair')) return 'https://schema.org/DamagedCondition';
+  if (text.includes('refurb')) return 'https://schema.org/RefurbishedCondition';
+  return 'https://schema.org/UsedCondition';
 }
 
 async function fetchAd(id) {
@@ -38,7 +82,7 @@ async function fetchAd(id) {
 }
 
 module.exports = async function handler(req, res) {
-  const url = new URL('https://www.everythingmarket.co.za' + (req.url || ''));
+  const url = new URL(SITE_URL + (req.url || ''));
   const pathId = url.pathname.replace(/^\/ad\//, '').replace(/^\/api\/ad\/?/, '');
   const id = String(req.query?.id || url.searchParams.get('id') || pathId || '').replace(/[^a-zA-Z0-9_-]/g, '');
   if (!id) return res.status(400).send('Missing ad id');
@@ -57,45 +101,56 @@ module.exports = async function handler(req, res) {
     return res.status(302).end();
   }
 
-  const title       = esc(ad.title || 'Listing');
-  const price       = esc(fmtPrice(ad.price));
-  const location    = esc(ad.loc || ad.location || 'South Africa');
-  const seller      = esc(ad.seller || ad.contact_name || '');
-  const description = esc((ad.description || ad.desc || '').slice(0, 300));
-  const cat         = esc(ad.cat || ad.category || '');
-  const photo       = (Array.isArray(ad.photos) && ad.photos[0]) ? ad.photos[0] : 'https://www.everythingmarket.co.za/logo.png';
-  const pageUrl     = `https://www.everythingmarket.co.za/ad/${id}`;
+  const rawTitle    = cleanText(ad.title || 'Everything Market listing', 90);
+  const rawDesc     = cleanText(ad.description || ad.desc || '', 520);
+  const rawPrice    = Number(ad.price);
+  const locationRaw = cleanText(ad.loc || ad.location || 'South Africa', 80);
+  const sellerRaw   = cleanText(ad.seller || ad.contact_name || 'Everything Market seller', 80);
+  const catRaw      = cleanText(ad.cat || ad.category || 'Marketplace listing', 60);
+  const photos      = parsePhotos(ad.photos).map(absoluteUrl).filter(Boolean);
 
-  const metaTitle = `${ad.title} — ${fmtPrice(ad.price)} | Everything Market`;
-  const metaDesc  = `${ad.title} for sale in ${ad.loc || 'South Africa'}. ${fmtPrice(ad.price)}. ${(ad.description || '').slice(0, 120)}`;
+  const title       = esc(rawTitle);
+  const price       = esc(fmtPrice(ad.price));
+  const location    = esc(locationRaw);
+  const seller      = esc(sellerRaw);
+  const description = esc(rawDesc.slice(0, 320));
+  const cat         = esc(catRaw);
+  const photo       = photos[0] || `${SITE_URL}/logo.png`;
+  const pageUrl     = `${SITE_URL}/ad/${id}`;
+
+  const metaTitle = `${rawTitle} - ${fmtPrice(ad.price)} | Everything Market`;
+  const metaDesc  = cleanText(`${rawTitle} for sale in ${locationRaw}. ${fmtPrice(ad.price)}. ${rawDesc || 'Contact the seller on Everything Market.'}`, 155);
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: ad.title || 'Everything Market listing',
-    description: (ad.description || ad.desc || '').slice(0, 500),
-    image: photo,
+    name: rawTitle,
+    description: rawDesc || metaDesc,
+    image: photos.length ? photos : [photo],
     url: pageUrl,
-    category: ad.cat || ad.category || 'Marketplace listing',
+    category: catRaw,
+    itemCondition: schemaCondition(ad.condition),
     areaServed: {
       '@type': 'Country',
       name: 'South Africa',
     },
     offers: {
       '@type': 'Offer',
-      price: Number(ad.price) || 0,
       priceCurrency: 'ZAR',
       availability: 'https://schema.org/InStock',
       url: pageUrl,
       seller: {
         '@type': 'Person',
-        name: ad.seller || ad.contact_name || 'Everything Market seller',
+        name: sellerRaw,
       },
       availableAtOrFrom: {
         '@type': 'Place',
-        name: ad.loc || ad.location || 'South Africa',
+        name: locationRaw,
       },
     },
   };
+  if (Number.isFinite(rawPrice) && rawPrice > 0) {
+    jsonLd.offers.price = rawPrice;
+  }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
@@ -118,9 +173,11 @@ module.exports = async function handler(req, res) {
 <meta property="og:description" content="${esc(metaDesc)}">
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:image" content="${esc(photo)}">
+<meta property="og:image:alt" content="${title}">
 <meta property="og:site_name" content="Everything Market – Marketplace South Africa">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(metaTitle)}">
+<meta name="twitter:description" content="${esc(metaDesc)}">
 <meta name="twitter:image" content="${esc(photo)}">
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>
@@ -154,7 +211,7 @@ module.exports = async function handler(req, res) {
 </div>
 <a class="back" href="/">← Back to all ads</a>
 <div class="card">
-  ${photo !== 'https://www.everythingmarket.co.za/logo.png' ? `<img class="photo" src="${esc(photo)}" alt="${title}" loading="eager">` : ''}
+  ${photo !== `${SITE_URL}/logo.png` ? `<img class="photo" src="${esc(photo)}" alt="${title}" loading="eager">` : ''}
   <div class="body">
     <h1>${title}</h1>
     <div class="price">${price}</div>
@@ -164,7 +221,7 @@ module.exports = async function handler(req, res) {
       ${seller ? `<span class="chip">👤 ${seller}</span>` : ''}
     </div>
     ${description ? `<div class="desc">${description}</div>` : ''}
-    <a class="btn" href="/?ad=${esc(id)}">💬 Chat with Seller on Everything Market</a>
+    <a class="btn" href="/?ad=${esc(id)}">Chat with Seller on Everything Market</a>
   </div>
 </div>
 <script>
