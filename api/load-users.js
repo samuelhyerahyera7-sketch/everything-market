@@ -75,6 +75,21 @@ module.exports = async function handler(req, res) {
         }
       }
     });
+    /* suspended is an optional column added by supabase-suspend.sql — query it
+       separately so a not-yet-migrated database never breaks the user list. */
+    const suspendedByUserId = {};
+    const suspendedByEmail = {};
+    const rSuspended = await sbReq('GET', '/rest/v1/ads?select=user_id,contact_email&suspended=eq.true');
+    if (rSuspended.status === 200) {
+      try {
+        JSON.parse(rSuspended.body).forEach(row => {
+          if (row.user_id) suspendedByUserId[row.user_id] = true;
+          const e = String(row.contact_email || '').toLowerCase();
+          if (e) suspendedByEmail[e] = true;
+        });
+      } catch {}
+    }
+
     const authEmails = new Set(users.map(u => String(u.email || '').toLowerCase()).filter(Boolean));
     const userIds = users.map(u => u.id).filter(Boolean);
     let phoneByUser = {};
@@ -117,6 +132,8 @@ module.exports = async function handler(req, res) {
       last_sign_in: u.last_sign_in_at,
       confirmed:  !!u.confirmed_at,
       verified:   !!u.user_metadata?.verified,
+      suspended:  (!!u.banned_until && new Date(u.banned_until).getTime() > Date.now()) ||
+                  !!suspendedByUserId[u.id] || !!suspendedByEmail[String(u.email || '').toLowerCase()],
       auth_user:  true,
       source:     'registered',
       ad_count:   adCountsByUserId[u.id] || adCountsByEmail[String(u.email || '').toLowerCase()] || 0,
@@ -150,6 +167,7 @@ module.exports = async function handler(req, res) {
         last_sign_in: null,
         confirmed: false,
         verified: !!s.verified,
+        suspended: !!suspendedByEmail[s.email],
         auth_user: false,
         source: 'listing_seller',
         ad_count: adCountsByEmail[s.email] || 0,

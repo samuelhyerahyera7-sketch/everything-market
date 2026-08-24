@@ -98,6 +98,7 @@
   .badge-conf  { background: #e8f5e9; color: #2e7d32; }
   .badge-pend  { background: #fff3e0; color: #e65100; }
   .badge-rej   { background: #ffebee; color: #c62828; }
+  .badge-susp  { background: #ffebee; color: #c62828; }
   .btn-del { background: #c0392b; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
   .btn-del:hover { background: #922b21; }
   .btn-del:disabled { background: #ccc; cursor: default; }
@@ -106,6 +107,11 @@
   .btn-vfy.unvfy { background: #7B4800; }
   .btn-vfy.unvfy:hover { background: #5a3400; }
   .btn-vfy:disabled { background: #ccc; cursor: default; }
+  .btn-susp { background: #B71C1C; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; margin-right: 4px; }
+  .btn-susp:hover { background: #8E1515; }
+  .btn-susp.unsusp { background: #455A64; }
+  .btn-susp.unsusp:hover { background: #33444C; }
+  .btn-susp:disabled { background: #ccc; cursor: default; }
   .btn-info { background: #eef4ef; color: #0A3D22; border: 1px solid #cfe0d5; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; margin-right: 4px; }
   .btn-info:hover { background: #dcebe2; }
   .verify-mini { display: block; margin-top: 4px; color: #5f6b63; font-size: 11px; line-height: 1.35; }
@@ -679,6 +685,7 @@
         ? `<span class="badge badge-biz">Business</span>`
         : `<span class="badge badge-priv">Private</span>`;
       const spons = a.sponsored ? `<span class="badge badge-spons">⚡ Boosted</span>` : '';
+      const susp  = a.suspended ? `<span class="badge badge-susp">🚫 Suspended</span>` : '';
       const email = a.contact_email ? `<a href="mailto:${a.contact_email}" style="color:#1565C0;text-decoration:none;">${a.contact_email}</a>` : '–';
       const phone = a.phone ? `<a href="tel:${a.phone}" style="color:#1565C0;text-decoration:none;">${a.phone}</a>` : '–';
       return `<tr id="row-${a.id}">
@@ -686,7 +693,7 @@
         <td><div class="ad-title" title="${(a.title||'').replace(/"/g,'&quot;')}">${a.title || '–'}</div></td>
         <td>${a.cat || '–'}</td>
         <td>${price}</td>
-        <td>${a.seller || '–'} ${badge} ${spons}</td>
+        <td>${a.seller || '–'} ${badge} ${spons} ${susp}</td>
         <td>${email}</td>
         <td>${phone}</td>
         <td>${a.loc || '–'}</td>
@@ -764,18 +771,22 @@
         ? '<span class="badge badge-conf">✅ Verified Seller</span>'
         : confBadge;
       const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Mobile ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
+      const suspBadge = u.suspended ? '<span class="badge badge-susp">🚫 Suspended</span>' : '';
+      const suspBtn = `<button class="btn-susp ${u.suspended ? 'unsusp' : ''}" onclick="toggleSuspend('${u.id}',${!u.suspended},this)">${u.suspended ? 'Unsuspend' : 'Suspend'}</button>`;
       const actions = u.auth_user === false
         ? `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
           <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+          ${suspBtn}
           <span style="font-size:11px;color:#777;display:block;margin-top:4px;">No account — listing only</span>`
         : `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
           <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
+          ${suspBtn}
           <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>`;
       return `<tr id="urow-${u.id}">
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div></div></td>
         <td>${email}</td>
         <td>${phone}</td>
-        <td>${typeBadge} ${veriBadge}${veriMini}</td>
+        <td>${suspBadge} ${typeBadge} ${veriBadge}${veriMini}</td>
         <td>${u.ad_count || 0}</td>
         <td>${joined}</td>
         <td>${lastSeen}</td>
@@ -942,6 +953,37 @@
         alert('Failed: ' + (j.error || 'unknown'));
       }
     } catch(e) { btn.disabled = false; btn.textContent = newVerified ? 'Verify' : 'Unverify'; alert('Error: ' + e.message); }
+  }
+
+  async function toggleSuspend(userId, newSuspended, btn) {
+    const u = ALL_USERS.find(x => String(x.id) === String(userId));
+    if (newSuspended && !confirm(`Suspend ${u?.name || u?.email || 'this seller'}?\nThis blocks sign-in (if they have an account) and hides all their listings until unsuspended.`)) return;
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const r = await fetch('/api/suspend-user', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          userId,
+          suspended: newSuspended,
+          email: u?.email || '',
+          adminNote: newSuspended ? 'Suspended from admin users tab' : 'Unsuspended from admin users tab'
+        })
+      });
+      const j = await r.json();
+      if (j.ok) {
+        if (u) u.suspended = newSuspended;
+        ALL_ADS.forEach(a => {
+          if ((a.user_id && String(a.user_id) === String(userId)) || (u?.email && a.contact_email === u.email)) a.suspended = newSuspended;
+        });
+        renderUsersTable();
+        renderAdsTable();
+        updateStats();
+      } else {
+        btn.disabled = false; btn.textContent = newSuspended ? 'Suspend' : 'Unsuspend';
+        alert('Failed: ' + (j.error || 'unknown'));
+      }
+    } catch(e) { btn.disabled = false; btn.textContent = newSuspended ? 'Suspend' : 'Unsuspend'; alert('Error: ' + e.message); }
   }
 
   async function deleteUser(userId, email, btn) {
