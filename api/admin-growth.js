@@ -26,6 +26,35 @@ function sbGet(path) {
   });
 }
 
+/* Exact row count for an event_type, all-time — via PostgREST's count=exact
+   with a 0-row page, so this never transfers the underlying rows. This is
+   the number that only ever goes up, unlike the rolling 30-day totals. */
+function sbCount(eventType) {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: SB_HOST,
+      path: '/rest/v1/events?event_type=eq.' + encodeURIComponent(eventType) + '&select=id',
+      method: 'GET',
+      headers: {
+        apikey: SB_KEY,
+        Authorization: 'Bearer ' + SB_KEY,
+        Accept: 'application/json',
+        Prefer: 'count=exact',
+        Range: '0-0',
+      },
+    }, res => {
+      res.on('data', () => {});
+      res.on('end', () => {
+        const range = res.headers['content-range'] || '';
+        const total = Number(range.split('/')[1]);
+        resolve(Number.isFinite(total) ? total : 0);
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 function dayKey(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -61,7 +90,13 @@ module.exports = async function handler(req, res) {
     const since = daysAgo(30).toISOString();
     const path = '/rest/v1/events?created_at=gte.' + encodeURIComponent(since) +
       '&order=created_at.desc&limit=5000&select=event_type,created_at,payload';
-    const r = await sbGet(path);
+    const [r, allTimePageViews, allTimeAdViews, allTimeMessages, allTimePosts] = await Promise.all([
+      sbGet(path),
+      sbCount('page_view').catch(() => 0),
+      sbCount('ad_view').catch(() => 0),
+      sbCount('em_message').catch(() => 0),
+      sbCount('ad_post').catch(() => 0),
+    ]);
     if (r.status !== 200) return res.status(502).json({ error: 'DB error ' + r.status, detail: r.body });
 
     const rows = JSON.parse(r.body || '[]');
@@ -132,6 +167,10 @@ module.exports = async function handler(req, res) {
         recent7Views,
         previous7Views,
         growthRate,
+        allTimePageViews,
+        allTimeAdViews,
+        allTimeMessages,
+        allTimePosts,
       },
       byDay,
       byType,

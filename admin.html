@@ -551,6 +551,9 @@
           statCard('Page views 30 days', fmtNum(growth.pageViews30d || 0), fmtNum(growth.pageViewsToday || 0) + ' today'),
           statCard('Listing views 30 days', fmtNum(growth.adViews30d || 0), 'Ad detail opens'),
           statCard('7-day growth', (growth.growthRate || 0) + '%', fmtNum(growth.recent7Views || 0) + ' vs ' + fmtNum(growth.previous7Views || 0)),
+          statCard('All-time page views', fmtNum(growth.allTimePageViews || 0), 'Lifetime total, only ever goes up'),
+          statCard('All-time listing views', fmtNum(growth.allTimeAdViews || 0), 'Lifetime total, only ever goes up'),
+          statCard('All-time messages sent', fmtNum(growth.allTimeMessages || 0), 'Lifetime total, only ever goes up'),
         ],
         list: listItems([
           ...topAds.map(a => `<b>Top ad</b> ${adLink(a.key)} · ${fmtNum(a.count)} views`),
