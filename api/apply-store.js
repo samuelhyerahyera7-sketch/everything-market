@@ -48,7 +48,49 @@ function sanitizeText(value, max) {
   return String(value || '').trim().slice(0, max);
 }
 
-function sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, email }) {
+const ALLOWED_CERT_TYPES = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' };
+
+function parseCertificateUpload(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:([^;]+);base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw new Error('CIPC certificate must be a PDF, JPEG, or PNG file');
+  const contentType = match[1];
+  const ext = ALLOWED_CERT_TYPES[contentType];
+  if (!ext) throw new Error('CIPC certificate must be a PDF, JPEG, or PNG file');
+  const buffer = Buffer.from(match[2], 'base64');
+  if (!buffer.length) throw new Error('CIPC certificate file is empty');
+  if (buffer.length > 10 * 1024 * 1024) throw new Error('CIPC certificate must be 10 MB or smaller');
+  return { contentType, ext, buffer };
+}
+
+function uploadCertificate(userId, parsed) {
+  const path = `${userId}/${Date.now()}/cipc-certificate.${parsed.ext}`;
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: SB_HOST,
+      path: `/storage/v1/object/store-documents/${path.split('/').map(encodeURIComponent).join('/')}`,
+      method: 'POST',
+      headers: {
+        apikey: SB_KEY,
+        Authorization: 'Bearer ' + SB_KEY,
+        'Content-Type': parsed.contentType,
+        'x-upsert': 'true',
+        'Content-Length': parsed.buffer.length
+      }
+    }, res => {
+      let raw = '';
+      res.on('data', d => raw += d);
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) return reject(new Error('Could not upload CIPC certificate'));
+        resolve(path);
+      });
+    });
+    req.on('error', reject);
+    req.write(parsed.buffer);
+    req.end();
+  });
+}
+
+function sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, hasCertificate, email }) {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) return Promise.resolve();
   const payload = JSON.stringify({
@@ -60,6 +102,7 @@ function sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, em
       <p><strong>Applicant Email:</strong> ${email || 'Unknown'}</p>
       <p><strong>Store Type:</strong> ${storeType}</p>
       <p><strong>CIPC Registration Number:</strong> ${cipcNumber || '(not provided)'}</p>
+      <p><strong>CIPC Certificate:</strong> ${hasCertificate ? 'Uploaded — view in admin panel' : '(not provided)'}</p>
       <p><strong>Description:</strong> ${storeDescription || '(none)'}</p>
       <hr>
       <p>Review this application in the <a href="https://everythingmarket.co.za/admin">admin panel</a>.</p>`
@@ -108,6 +151,16 @@ module.exports = async function handler(req, res) {
   if (!storeName) return res.status(400).json({ error: 'Store name is required' });
   if (!acceptedTerms) return res.status(400).json({ error: 'Please accept the Store Terms & Conditions before submitting.' });
 
+  let cipcCertificatePath = null;
+  if (body.cipc_certificate) {
+    try {
+      const parsed = parseCertificateUpload(body.cipc_certificate);
+      cipcCertificatePath = await uploadCertificate(user.id, parsed);
+    } catch (e) {
+      return res.status(400).json({ error: e.message || 'Could not upload CIPC certificate' });
+    }
+  }
+
   const existingRes = await request(
     'GET',
     `/rest/v1/store_applications?user_id=eq.${encodeURIComponent(user.id)}&select=id,status&limit=1`,
@@ -139,6 +192,7 @@ module.exports = async function handler(req, res) {
       store_description: storeDescription,
       store_type: storeType,
       cipc_number: cipcNumber,
+      cipc_certificate_path: cipcCertificatePath,
       status: 'pending'
     },
     SB_KEY,
@@ -150,7 +204,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Could not submit application. Please try again.' });
   }
 
-  await sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, email: user.email });
+  await sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, hasCertificate: !!cipcCertificatePath, email: user.email });
 
   return res.status(200).json({ ok: true });
 };

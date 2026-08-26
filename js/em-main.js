@@ -3020,6 +3020,11 @@ function openApplyStoreModal() {
         <label class="em-post-label" for="apply-store-cipc">CIPC Registration Number <span style="font-weight:400;color:var(--muted);">(if a registered company)</span></label>
         <input id="apply-store-cipc" class="em-post-input" placeholder="e.g. 2024/123456/07" maxlength="30">
       </div>
+      <div class="em-post-field" style="margin-bottom:14px;">
+        <label class="em-post-label" for="apply-store-cipc-file">CIPC Certificate <span style="font-weight:400;color:var(--muted);">(PDF, JPEG, or PNG — optional)</span></label>
+        <input id="apply-store-cipc-file" class="em-post-input" type="file" accept="application/pdf,image/jpeg,image/png">
+        <div id="apply-store-cipc-file-err" class="em-post-error" style="display:none;margin-top:6px;"></div>
+      </div>
       <div style="background:var(--surf2);border:1px solid var(--border-lt);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
         <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Store Terms &amp; Conditions</div>
         <ul style="margin:0 0 0 18px;padding:0;color:var(--muted);font-size:12.5px;line-height:1.55;">
@@ -3047,14 +3052,21 @@ async function submitStoreApplication(btn) {
   const desc = document.getElementById('apply-store-desc')?.value.trim();
   const type = document.getElementById('apply-store-type')?.value;
   const cipc = document.getElementById('apply-store-cipc')?.value.trim();
+  const cipcFile = document.getElementById('apply-store-cipc-file')?.files[0];
   const acceptedTerms = !!document.getElementById('apply-store-terms')?.checked;
   const err = document.getElementById('apply-store-err');
+  const fileErr = document.getElementById('apply-store-cipc-file-err');
   const fail = msg => {
     if (err) { err.textContent = msg; err.style.display = 'block'; }
     else toast(msg);
   };
   if (!name) { fail('Please enter a store name.'); return; }
   if (!acceptedTerms) { fail('Please accept the Store Terms & Conditions before submitting.'); return; }
+  if (fileErr) fileErr.style.display = 'none';
+  if (cipcFile && cipcFile.size > 10 * 1024 * 1024) {
+    if (fileErr) { fileErr.textContent = 'CIPC certificate must be 10 MB or smaller.'; fileErr.style.display = 'block'; }
+    return;
+  }
 
   const sess = _getSession();
   if (!sess) { openSignInModal('Sign in to apply for a store.'); return; }
@@ -3066,10 +3078,19 @@ async function submitStoreApplication(btn) {
   try {
     const token = (await _sb.auth.getSession()).data.session?.access_token;
     if (!token) throw new Error('Please sign in again before applying.');
+    let cipcCertificate = null;
+    if (cipcFile) {
+      cipcCertificate = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(cipcFile);
+      });
+    }
     const r = await fetch('/api/apply-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type, cipc_number: cipc, accepted_terms: acceptedTerms })
+      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type, cipc_number: cipc, cipc_certificate: cipcCertificate, accepted_terms: acceptedTerms })
     });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {

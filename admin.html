@@ -1300,8 +1300,11 @@
            <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:4px;">Delete Store</button>`
         : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>
            <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:8px;">Delete Store</button>`;
+      const cipcCert = a.cipc_certificate_path
+        ? `<button class="btn-info" onclick="openStoreDocument('${escJs(a.cipc_certificate_path)}')" style="margin-top:4px;">View CIPC Certificate</button>`
+        : '';
       return `<tr id="store-row-${escHtml(a.id)}">
-        <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}${a.cipc_number ? ' · CIPC ' + escHtml(a.cipc_number) : ''}</div></td>
+        <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}${a.cipc_number ? ' · CIPC ' + escHtml(a.cipc_number) : ''}</div>${cipcCert}</td>
         <td>${a.user_email ? `<a href="mailto:${escHtml(a.user_email)}" style="color:#1565C0;text-decoration:none;">${escHtml(a.user_email)}</a>` : '–'}</td>
         <td style="max-width:280px;line-height:1.45;">${desc}</td>
         <td>${storeStatusBadge(a.status)}</td>
@@ -1314,6 +1317,19 @@
         <thead><tr><th>Store</th><th>Applicant</th><th>Description</th><th>Status</th><th>Applied</th><th>Action</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
+  }
+
+  async function openStoreDocument(path) {
+    try {
+      const r = await fetch('/api/admin-store-document?path=' + encodeURIComponent(path), { headers: adminHeaders() });
+      if (!r.ok) throw new Error('Could not open document');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch(e) {
+      alert(e.message || 'Could not open CIPC certificate');
+    }
   }
 
   async function reviewStoreApplication(storeId, action, btn) {
