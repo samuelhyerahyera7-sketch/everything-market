@@ -204,6 +204,7 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('ads')">📋 Ads</div>
     <div class="tab" onclick="switchTab('users')">👥 Users</div>
+    <div class="tab" onclick="switchTab('reports')">⚑ Reports</div>
     <div class="tab" onclick="switchTab('stores')">🏪 Store Requests & Deletion</div>
     <div class="tab" onclick="switchTab('chats')">💬 Chats</div>
     <div class="tab" onclick="switchTab('growth')">📈 Growth</div>
@@ -257,6 +258,22 @@
     </div>
   </div>
 
+  <!-- ── REPORTS TAB ── -->
+  <div class="tab-content" id="tab-reports">
+    <div class="filter-bar">
+      <select id="report-status-filter" onchange="renderReportsTable()">
+        <option value="open">Open</option>
+        <option value="">All statuses</option>
+        <option value="actioned">Actioned</option>
+        <option value="dismissed">Dismissed</option>
+      </select>
+      <button class="btn-info" onclick="loadReports()">Refresh</button>
+    </div>
+    <div class="tbl-wrap">
+      <div id="reports-wrap"><div class="loading">Loading reports…</div></div>
+    </div>
+  </div>
+
   <!-- ── STORE REQUESTS TAB ── -->
   <div class="tab-content" id="tab-stores">
     <div class="filter-bar">
@@ -298,6 +315,7 @@
 <script>
   let ALL_ADS   = [];
   let ALL_USERS = [];
+  let ALL_REPORTS = [];
   let ALL_CHATS = [];
   let ALL_STORE_APPS = [];
   let ALL_GROWTH = null;
@@ -350,9 +368,10 @@
 
   /* ── Tab switching ── */
   function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','stores','chats','growth'][i] === name));
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['ads','users','reports','stores','chats','growth'][i] === name));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'reports') renderReportsTable();
     if (name === 'stores') renderStoreApplications();
     if (name === 'growth') renderGrowthPanels();
   }
@@ -361,6 +380,7 @@
   async function loadAll() {
     loadAds();
     loadUsers();
+    loadReports();
     loadStoreApplications();
     loadChats();
     loadGrowth();
@@ -701,7 +721,10 @@
         <td>${phone}</td>
         <td>${a.loc || '–'}</td>
         <td>${date}</td>
-        <td><button class="btn-del" onclick="deleteAd('${a.id}',this)">Delete</button></td>
+        <td>
+          <button class="btn-susp ${a.suspended ? 'unsusp' : ''}" onclick="moderateAd('${a.id}','${a.suspended ? 'unsuspend' : 'suspend'}',this)">${a.suspended ? 'Unsuspend' : 'Suspend'}</button>
+          <button class="btn-del" onclick="moderateAd('${a.id}','delete',this)">Delete</button>
+        </td>
       </tr>`;
     }).join('');
     document.getElementById('ads-wrap').innerHTML = `
@@ -711,18 +734,112 @@
       </table>`;
   }
 
-  async function deleteAd(id, btn) {
-    if (!confirm('Delete this ad? This cannot be undone.')) return;
+  /* action: 'suspend' | 'unsuspend' | 'delete'. Suspending or deleting an ad
+     with a reason emails the seller that their listing was actioned for a
+     policy violation (see api/moderate-ad.js). report_id, when passed,
+     marks the originating report as actioned too. */
+  async function moderateAd(id, action, btn, report_id) {
+    let reason = '';
+    if (action === 'suspend' || action === 'delete') {
+      const verb = action === 'suspend' ? 'suspending' : 'deleting';
+      reason = prompt(`Reason for ${verb} this ad? This is emailed to the seller as the policy violation notice.`, 'This listing does not meet Everything Market policy guidelines.') || '';
+      if (!reason.trim()) return;
+    } else if (!confirm('Unsuspend this ad and restore it to the marketplace?')) {
+      return;
+    }
+    const prevLabel = btn.textContent;
     btn.disabled = true; btn.textContent = '…';
     try {
-      const r = await fetch('/api/delete-ad', { method: 'POST', headers: adminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ id }) });
-      const j = await r.json();
-      if (j.ok) {
+      const r = await fetch('/api/moderate-ad', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ id, action, reason, report_id })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j.error || 'Action failed');
+      if (action === 'delete') {
         ALL_ADS = ALL_ADS.filter(a => String(a.id) !== String(id));
         document.getElementById('row-' + id)?.remove();
-        updateStats();
-      } else { btn.disabled = false; btn.textContent = 'Delete'; alert('Delete failed: ' + (j.error || 'unknown')); }
-    } catch(e) { btn.disabled = false; btn.textContent = 'Delete'; alert('Error: ' + e.message); }
+      } else {
+        const a = ALL_ADS.find(x => String(x.id) === String(id));
+        if (a) a.suspended = action === 'suspend';
+        renderAdsTable();
+      }
+      updateStats();
+      if (report_id) { ALL_REPORTS = ALL_REPORTS.filter(rp => String(rp.id) !== String(report_id)); renderReportsTable(); }
+    } catch(e) {
+      btn.disabled = false; btn.textContent = prevLabel;
+      alert(e.message || 'Action failed');
+    }
+  }
+
+  /* ── REPORTS ── */
+  async function loadReports() {
+    try {
+      const r = await fetch('/api/load-reports', { headers: adminHeaders() });
+      ALL_REPORTS = await r.json();
+      if (document.getElementById('tab-reports').classList.contains('active')) renderReportsTable();
+    } catch(e) {
+      document.getElementById('reports-wrap').innerHTML = `<div class="empty">Could not load reports: ${escHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderReportsTable() {
+    const wrap = document.getElementById('reports-wrap');
+    if (!wrap) return;
+    const status = document.getElementById('report-status-filter')?.value ?? 'open';
+    const reports = ALL_REPORTS.filter(rp => !status || (rp.status || 'open') === status)
+      .slice()
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    if (!reports.length) { wrap.innerHTML = '<div class="empty">No reports found.</div>'; return; }
+    const rows = reports.map(rp => {
+      const ad = ALL_ADS.find(a => String(a.id) === String(rp.ad_id));
+      const when = rp.created_at ? new Date(rp.created_at).toLocaleString('en-ZA') : '–';
+      const statusBadge = rp.status === 'actioned'
+        ? '<span class="badge badge-conf">Actioned</span>'
+        : rp.status === 'dismissed'
+        ? '<span class="badge badge-priv">Dismissed</span>'
+        : '<span class="badge badge-pend">Open</span>';
+      const susp = ad?.suspended ? `<span class="badge badge-susp">🚫 Suspended</span>` : '';
+      const actions = (rp.status || 'open') === 'open'
+        ? `<button class="btn-susp" onclick="moderateAd('${escJs(rp.ad_id)}','suspend',this,'${escJs(rp.id)}')">Suspend</button>
+           <button class="btn-del" onclick="moderateAd('${escJs(rp.ad_id)}','delete',this,'${escJs(rp.id)}')">Delete</button>
+           <button class="btn-info" onclick="dismissReport('${escJs(rp.id)}',this)">Dismiss</button>`
+        : `<span style="font-size:11px;color:#777;">${escHtml(rp.admin_action || rp.status)}${rp.resolved_at ? ' · ' + new Date(rp.resolved_at).toLocaleDateString('en-ZA') : ''}</span>`;
+      return `<tr id="report-row-${escHtml(rp.id)}">
+        <td><div class="ad-title" title="${(rp.ad_title||'').replace(/"/g,'&quot;')}">${escHtml(rp.ad_title || ad?.title || 'Ad #' + rp.ad_id)}</div>${susp}</td>
+        <td style="max-width:280px;line-height:1.45;">${escHtml(rp.reason || '–')}</td>
+        <td>${ad?.seller ? escHtml(ad.seller) : '–'}${ad?.contact_email ? `<br><a href="mailto:${escHtml(ad.contact_email)}" style="color:#1565C0;text-decoration:none;font-size:11px;">${escHtml(ad.contact_email)}</a>` : ''}</td>
+        <td>${when}</td>
+        <td>${statusBadge}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Reported Ad</th><th>Reason</th><th>Seller</th><th>Reported</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  async function dismissReport(reportId, btn) {
+    if (!confirm('Dismiss this report without actioning the ad?')) return;
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const r = await fetch('/api/resolve-report', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ report_id: reportId })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j.error || 'Could not dismiss report');
+      const rp = ALL_REPORTS.find(x => String(x.id) === String(reportId));
+      if (rp) rp.status = 'dismissed';
+      renderReportsTable();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Dismiss';
+      alert(e.message || 'Could not dismiss report');
+    }
   }
 
   /* ── USERS ── */
@@ -810,11 +927,16 @@
     const manualFiles = v.manual_files || {};
     const idPhotoPath = manualFiles.id_photo?.path || '';
     const selfiePhotoPath = manualFiles.selfie_photo?.path || '';
+    const hasAccount = u.auth_user !== false;
     const reviewFiles = (idPhotoPath || selfiePhotoPath) ? `
           <div class="verify-row"><span>Review photos</span><strong>
             ${idPhotoPath ? `<button class="btn-info" onclick="openVerificationFile('${escJs(idPhotoPath)}')">Open ID Photo</button>` : ''}
             ${selfiePhotoPath ? `<button class="btn-info" onclick="openVerificationFile('${escJs(selfiePhotoPath)}')">Open Selfie</button>` : ''}
-          </strong></div>` : '';
+          </strong></div>`
+      : `<div class="verify-row"><span>Review photos</span><strong style="color:#b45309;">
+            No ID/selfie on file${hasAccount ? '' : ' (guest seller, no account to attach evidence to)'}
+            ${hasAccount ? ` &nbsp;<button class="btn-info" onclick="openAdminPhotoUpload('${escJs(u.id)}')">Attach Photos</button>` : ''}
+          </strong></div>`;
     const ads = ALL_ADS.filter(a => a.contact_email === u.email || (a.user_id && String(a.user_id) === String(u.id)));
     const level = v.level || (u.verified ? 'Verified Seller' : 'Not Verified');
     const latestAd = ads
@@ -872,6 +994,70 @@
 
   function closeVerifyModal() {
     document.getElementById('verify-modal')?.remove();
+  }
+
+  /* Lets an admin attach ID/selfie evidence received outside the app
+     (WhatsApp, email, etc.) so it becomes viewable via openVerificationFile
+     like a normal self-serve submission. Registered users only. */
+  function openAdminPhotoUpload(userId) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'admin-modal-backdrop';
+    backdrop.id = 'upload-modal';
+    backdrop.onclick = e => { if (e.target === backdrop) backdrop.remove(); };
+    backdrop.innerHTML = `
+      <div class="admin-modal">
+        <div class="admin-modal-head">
+          <h3>Attach Verification Photos</h3>
+          <button class="admin-modal-close" onclick="document.getElementById('upload-modal').remove()">×</button>
+        </div>
+        <div class="admin-modal-body">
+          <p style="font-size:12.5px;color:#777;margin:0 0 14px;">Upload the ID and selfie photos received outside the app (e.g. WhatsApp). They'll appear in this seller's review photos going forward.</p>
+          <div class="verify-row"><span>ID photo</span><input type="file" accept="image/jpeg,image/png,image/webp" id="up-id-file"></div>
+          <div class="verify-row"><span>Selfie photo</span><input type="file" accept="image/jpeg,image/png,image/webp" id="up-selfie-file"></div>
+          <div id="up-err" style="color:#b91c1c;font-size:12px;margin-top:10px;display:none;"></div>
+          <div class="verify-actions">
+            <button class="btn-vfy" id="up-submit-btn" onclick="submitAdminPhotoUpload('${escJs(userId)}')">Attach Photos</button>
+            <button class="btn-info" onclick="document.getElementById('upload-modal').remove()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function submitAdminPhotoUpload(userId) {
+    const idFile = document.getElementById('up-id-file').files[0];
+    const selfieFile = document.getElementById('up-selfie-file').files[0];
+    const errEl = document.getElementById('up-err');
+    errEl.style.display = 'none';
+    if (!idFile || !selfieFile) { errEl.textContent = 'Both photos are required.'; errEl.style.display = ''; return; }
+    const btn = document.getElementById('up-submit-btn');
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    try {
+      const [idDataUrl, selfieDataUrl] = await Promise.all([readFileAsDataUrl(idFile), readFileAsDataUrl(selfieFile)]);
+      const r = await fetch('/api/admin-upload-verification-photo', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ userId, idPhoto: { dataUrl: idDataUrl }, selfiePhoto: { dataUrl: selfieDataUrl } })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j.error || 'Upload failed');
+      document.getElementById('upload-modal')?.remove();
+      await loadUsers();
+      showUserVerification(userId);
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Attach Photos';
+      errEl.textContent = e.message || 'Upload failed';
+      errEl.style.display = '';
+    }
   }
 
   async function showVerificationSetup() {
