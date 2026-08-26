@@ -3016,6 +3016,10 @@ function openApplyStoreModal() {
           <option value="other">Other</option>
         </select>
       </div>
+      <div class="em-post-field" style="margin-bottom:14px;">
+        <label class="em-post-label" for="apply-store-cipc">CIPC Registration Number <span style="font-weight:400;color:var(--muted);">(if a registered company)</span></label>
+        <input id="apply-store-cipc" class="em-post-input" placeholder="e.g. 2024/123456/07" maxlength="30">
+      </div>
       <div style="background:var(--surf2);border:1px solid var(--border-lt);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
         <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Store Terms &amp; Conditions</div>
         <ul style="margin:0 0 0 18px;padding:0;color:var(--muted);font-size:12.5px;line-height:1.55;">
@@ -3042,6 +3046,7 @@ async function submitStoreApplication(btn) {
   const name = document.getElementById('apply-store-name')?.value.trim();
   const desc = document.getElementById('apply-store-desc')?.value.trim();
   const type = document.getElementById('apply-store-type')?.value;
+  const cipc = document.getElementById('apply-store-cipc')?.value.trim();
   const acceptedTerms = !!document.getElementById('apply-store-terms')?.checked;
   const err = document.getElementById('apply-store-err');
   const fail = msg => {
@@ -3064,7 +3069,7 @@ async function submitStoreApplication(btn) {
     const r = await fetch('/api/apply-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type, accepted_terms: acceptedTerms })
+      body: JSON.stringify({ store_name: name, store_description: desc, store_type: type, cipc_number: cipc, accepted_terms: acceptedTerms })
     });
     const json = await r.json().catch(() => ({}));
     if (!r.ok) {

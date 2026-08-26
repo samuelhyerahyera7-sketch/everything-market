@@ -48,7 +48,7 @@ function sanitizeText(value, max) {
   return String(value || '').trim().slice(0, max);
 }
 
-function sendAdminEmail({ storeName, storeDescription, storeType, email }) {
+function sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, email }) {
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) return Promise.resolve();
   const payload = JSON.stringify({
@@ -59,6 +59,7 @@ function sendAdminEmail({ storeName, storeDescription, storeType, email }) {
       <p><strong>Store Name:</strong> ${storeName}</p>
       <p><strong>Applicant Email:</strong> ${email || 'Unknown'}</p>
       <p><strong>Store Type:</strong> ${storeType}</p>
+      <p><strong>CIPC Registration Number:</strong> ${cipcNumber || '(not provided)'}</p>
       <p><strong>Description:</strong> ${storeDescription || '(none)'}</p>
       <hr>
       <p>Review this application in the <a href="https://everythingmarket.co.za/admin">admin panel</a>.</p>`
@@ -101,6 +102,7 @@ module.exports = async function handler(req, res) {
   const storeType = ['retail', 'dealership', 'services', 'wholesale', 'other'].includes(body.store_type)
     ? body.store_type
     : 'retail';
+  const cipcNumber = sanitizeText(body.cipc_number, 30);
   const acceptedTerms = body.accepted_terms === true;
 
   if (!storeName) return res.status(400).json({ error: 'Store name is required' });
@@ -136,6 +138,7 @@ module.exports = async function handler(req, res) {
       store_name: storeName,
       store_description: storeDescription,
       store_type: storeType,
+      cipc_number: cipcNumber,
       status: 'pending'
     },
     SB_KEY,
@@ -147,7 +150,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Could not submit application. Please try again.' });
   }
 
-  await sendAdminEmail({ storeName, storeDescription, storeType, email: user.email });
+  await sendAdminEmail({ storeName, storeDescription, storeType, cipcNumber, email: user.email });
 
   return res.status(200).json({ ok: true });
 };

@@ -893,14 +893,17 @@
       const veriMini = `<span class="verify-mini">${escHtml(level)} · Email ${v.email_verified || u.confirmed ? 'OK' : 'No'} · Mobile ${v.phone_verified ? 'OK' : 'No'} · ID ${escHtml(v.identity_status || 'none')}</span>`;
       const suspBadge = u.suspended ? '<span class="badge badge-susp">🚫 Suspended</span>' : '';
       const suspBtn = `<button class="btn-susp ${u.suspended ? 'unsusp' : ''}" onclick="toggleSuspend('${u.id}',${!u.suspended},this)">${u.suspended ? 'Unsuspend' : 'Suspend'}</button>`;
+      const msgBtn = u.email ? `<button class="btn-info" onclick="openAdminMessageModal('${escJs(u.email)}','${escJs(u.name || u.email)}')">Message</button>` : '';
       const actions = u.auth_user === false
         ? `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
           <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
           ${suspBtn}
+          ${msgBtn}
           <span style="font-size:11px;color:#777;display:block;margin-top:4px;">No account — listing only</span>`
         : `<button class="btn-info" onclick="showUserVerification('${u.id}')">Details</button>
           <button class="btn-vfy ${u.verified ? 'unvfy' : ''}" onclick="toggleVerify('${u.id}',${!u.verified},this)">${u.verified ? 'Unverify' : 'Verify'}</button>
           ${suspBtn}
+          ${msgBtn}
           <button class="btn-del" onclick="deleteUser('${u.id}','${(u.email||'').replace(/'/g,"\\'")}',this)">Delete</button>`;
       return `<tr id="urow-${u.id}">
         <td><div style="display:flex;align-items:center;gap:8px;"><div class="u-avatar">${initials}</div><div style="font-weight:700;font-size:13px;">${u.name || '–'}</div></div></td>
@@ -1056,6 +1059,58 @@
     } catch(e) {
       btn.disabled = false; btn.textContent = 'Attach Photos';
       errEl.textContent = e.message || 'Upload failed';
+      errEl.style.display = '';
+    }
+  }
+
+  /* Sends a message that lands directly in the user's own message inbox
+     (same events table / em_message row a normal buyer-seller message
+     uses), plus the usual email notification. See api/admin-send-message.js. */
+  function openAdminMessageModal(email, name, adTitle, adId) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'admin-modal-backdrop';
+    backdrop.id = 'admin-msg-modal';
+    backdrop.onclick = e => { if (e.target === backdrop) backdrop.remove(); };
+    backdrop.innerHTML = `
+      <div class="admin-modal">
+        <div class="admin-modal-head">
+          <h3>Message ${escHtml(name || email)}</h3>
+          <button class="admin-modal-close" onclick="document.getElementById('admin-msg-modal').remove()">×</button>
+        </div>
+        <div class="admin-modal-body">
+          <p style="font-size:12.5px;color:#777;margin:0 0 14px;">This lands directly in ${escHtml(name || email)}'s Everything Market message inbox, and they'll get an email notification.</p>
+          <textarea id="admin-msg-text" class="em-post-input" style="width:100%;height:100px;resize:vertical;box-sizing:border-box;" placeholder="Type your message…"></textarea>
+          <div id="admin-msg-err" style="color:#b91c1c;font-size:12px;margin-top:10px;display:none;"></div>
+          <div class="verify-actions">
+            <button class="btn-vfy" id="admin-msg-submit-btn" onclick="submitAdminMessage('${escJs(email)}','${escJs(adTitle || '')}','${escJs(adId || '')}')">Send</button>
+            <button class="btn-info" onclick="document.getElementById('admin-msg-modal').remove()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    setTimeout(() => document.getElementById('admin-msg-text')?.focus(), 80);
+  }
+
+  async function submitAdminMessage(email, adTitle, adId) {
+    const text = document.getElementById('admin-msg-text')?.value.trim();
+    const errEl = document.getElementById('admin-msg-err');
+    errEl.style.display = 'none';
+    if (!text) { errEl.textContent = 'Please write a message.'; errEl.style.display = ''; return; }
+    const btn = document.getElementById('admin-msg-submit-btn');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const r = await fetch('/api/admin-send-message', {
+        method: 'POST',
+        headers: adminHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ recipient_email: email, message: text, ad_title: adTitle || undefined, ad_id: adId || undefined })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j.error || 'Could not send message');
+      document.getElementById('admin-msg-modal')?.remove();
+      loadChats();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Send';
+      errEl.textContent = e.message || 'Could not send message';
       errEl.style.display = '';
     }
   }
@@ -1246,7 +1301,7 @@
         : `<span style="font-size:11px;color:#777;">Reviewed ${reviewed}</span>
            <button class="btn-del" onclick="deleteStore('${escJs(a.id)}',this)" style="background:#7f1d1d;margin-left:8px;">Delete Store</button>`;
       return `<tr id="store-row-${escHtml(a.id)}">
-        <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}</div></td>
+        <td><strong>${escHtml(a.store_name || 'Unnamed store')}</strong><div style="font-size:11px;color:#777;margin-top:3px;">${escHtml(a.store_type || 'retail')}${a.cipc_number ? ' · CIPC ' + escHtml(a.cipc_number) : ''}</div></td>
         <td>${a.user_email ? `<a href="mailto:${escHtml(a.user_email)}" style="color:#1565C0;text-decoration:none;">${escHtml(a.user_email)}</a>` : '–'}</td>
         <td style="max-width:280px;line-height:1.45;">${desc}</td>
         <td>${storeStatusBadge(a.status)}</td>
@@ -1373,6 +1428,10 @@
               From: <strong>${c.sender_email}</strong> → To: <strong>${c.recipient_email}</strong>
             </div>
             ${msgs}
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;">
+              ${c.sender_email ? `<button class="btn-info" onclick="event.stopPropagation();openAdminMessageModal('${escJs(c.sender_email)}','${escJs(c.sender_name || c.sender_email)}','${escJs(c.ad_title || '')}','${escJs(c.ad_id || '')}')">Message ${escHtml(c.sender_name || c.sender_email)}</button>` : ''}
+              ${c.recipient_email ? `<button class="btn-info" onclick="event.stopPropagation();openAdminMessageModal('${escJs(c.recipient_email)}','${escJs(c.seller || c.recipient_email)}','${escJs(c.ad_title || '')}','${escJs(c.ad_id || '')}')">Message ${escHtml(c.seller || c.recipient_email)}</button>` : ''}
+            </div>
           </div>
         </div>`;
     }).join('');
