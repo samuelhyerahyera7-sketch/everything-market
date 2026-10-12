@@ -184,7 +184,17 @@ const _ART_ICON = {
   apt:      { emoji:'🏢', color:'#E3F2FD', icon:'M3 21V7l9-4 9 4v14H3zM3 21h18M9 21V9M15 21V9M9 9h6M9 13h6M9 17h6' },
 };
 
+function _renderSoldBadge(el, l) {
+  if (!l.soldAt || el.querySelector('.em-sold-badge')) return;
+  if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+  const b = document.createElement('span');
+  b.className = 'em-sold-badge';
+  b.textContent = 'SOLD';
+  el.appendChild(b);
+}
+
 function _renderImg(el, l, tappable) {
+  _renderSoldBadge(el, l);
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
     img.src = l.photos[0];
@@ -1065,7 +1075,7 @@ function renderCatResults(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${l.soldAt ? 'Sold' : 'Contact Seller'}</button>
         </div>
       </div>`;
     container.appendChild(card);
@@ -1274,8 +1284,8 @@ function renderBB(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
-          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${l.soldAt ? 'Sold' : 'Contact Seller'}</button>
+          ${l.neg && !l.soldAt ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
     grid.appendChild(card);
@@ -1328,8 +1338,8 @@ function renderGT(data) {
           ${timeStr ? `<span>${ICO.time} ${timeStr}</span>` : ''}
         </div>
         <div class="bb-actions">
-          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Contact Seller</button>
-          ${l.neg ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
+          <button class="btn-view" onclick="event.stopPropagation();openBuyNow(LISTINGS.find(x=>String(x.id)==='${l.id}'))">${l.soldAt ? 'Sold' : 'Contact Seller'}</button>
+          ${l.neg && !l.soldAt ? `<button class="btn-offer" onclick="event.stopPropagation();openMakeOffer(LISTINGS.find(x=>String(x.id)==='${l.id}'))">Make Offer</button>` : ''}
         </div>
       </div>`;
     list.appendChild(card);
@@ -2464,6 +2474,7 @@ function openBuyNow(listing) {
   window._emCurrentPhotos = photos;
   const galleryHTML = photos.length > 1
     ? `<div class="em-gallery" id="em-gallery">
+        ${listing.soldAt ? '<span class="em-sold-badge">SOLD</span>' : ''}
         <div class="em-gallery-track" id="em-gallery-track">
           ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen(window._emCurrentPhotos[${i}],window._emCurrentPhotos,${i})" onerror="this.style.display='none'"></div>`).join('')}
         </div>
@@ -2486,6 +2497,7 @@ function openBuyNow(listing) {
       <div class="em-ad-detail-title">${listing.title}</div>
       <div class="em-ad-detail-meta">
         ${listing.cond !== 'N/A' ? `<span class="gt-chip">${listing.cond}</span>` : ''}
+        ${listing.soldAt ? `<span class="gt-chip em-sold-chip">SOLD</span>` : ''}
         <span class="gt-chip">${_fmtLoc(listing.loc)}</span>
         <span class="gt-chip">${fmtTime(listing.postedAt)}</span>
         <span class="gt-chip em-view-count" id="modal-view-count"></span>
@@ -2504,6 +2516,8 @@ function openBuyNow(listing) {
       </button>
     </div>
     <div class="em-modal-divider"></div>
+    ${listing.soldAt && !isOwner ? `
+    <div class="em-sold-notice">This item has been sold. <a href="#" onclick="event.preventDefault();openSellerProfile('${listing.seller.replace(/'/g,"\\'")}','${listing.userId||''}','${listing.sellerType}',${!!listing.verified},'${(listing.contactEmail||'').replace(/'/g,"\\'")}')">See the seller's other listings &rarr;</a></div>` : `
     <div style="padding:0 20px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact Seller</div>
     <div class="em-contact-btns">
       <button class="em-contact-btn chat" onclick="showMessageScreen('${listing.id}','${listing.title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${(listing.contactEmail||'').replace(/'/g,"\\'")}','${listing.seller.replace(/'/g,"\\'")}')">
@@ -2511,6 +2525,7 @@ function openBuyNow(listing) {
         <div><span>Chat on Everything Market</span><span class="em-contact-btn-sub">Messages stay on-site for safer monitoring</span></div>
       </button>
     </div>
+    `}
     <div style="padding:10px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <button onclick="navigator.clipboard.writeText('${adUrl}').then(()=>toast('Link copied!'))" style="background:var(--surf3);border:none;border-radius:10px;padding:11px 14px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
@@ -4704,6 +4719,7 @@ function openMyAds() {
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
               <button class="em-myad-edit" onclick="event.stopPropagation();openEditAdModal('${l.id}')" title="Edit ad">&#x270E; Edit</button>
+              <button class="em-myad-sold" onclick="event.stopPropagation();_toggleSoldMyAd('${l.id}')" title="${l.soldAt ? 'Relist this ad' : 'Mark as sold'}">${l.soldAt ? '&#x21BA; Relist' : '&#x2713; Sold'}</button>
               <button class="em-myad-del"  onclick="event.stopPropagation();_deleteMyAd('${l.id}')"  title="Delete ad">&#x2715;</button>
             </div>
           </div>`).join('')
@@ -4833,6 +4849,37 @@ async function _startSponsorPayment(adId, adTitle) {
 window._selectSponsorPlan  = _selectSponsorPlan;
 window._startSponsorPayment = _startSponsorPayment;
 window.openSponsorModal = openSponsorModal;
+
+window._toggleSoldMyAd = async function(id) {
+  const listing = LISTINGS.find(l => String(l.id) === String(id));
+  if (!listing) return;
+  const sold = !listing.soldAt;
+  if (sold && !confirm('Mark this item as sold? Buyers will see a SOLD badge and can no longer contact you about it. After 7 days it is hidden from the marketplace.')) return;
+
+  const prev = listing.soldAt;
+  listing.soldAt = sold ? Date.now() : null;
+  _saveUserAds();
+  renderAll('all');
+  openMyAds();
+
+  try {
+    const token = (await _sb.auth.getSession()).data.session?.access_token || '';
+    const r = await fetch('/api/edit-ad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ id, sold })
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'Save failed.');
+    toast(sold ? 'Marked as sold' : 'Ad relisted');
+  } catch (e) {
+    listing.soldAt = prev;
+    _saveUserAds();
+    renderAll('all');
+    openMyAds();
+    toast('Could not update: ' + e.message);
+  }
+};
 
 window._deleteMyAd = async function(id) {
   if (!confirm('Delete this listing? This cannot be undone.')) return;

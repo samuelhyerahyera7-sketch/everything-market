@@ -205,6 +205,7 @@
       userId: row.user_id || null,
       sponsored: !!row.sponsored,
       sponsoredUntil: row.sponsored_until ? new Date(row.sponsored_until).getTime() : null,
+      soldAt: row.sold_at ? new Date(row.sold_at).getTime() : null,
     };
   }
 

@@ -67,7 +67,7 @@ module.exports = async function handler(req, res) {
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; }
   catch { return res.status(400).json({ error: 'Invalid JSON' }); }
 
-  const { id, title, description, price, photos, cond, neg } = body;
+  const { id, title, description, price, photos, cond, neg, sold } = body;
   if (!id) return res.status(400).json({ error: 'Missing id' });
 
   // Fetch current ad
@@ -89,6 +89,9 @@ module.exports = async function handler(req, res) {
   const ageMs       = Date.now() - new Date(ad.created_at).getTime();
   const withinWindow = ageMs <= EDIT_WINDOW_MS;
   const patch       = {};
+
+  // Mark as sold / relist — allowed at any age
+  if (sold !== undefined) patch.sold_at = sold ? new Date().toISOString() : null;
 
   if (withinWindow) {
     // Full edit

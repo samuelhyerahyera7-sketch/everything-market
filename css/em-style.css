@@ -695,6 +695,24 @@ svg { display: block; }
   cursor: pointer; white-space: nowrap; transition: .13s;
 }
 .em-myad-edit:hover { border-color: #1A7A42; color: #1A7A42; background: #E8F5E9; }
+.em-myad-sold {
+  padding: 3px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+  background: none; color: var(--muted); font-size: 11px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: .13s;
+}
+.em-myad-sold:hover { border-color: #B45309; color: #B45309; background: #FFF7E6; }
+.em-sold-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  background: #C62828; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: .08em;
+  padding: 4px 10px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,.25); pointer-events: none;
+}
+.em-myad-img .em-sold-badge { top: 3px; left: 3px; font-size: 8px; padding: 2px 4px; border-radius: 4px; }
+.em-sold-chip { background: #C62828 !important; color: #fff !important; font-weight: 800; }
+.em-sold-notice {
+  margin: 4px 20px 8px; padding: 14px 16px; border-radius: 10px;
+  background: #FDECEA; color: #8E1B1B; font-size: 14px; font-weight: 600; line-height: 1.5;
+}
+.em-sold-notice a { color: inherit; text-decoration: underline; }
 
 /* ── Boost button in My Ads ── */
 .em-boost-btn {

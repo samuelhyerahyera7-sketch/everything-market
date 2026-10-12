@@ -42,7 +42,14 @@ module.exports = async function handler(req, res) {
     /* Hide suspended sellers' listings. The suspended column is optional
        (added by supabase-suspend.sql) — if it doesn't exist yet, this filtered
        query 400s and we fall back to the unfiltered one below. */
-    let r = await sbGet('/rest/v1/ads?select=*&suspended=eq.false&order=created_at.desc&limit=500');
+    /* Sold ads stay visible (with a SOLD badge) for 7 days, then drop off.
+       sold_at is optional too (added by supabase-sold.sql). */
+    const soldCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const soldFilter = '&or=' + encodeURIComponent(`(sold_at.is.null,sold_at.gt.${soldCutoff})`);
+    let r = await sbGet('/rest/v1/ads?select=*&suspended=eq.false' + soldFilter + '&order=created_at.desc&limit=500');
+    if (r.status !== 200) {
+      r = await sbGet('/rest/v1/ads?select=*&suspended=eq.false&order=created_at.desc&limit=500');
+    }
     if (r.status !== 200) {
       r = await sbGet('/rest/v1/ads?select=*&order=created_at.desc&limit=500');
     }
