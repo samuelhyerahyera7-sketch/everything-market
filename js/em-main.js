@@ -184,17 +184,34 @@ const _ART_ICON = {
   apt:      { emoji:'🏢', color:'#E3F2FD', icon:'M3 21V7l9-4 9 4v14H3zM3 21h18M9 21V9M15 21V9M9 9h6M9 13h6M9 17h6' },
 };
 
+/* Thumbnail URL saved next to an uploaded photo (<index>_thumb.jpg), or null
+   for photos that aren't in our Supabase ad-photos bucket. */
+function _thumbUrl(url) {
+  if (typeof url !== 'string') return null;
+  const m = url.match(/^(.*\/storage\/v1\/object\/public\/ad-photos\/ad-[^/]+\/[^/]+?)\.(jpe?g|png|webp)$/i);
+  return m ? m[1] + '_thumb.jpg' : null;
+}
+
 function _renderImg(el, l, tappable) {
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
-    img.src = l.photos[0];
+    const full = l.photos[0];
+    /* Cards show the small thumbnail; only the tappable ad view gets the full
+       photo. Older ads have no thumbnail, so fall back to the full photo. */
+    const thumb = tappable ? null : _thumbUrl(full);
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.src = thumb || full;
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
     if (tappable) {
       img.style.cursor = 'zoom-in';
       img.onclick = () => emLightboxOpen(l.photos[0], l.photos, 0);
     }
-    img.onerror = () => { img.remove(); _renderArtIcon(el, l.art); };
+    img.onerror = () => {
+      if (thumb && img.src !== full) { img.src = full; return; }
+      img.remove(); _renderArtIcon(el, l.art);
+    };
     el.appendChild(img);
   } else {
     _renderArtIcon(el, l.art);
@@ -3492,13 +3509,15 @@ window._spDrop = function(e) {
 async function _spUploadNewPhotos(productKey) {
   const uploaded = [];
   for (let i = 0; i < window._spNewPhotos.length; i++) {
+    const thumbDataUrl = window.emMakeThumb ? await window.emMakeThumb(window._spNewPhotos[i]) : null;
     const r = await fetch('/api/upload-photo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         adId: 'store-' + productKey,
         index: Date.now() + '-' + i,
-        dataUrl: window._spNewPhotos[i]
+        dataUrl: window._spNewPhotos[i],
+        thumbDataUrl
       })
     });
     const data = await r.json().catch(() => ({}));

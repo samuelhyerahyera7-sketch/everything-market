@@ -52,6 +52,11 @@ module.exports = async function handler(req, res) {
     }
     const ads = JSON.parse(r.body);
     console.log('[load-ads] returned', ads.length, 'ads');
+    /* Cache the ad list on Vercel's CDN for 60s (and serve a stale copy while
+       refreshing for 5 more minutes). Without this, every page view re-fetched
+       up to 500 ads from Supabase, which burned through the egress quota. */
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    res.setHeader('Vercel-CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     return res.status(200).json(ads);
   } catch (e) {
     console.error('[load-ads] exception:', e);

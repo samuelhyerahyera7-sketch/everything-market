@@ -49,14 +49,42 @@
     return SB_KEY;
   }
 
+  /* ── Make a small JPEG thumbnail (max 400px) from a photo data URL.
+        Listing cards show this instead of the full photo to save bandwidth. ── */
+  function emMakeThumb(dataUrl) {
+    return new Promise(resolve => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const MAX = 400;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else       { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(c.toDataURL('image/jpeg', 0.7));
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+      } catch (e) { resolve(null); }
+    });
+  }
+  window.emMakeThumb = emMakeThumb;
+
   /* ── Upload a single photo via server endpoint (uses service key, always works) ── */
   async function _uploadPhoto(adId, index, dataUrl) {
     try {
       const token = await _getAuthToken();
+      const thumbDataUrl = await emMakeThumb(dataUrl);
       const r = await fetch('/api/upload-photo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ adId, index, dataUrl })
+        body: JSON.stringify({ adId, index, dataUrl, thumbDataUrl })
       });
       if (!r.ok) { console.error('[EM] upload-photo', r.status); return null; }
       const json = await r.json();

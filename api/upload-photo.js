@@ -60,6 +60,9 @@ function uploadToStorage(path, buffer, mimeType) {
         'Content-Type': mimeType,
         'Content-Length': buffer.length,
         'x-upsert': 'true',
+        /* Let browsers keep photos for a day instead of Supabase's 1-hour
+           default, so returning visitors don't re-download them (egress). */
+        'cache-control': 'max-age=86400',
       },
     };
     const req = https.request(opts, res => {
@@ -84,7 +87,7 @@ module.exports = async function handler(req, res) {
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; }
   catch { return res.status(400).json({ error: 'Invalid JSON' }); }
 
-  const { adId, index, dataUrl } = body || {};
+  const { adId, index, dataUrl, thumbDataUrl } = body || {};
   if (!adId || index == null || !dataUrl || !dataUrl.startsWith('data:')) {
     return res.status(400).json({ error: 'Missing adId, index, or dataUrl' });
   }
@@ -132,6 +135,25 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'Storage error ' + r.status });
     }
     const publicUrl = SB_URL_RAW + '/storage/v1/object/public/ad-photos/' + path;
+
+    /* Optional small thumbnail, stored next to the photo as <index>_thumb.jpg.
+       Listing cards load this instead of the full photo, which is what keeps
+       Supabase egress down. A failed thumbnail never fails the upload — cards
+       fall back to the full photo when the thumbnail is missing. */
+    if (typeof thumbDataUrl === 'string') {
+      const t = thumbDataUrl.match(/^data:image\/jpeg;base64,(.+)$/);
+      if (t) {
+        const tBuf = Buffer.from(t[1], 'base64');
+        if (tBuf.length <= 512 * 1024) {
+          const tPath = 'ad-' + String(adId) + '/' + index + '_thumb.jpg';
+          try {
+            const tr = await uploadToStorage(tPath, tBuf, 'image/jpeg');
+            if (tr.status !== 200 && tr.status !== 201) console.error('[upload-photo] thumb error', tr.status, tr.body);
+          } catch (e) { console.error('[upload-photo] thumb exception:', e); }
+        }
+      }
+    }
+
     return res.status(200).json({ url: publicUrl });
   } catch (e) {
     console.error('[upload-photo] exception:', e);
