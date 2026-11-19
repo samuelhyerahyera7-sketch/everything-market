@@ -68,7 +68,9 @@ module.exports = async function handler(req, res) {
     const logo = store.logo_url || `${SITE_URL}/logo.png`;
     const loc = safeProducts.find(p => p.loc)?.loc || 'South Africa';
     const productCards = safeProducts.map(product => {
-      const photo = Array.isArray(product.photos) && product.photos[0] ? product.photos[0] : '';
+      const rawPhoto = Array.isArray(product.photos) && product.photos[0] ? String(product.photos[0]) : '';
+      const mk = '/storage/v1/object/public/ad-photos/';
+      const photo = rawPhoto.includes(mk) ? '/img/' + rawPhoto.slice(rawPhoto.indexOf(mk) + mk.length) : rawPhoto;
       return `<a class="product" href="/?store=${esc(storeId)}">
         ${photo ? `<img src="${esc(photo)}" alt="${esc(product.title)}" loading="lazy">` : '<div class="placeholder">EM</div>'}
         <strong>${esc(product.title)}</strong>
