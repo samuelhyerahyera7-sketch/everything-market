@@ -52,6 +52,8 @@ module.exports = async function handler(req, res) {
     }
     const ads = JSON.parse(r.body);
     console.log('[load-ads] returned', ads.length, 'ads');
+    /* Short CDN cache: one Supabase query serves every visitor for 30s. */
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120');
     return res.status(200).json(ads);
   } catch (e) {
     console.error('[load-ads] exception:', e);

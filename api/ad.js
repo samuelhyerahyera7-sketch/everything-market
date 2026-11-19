@@ -37,6 +37,9 @@ function cleanText(value, maxLength) {
 function absoluteUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
+  const mark = '/storage/v1/object/public/ad-photos/';
+  const at = raw.indexOf(mark);
+  if (at > -1) return SITE_URL + '/img/' + raw.slice(at + mark.length);
   if (/^https?:\/\//i.test(raw)) return raw;
   if (raw.startsWith('/')) return SITE_URL + raw;
   return raw;

@@ -1,3 +1,13 @@
+/* ── Photo URLs: serve Supabase Storage ad photos through our Vercel CDN
+   (/img/...) so repeat views don't burn Supabase egress quota. ── */
+const _EM_SB_PHOTO_MARK = '/storage/v1/object/public/ad-photos/';
+function emImg(u) {
+  if (typeof u !== 'string') return u;
+  const i = u.indexOf(_EM_SB_PHOTO_MARK);
+  return i > -1 ? '/img/' + u.slice(i + _EM_SB_PHOTO_MARK.length) : u;
+}
+window.emImg = emImg;
+
 /* ── Wishlist ── */
 let wl = new Set(JSON.parse(localStorage.getItem('em_wl2') || '[]'));
 function toggleWL(id, btn) {
@@ -187,7 +197,7 @@ const _ART_ICON = {
 function _renderImg(el, l, tappable) {
   if (l.photos && l.photos.length > 0) {
     const img = document.createElement('img');
-    img.src = l.photos[0];
+    img.src = emImg(l.photos[0]);
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
     img.alt = l.title;
     if (tappable) {
@@ -824,7 +834,7 @@ function openStoreCart(storeId, storeName) {
         : `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
              ${items.map(i => `
                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surf2);border-radius:12px;border:1px solid var(--border-lt);">
-                 ${i.photo ? `<img src="${i.photo}" style="width:56px;height:56px;object-fit:cover;border-radius:9px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:9px;background:var(--surf3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">🛒</div>`}
+                 ${i.photo ? `<img src="${emImg(i.photo)}" style="width:56px;height:56px;object-fit:cover;border-radius:9px;flex-shrink:0;" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:9px;background:var(--surf3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;">🛒</div>`}
                  <div style="flex:1;min-width:0;">
                    <div style="font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i.title}</div>
                    <div style="font-size:12px;color:var(--muted);margin-top:1px;">R${i.price.toLocaleString('en-ZA')} each</div>
@@ -2228,7 +2238,8 @@ function emLightboxOpen(src, allPhotos, startIdx) {
   const lb  = document.getElementById('em-lightbox');
   const img = document.getElementById('em-lightbox-img');
   if (!lb || !img || !src) return;
-  _lbPhotos = Array.isArray(allPhotos) && allPhotos.length > 1 ? allPhotos : [src];
+  src = emImg(src);
+  _lbPhotos = Array.isArray(allPhotos) && allPhotos.length > 1 ? allPhotos.map(emImg) : [src];
   _lbIdx    = (startIdx != null) ? startIdx : _lbPhotos.indexOf(src);
   if (_lbIdx < 0) _lbIdx = 0;
   img.src = _lbPhotos[_lbIdx];
@@ -2465,7 +2476,7 @@ function openBuyNow(listing) {
   const galleryHTML = photos.length > 1
     ? `<div class="em-gallery" id="em-gallery">
         <div class="em-gallery-track" id="em-gallery-track">
-          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${p}" alt="Photo ${i+1}" onclick="emLightboxOpen(window._emCurrentPhotos[${i}],window._emCurrentPhotos,${i})" onerror="this.style.display='none'"></div>`).join('')}
+          ${photos.map((p, i) => `<div class="em-gallery-slide"><img src="${emImg(p)}" alt="Photo ${i+1}" onclick="emLightboxOpen(window._emCurrentPhotos[${i}],window._emCurrentPhotos,${i})" onerror="this.style.display='none'"></div>`).join('')}
         </div>
         <button class="em-gallery-arrow em-gallery-prev" onclick="emGalleryMove(-1)">&#8249;</button>
         <button class="em-gallery-arrow em-gallery-next" onclick="emGalleryMove(1)">&#8250;</button>
@@ -3183,7 +3194,7 @@ async function _renderProductsTab() {
     if (!el) return;
     const photos = Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : []);
     if (photos[0]) {
-      el.style.backgroundImage = `url(${photos[0]})`;
+      el.style.backgroundImage = `url(${emImg(photos[0])})`;
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
     }

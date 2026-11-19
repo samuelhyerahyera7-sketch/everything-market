@@ -60,6 +60,7 @@ function uploadToStorage(path, buffer, mimeType) {
         'Content-Type': mimeType,
         'Content-Length': buffer.length,
         'x-upsert': 'true',
+        'cache-control': 'max-age=31536000',
       },
     };
     const req = https.request(opts, res => {
@@ -123,7 +124,9 @@ module.exports = async function handler(req, res) {
     return res.status(413).json({ error: 'Image too large (max 8 MB)' });
   }
 
-  const path = 'ad-' + String(adId) + '/' + index + '.' + ext;
+  /* Unique filename per upload so a photo URL never changes content —
+     lets browsers and the CDN cache photos for a year. */
+  const path = 'ad-' + String(adId) + '/' + index + '-' + Date.now().toString(36) + '.' + ext;
 
   try {
     const r = await uploadToStorage(path, buffer, mimeType);
